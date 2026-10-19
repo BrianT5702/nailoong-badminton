@@ -17,6 +17,17 @@ A little browser badminton game starring Nailoong. No install needed: open the l
 - Drop/Net (L) on a floater at the net plays a softer push kill
 - 1-player (Easy / Normal / Hard) or 2-player on one keyboard; touch buttons on mobile
 
+## Play online (1 vs 1)
+
+1. Pick **Online** on the title screen, press **Online ♥**, then **Create room**. You get a short room code.
+2. Send the code, or press **Copy invite link** and send the link (`...?room=CODE` joins straight away).
+3. Your friend opens the link (or picks Online → types the code → **Join**). When they're in, choose 11 or 21 and press **Start match**.
+
+- The host plays Nailoong and the guest plays Berry. Both use the Player 1 keys (A / D, Space, J, K, L, Shift) or touch.
+- It's a direct peer-to-peer WebRTC link. A public PeerJS server is used only to find each other. Your own moves show instantly; your opponent's reach you about half your ping later (the ping is shown top-left).
+- Rematch from the end screen. If someone drops, the room stays open so they can reconnect.
+- Some strict networks (certain office, school or mobile setups) block peer-to-peer connections. If joining never connects, try another network. You can also add your own TURN server with `?turn=turn:host:3478,user,pass`.
+
 ## Feedback welcome!
 
 Tried it? Tell Brian what felt fun, what felt off, and any bugs you spotted.
