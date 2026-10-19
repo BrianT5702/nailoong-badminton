@@ -16,7 +16,7 @@ A little browser badminton game starring Nailoong. No install needed: open the l
 - Timing and contact decide shot quality (Perfect / Good / Early / Late)
 - Net kill: Smash (K / . / touch Smash) near the net on a loose net shot that hangs above the tape. Timing matters: late or low goes into the net, early or too hard goes long. Tight net shots below the tape can't be killed
 - Drop/Net (L) on a floater at the net plays a softer push kill
-- Realistic shuttle flight: one physics model for every shot (gravity + air drag, terminal speed ~6.8 m/s)
+- Realistic shuttle flight: one physics model for every shot (gravity + air drag, terminal speed ~7.8 m/s)
 - Bigger, flashier smashes the better you time them. A Perfect jump smash gets the full show
 - 1-player (Easy / Normal / Hard) or 2-player on one keyboard; touch buttons on mobile
 
