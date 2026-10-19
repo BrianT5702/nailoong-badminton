@@ -504,6 +504,7 @@ function setupServe(side){
 }
 
 /* ================= Shuttle physics ================= */
+let PUNCH_CLR=-48;   // v14.2: punch is solved to pass ~0.6 m under a full jump reach at the opponent (was +12 px above): flatter and ~12% quicker, still interceptable by a jump or a back-court chase
 const BOOST_K=1, PUNCH_MAXSP=70*PX_M;   // v14: no drag windows / gravity multipliers any more; punch launch capped at 70 m/s off the racket
 function stepS(s,dt){   // midpoint (RK2) step of dv/dt = g - k|v|v; same model for every shot and for the AI's predictions
   const vx=s.vx, vy=s.vy, sp=Math.hypot(vx,vy), h=dt/2;
@@ -791,12 +792,12 @@ function hitShuttle(p,d=0,reach=REACH){
   } else if(type==='punch'){
     // perfect = fastest + deep; good = a touch slower/higher; mistimed = too low (interceptable) or too long (out)
     if(!p.ai){ const tp=clamp(1-Math.abs(p.swingT-SW_PEAK-.01)/.04,0,1); q*=.55+.45*tp; }   // punch timing window is tight
-    const base=dir>0?COURT_R:COURT_L; let tx, clr=JUMP_REACH_H+12;
+    const base=dir>0?COURT_R:COURT_L; let tx, clr=JUMP_REACH_H+PUNCH_CLR;
     if(q>=.8){ tx=base-dir*rand(22,55); }
     else if(q>=.6){ tx=base-dir*rand(35,85); clr+=rand(25,50); }
     else { const long=(p.swingT-SW_PEAK>.015)?Math.random()<.65:Math.random()<.3;
       if(long){ tx=base+dir*rand(10,25+(.6-q)*160); clr+=rand(0,30); p.punchMiss='long'; }
-      else { tx=base-dir*rand(40,130); clr=JUMP_REACH_H-rand(30,90)*(1.2-q); p.punchMiss='low'; } }
+      else { tx=base-dir*rand(40,130); clr=JUMP_REACH_H+PUNCH_CLR-rand(40,100)*(1.2-q); p.punchMiss='low'; } }
     if(p.ai){ const d=DIFF[p.ai.diff]; tx+=rand(-1,1)*d.err*.4*dir; if(Math.random()<d.outChance) tx=base+dir*rand(10,60); }
     v=solvePunch(s.x,s.y,dir,tx,clr,opp.x)||solvePunch(s.x,s.y,dir,tx,clr-60,opp.x);
     if(!v){ v=solveShot(s.x,s.y,oppX(p.side,aimFrac(p,'punch')*(.72+.28*q)),SHOTS.punch.ang); v.noBoost=true; }
