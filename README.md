@@ -33,7 +33,7 @@ A little browser badminton game starring Nailoong. No install needed: open the l
 
 ## Sounds
 
-All sounds are made in the browser (Web Audio): the Nailoong and Berry voices, crowd and background music are synthesized. No recorded or official clips are used.
+Racket hits use a real jump-smash sound recorded on Brian's own court, embedded in the page (a short, cleaned 24 kHz clip). Perfect smashes play the full hit, good smashes a softer version, and mistimed smashes sound like a frame hit. The Nailoong and Berry voices, crowd and background music are synthesized in the browser (Web Audio). No official Nailoong audio is used.
 
 ## Feedback welcome!
 
