@@ -119,8 +119,8 @@
       <div class="grp"><div class="gh">Shots</div>
         <table>
         <tr><td class="n">Clear</td><td class="k"><span class="kc">J</span></td><td class="k altK"><span class="kc">Z</span></td><td><b>On time, out in front</b> &rarr; fast flat <b>punch clear</b>.<br>Late, behind you or low &rarr; <b>high clear / lift</b>.</td></tr>
-        <tr><td class="n">Smash</td><td class="k"><span class="kc">K</span></td><td class="k altK"><span class="kc">X</span></td><td>jump + hit a high shuttle</td></tr>
-        <tr><td class="n">Drop / Net</td><td class="k"><span class="kc">L</span></td><td class="k altK"><span class="kc">C</span></td><td>mid/back court: <b>drop</b> just over the net.<br>At the net: tumbling <b>net shot</b> (or a <b>kill</b> if it floats above the tape)</td></tr></table></div>
+        <tr><td class="n">Smash</td><td class="k"><span class="kc">K</span></td><td class="k altK"><span class="kc">X</span></td><td>jump + hit a high shuttle.<br><b>Near the net on a loose net shot = Net kill</b> (timing matters: late/low &rarr; into the net, early &rarr; long)</td></tr>
+        <tr><td class="n">Drop / Net</td><td class="k"><span class="kc">L</span></td><td class="k altK"><span class="kc">C</span></td><td>mid/back court: <b>drop</b> just over the net.<br>At the net: tumbling <b>net shot</b> (or a soft <b>push kill</b> if it floats above the tape)</td></tr></table></div>
       <div class="tip">&#9201; <b>Timing tip:</b> swing just before the shuttle reaches you, in front of your body, for a <b>Perfect!</b> shot. Serve with <span class="kc">J</span> (long) or <span class="kc">L</span> (short).</div>
       <div class="foot"><span class="kc">P</span> pause &middot; <span class="kc">M</span> mute &middot; <span class="kc">F</span> fullscreen</div>
     </div>
@@ -363,6 +363,21 @@ function netPlay(p,s){
   if(s.y>NET_TOP-30) return 'net';
   return null;
 }
+// v11 NET KILL (K near the net): shuttle hanging near/above the tape on your side, you close to the net.
+// Returns the height above the tape (px, negative = below) or null when not in the kill zone.
+function netKillZone(p,s){
+  if(Math.abs(p.x-NET_X)>165 || Math.abs(s.x-NET_X)>125) return null;
+  if(s.y<NET_TOP-150 || s.y>NET_TOP+12) return null;
+  return NET_TOP-s.y;
+}
+// Kill success chance from contact quality q and the height above the tape h: tight (h<~5) can't be killed
+function netKillOdds(p,s,q,h){
+  const qf=Math.pow(clamp((q-.45)/.35,0,1),1.2), hf=Math.pow(clamp((h-4)/26,0,1),.8);
+  let ok=qf*hf;
+  if(p.lungeT>0||p.recT>0) ok-=.1;
+  if(p.ai) ok*=({easy:.8,normal:.95,hard:1})[p.ai.diff];
+  return clamp(ok,0,.96);
+}
 // J = clear: on-time/early contact out in front = fast flat punch clear; late (behind you) or low = high clear / lift
 function clearType(p,s){
   if(s.y>GROUND-50) return 'lift';
@@ -370,13 +385,14 @@ function clearType(p,s){
   return (e>=-.03 && e<=.05 && front)?'punch':'clear';
 }
 function shotFor(p){
-  const s=shuttle, low=s.y>NET_TOP+55, vsSmash=shuttle.type==='smash'||shuttle.type==='kill';
+  const s=shuttle, low=s.y>NET_TOP+55, vsSmash=shuttle.type==='smash'||shuttle.type==='kill'||shuttle.type==='netkill';
   if(p.ai){
     const d=DIFF[p.ai.diff], r=Math.random();
     if(vsSmash) return r<.55?'lift':'block';
     const np0=netPlay(p,s);
     if(p.ai.lateId===game.hitId) return np0==='net'?(r<.5?'net':'lift'):low?(r<.7?'lift':'drop'):(r<.6?'clear':r<.85?'drop':'drive');   // scrambling: just get it back
     const np=np0;
+    if(p.req==='smash' && netKillZone(p,s)!==null) return 'netkill';   // pounced on a loose net shot (decided in the AI)
     if(np==='kill') return r<d.smash+.2?'kill':'net';
     if(np==='net') return r<.35+d.smash*.3?'net':'lift';
     const tightDrop=(s.type==='drop'||s.type==='block'||s.type==='net')&&s.q>=.5;   // a well-played drop can never be smashed
@@ -387,7 +403,7 @@ function shotFor(p){
     return r<.3?'drive':r<.55?'clear':r<.75?'punch':'drop';
   }
   if(vsSmash) return p.req==='drop'?'block':'lift';      // smashes can only be defended
-  if(p.req==='smash') return canSmash(p,s)?'smash':(s.y<NET_TOP+30?'drive':'lift');
+  if(p.req==='smash'){ if(netKillZone(p,s)!==null) return 'netkill'; return canSmash(p,s)?'smash':(s.y<NET_TOP+30?'drive':'lift'); }
   if(p.req==='drop') return netPlay(p,s)||'drop';
   return clearType(p,s);
 }
@@ -462,7 +478,7 @@ function contactQuality(p,d,reach){
 }
 function hitShuttle(p,d=0,reach=REACH){
   const s=shuttle, dir=p.side===0?1:-1, opp=players[1-p.side];
-  const Q=contactQuality(p,d,reach), q=Q.q;
+  const Q=contactQuality(p,d,reach); let q=Q.q;
   p.hitT=game.time; p.hitPt={x:s.x,y:s.y};
   let v=null, type=shotFor(p), big=false;
   if(type==='smash'){
@@ -481,6 +497,35 @@ function hitShuttle(p,d=0,reach=REACH){
     else if(q<.75){ // mis-timed: angle wobbles, can find the net or go long
       const sp2=Math.hypot(v.vx,v.vy), a=Math.atan2(v.vy,v.vx*dir)+rand(-1,1)*(1-q)*0.17;
       v={vx:Math.cos(a)*sp2*dir, vy:Math.sin(a)*sp2};
+    }
+  }
+  let nkOut=null;
+  if(type==='netkill'){
+    const h=NET_TOP-s.y, e=p.swingT-SW_PEAK, front=(s.x-hitCenter(p).x)*p.f>-14;
+    const qq=p.ai?q:q*(front?1:.7);
+    if(h<0 && Math.random()<.45){ type='net'; q*=.5; }                 // below the tape: forced push / net shot fallback
+    else {
+      const ok=h<0?0:netKillOdds(p,s,qq,h), roll=Math.random();
+      if(roll<ok){                                                   // steep, fast kill just past the net
+        const tx=NET_X+dir*rand(45,150); let best=-1e9;
+        for(let ang=82; ang>=2; ang-=2) for(const sp of [2600,2200,1800,1400]){ const r=ang*Math.PI/180, c={vx:Math.cos(r)*dir*sp*(.75+.25*qq), vy:Math.sin(r)*sp*(.75+.25*qq)};
+          const sim=simulate(s.x,s.y,c.vx,c.vy,2);
+          if(sim.crossY===null || sim.crossY>NET_TOP-4) continue; const land=(sim.landX-NET_X)*dir; if(land<15||land>SHORT_PX*1.7) continue;
+          const sc=ang*2+sp/100-Math.abs(sim.landX-tx)*.15; if(sc>best){ best=sc; v=c; } }
+        if(v) nkOut='kill';
+      }
+      if(!v){                                                        // failed: into the net, or too early/hard = long
+        const early=e>.02, outP=h<6?.08:early?.6:.2;
+        if(Math.random()<outP){ nkOut='out';
+          const tx=(dir>0?COURT_R:COURT_L)+dir*rand(18,70); let bestErr=1e9;
+          for(let ang=-25; ang<=12; ang+=1.5){ const r=ang*Math.PI/180, c={vx:Math.cos(r)*dir*2300, vy:Math.sin(r)*2300}, sim=simulate(s.x,s.y,c.vx,c.vy,4);
+            if(sim.crossY===null||sim.crossY>NET_TOP-4) continue; const er=Math.abs(sim.landX-tx); if(er<bestErr){ bestErr=er; v=c; } } }
+        if(!v){ nkOut='net'; const ty=NET_TOP+rand(4,46), dx=NET_X-s.x, dy=ty-s.y, L=Math.hypot(dx,dy)||1;   // driven down into the tape/mesh
+          v={vx:dx/L*1900, vy:dy/L*1900}; if((v.vx)*dir<=40) v.vx=dir*Math.max(40,Math.abs(v.vx)); }
+      }
+      if(nkOut==='kill'){ game.shake=.35; sfx.smash(); popup(s.x,s.y-34,'NET KILL!','#ff3f7f',38); for(let i=0;i<12;i++) spark(s.x,s.y,'#ffe066'); }
+      else sfx.hit(.8);
+      (game.nkLog=game.nkLog||[]).push({ai:!!p.ai,q:+qq.toFixed(2),h:Math.round(h),out:nkOut});
     }
   }
   if(type==='kill'){
@@ -502,13 +547,14 @@ function hitShuttle(p,d=0,reach=REACH){
     if(!v){ type='lift'; }
     else if(type==='drop' && Math.random()<netFailChance(p,s,q,'drop')) v=intoTape(s,v,dir)||v;
   }
-  if(type==='kill'){ game.shake=.3; sfx.smash(); popup(s.x,s.y-30,'Kill!','#ff5f8f',34); for(let i=0;i<10;i++) spark(s.x,s.y,'#ffe066'); }
+  if(type==='kill'){ game.shake=.15; sfx.smash(); popup(s.x,s.y-30,'Push kill','#ff5f8f',28); for(let i=0;i<10;i++) spark(s.x,s.y,'#ffe066'); }
   else if(type==='net'){ sfx.hit(.3); for(let i=0;i<4;i++) spark(s.x,s.y,'#fff6a8'); if(!p.ai) popup(s.x,s.y-30,'Net shot','#7aa0d8',24); }
   else if(type==='smash'){
     const perfect=q>=.8;
     game.shake=perfect?.6:big?.4:.2; sfx.smash();
     popup(s.x,s.y-30,big?'SMASH!!':'Smash!','#ff5f8f',big?46:36);
     for(let i=0;i<(big?20:12);i++) spark(s.x,s.y,'#ffe066');
+  } else if(type==='netkill'){ /* handled above */
   } else if(type==='drop'||type==='block'){
     sfx.hit(.45); for(let i=0;i<5;i++) spark(s.x,s.y,'#fff6a8');
   } else {
@@ -585,7 +631,9 @@ function updatePlayer(p,dt){
   p.blink-=dt; if(p.blink<0){ p.blinkT=.13; p.blink=rand(2,4.5);} p.blinkT=Math.max(0,p.blinkT-dt);
   if(p.moodT>0){ p.moodT-=dt; if(p.moodT<=0) p.mood=null; }
 }
-function hitCenter(p){ const l=(p.lungeT>0||p.recT>0)?1:0; return {x:p.x+p.f*25+(l?(p.lungeDir||0)*9:0), y:p.y-(p.onGround?75:100)+l*12}; }   // airborne = arm stretched overhead
+function hitCenter(p){ const l=(p.lungeT>0||p.recT>0)?1:0;
+  const nk=p.req==='smash'&&p.swingT>=0&&Math.abs(p.x-NET_X)<165;   // net kill: arm up, racket above the tape
+  return {x:p.x+p.f*25+(l?(p.lungeDir||0)*9:0), y:p.y-(nk?(p.onGround?122:140):(p.onGround?75:100))+l*12}; }   // airborne = arm stretched overhead
 function reachOf(p){ return (p.ai?REACH:REACH+5)+((p.lungeT>0||p.recT>0)?LUNGE_REACH:0); }
 
 /* ================= AI ================= */
@@ -602,6 +650,7 @@ function aiThink(p,dt){
       if(a.seen!==game.hitId){ a.seen=game.hitId; a.react=d.react*rand(.7,1.3); a.err=rand(-1,1)*d.err;
         a.miss=Math.random()<d.mistake; a.jump=Math.random()<d.jump; a.jroll=Math.random()<d.jump; a.runFrom=p.x; a.leave=Math.random()<d.leave;
         if(s.type==='kill'){ a.react=d.sReact*rand(.8,1.2); a.miss=Math.random()<d.sMiss*1.2; a.jump=false; }
+        if(s.type==='netkill'){ a.react=d.sReact*rand(.9,1.3); a.miss=Math.random()<Math.min(.95,d.sMiss+.6); a.jump=false; }
         if(s.type==='smash'){ const sq=s.q===undefined?1:s.q; a.react=d.sReact*rand(.8,1.25)*(.5+.5*sq); a.miss=Math.random()<(s.bigSmash?d.bigMiss:d.sMiss)*(.25+.75*sq); a.jump=false; }
         if(s.type==='drop'||s.type==='block'||s.type==='net') a.jump=false; }
       // predict
@@ -629,7 +678,15 @@ function aiThink(p,dt){
         if(need>REACH*.6 && need<190 && tI<.55 && need>Math.abs(p.vx)*tI+sp*.5*Math.max(0,tI-.15)){ inp.lunge=true; inp.right=tx>p.x; inp.left=tx<p.x; } }
       const hc=hitCenter(p), dist=Math.hypot(s.x-hc.x,s.y-hc.y);
       const mineNow=p.side===0?s.x<NET_X+8:s.x>NET_X-8;
-      if(!a.miss && !letGo && mineNow && dist<REACH*.85) swing=true;
+      if(a.nkId!==game.hitId){ a.nkId=game.hitId; a.nkRoll=Math.random()<({easy:.3,normal:.6,hard:.85})[d===DIFF.easy?'easy':d===DIFF.hard?'hard':'normal']; }
+      let kill=false;
+      if(a.nkRoll && !a.miss && !letGo && mineNow && p.swingT<0 && Math.abs(p.x-NET_X)<165){ const h=netKillZone(p,s);
+        if(h!==null && h>12){ const f={x:s.x,y:s.y,vx:s.vx,vy:s.vy}; for(let k=0;k<5;k++) stepS(f,1/120);   // where it will be at contact
+          const hF=NET_TOP-f.y, thr=d===DIFF.easy?14:d===DIFF.hard?26:20, own=p.side===0?f.x<NET_X-4:f.x>NET_X+4;
+          if(own && hF>thr && Math.hypot(f.x-hc.x,f.y-(p.y-(p.onGround?122:140)))<REACH*.85) kill=true; } }
+      const hNow=a.nkRoll&&Math.abs(p.x-NET_X)<165?netKillZone(p,s):null, waitKill=hNow!==null&&hNow>6&&s.vy<120;   // let a loose one hang, then pounce
+      if(kill) swing='smash';
+      else if(!waitKill && !a.miss && !letGo && mineNow && dist<REACH*.85) swing=true;
       if(a.icptId===game.hitId && p.onGround && !letGo && game.time>=a.icptT-.34) jump=true;
       if(a.jump && p.onGround && !letGo && mineNow && Math.abs(s.x-hc.x)<55 && s.vy>0 && s.y>GROUND-440 && s.y<GROUND-320) jump=true;
     } else tx=base;
@@ -638,7 +695,7 @@ function aiThink(p,dt){
   if(!inp.lunge){
     if(Math.sign(dx)===Math.sign(p.vx) && Math.abs(dx)<=stopD+4){}      // brake early: AI skids too
     else if(dx>8) inp.right=true; else if(dx<-8) inp.left=true; }
-  inp.shot=swing?'clear':null; inp.jump=jump; inp.lunge=!!inp.lunge;
+  inp.shot=swing==='smash'?'smash':swing?'clear':null; inp.jump=jump; inp.lunge=!!inp.lunge;
   return inp;
 }
 
@@ -1172,7 +1229,7 @@ function drawHUD(){
   // first-time hint toast (fades in and out)
   if(hintT>0){ const a=clamp(Math.min(hintT,7-hintT)*1.5,0,1); ctx.globalAlpha=a*.92; pill(cx,H-38,620,34,'rgba(255,255,255,.92)','#ffd0df'); ctx.globalAlpha=a;
     ctx.font=`bold 14px ${UIF}`; ctx.fillStyle='#a35a78'; ctx.textAlign='center';
-    ctx.fillText(isTouch?'Tip: Clear on time = punch clear, late = high clear \u00b7 Drop/Net at the net = net shot \u00b7 Dash = lunge':'Tip: J on time = punch clear, late = high clear \u00b7 L at the net = net shot \u00b7 Shift / double-tap = lunge',cx,H-37); ctx.globalAlpha=1; }
+    ctx.fillText(isTouch?'Tip: Clear on time = punch, late = high clear \u00b7 Drop/Net at the net = net shot \u00b7 Smash near the net on a loose net shot = Net kill':'Tip: J on time = punch, late = high clear \u00b7 L at the net = net shot \u00b7 K near the net on a loose net shot = Net kill (timing matters)',cx,H-37); ctx.globalAlpha=1; }
 }
 const CAM={x:632,z:.9};
 const toScreen=(x,y)=>[(x-CAM.x)*CAM.z+W/2,(y-H)*CAM.z+H];
@@ -1294,7 +1351,7 @@ function frame(now){
 newMatch('demo','normal',11);
 requestAnimationFrame(frame);
 // test/debug hook
-window.__nb={toScreen,proj,clouds,netPlay,solveNet,update,pointTo,setupServe,contactQuality,SHOTS,solveShot,solveDrop,canSmash,hitShuttle,SMASH_Y,NET_TOP,proj,SPR,spritesReady,drawDino,ctx,render,game,players:()=>players,shuttle,newMatch,startFromMenu,solveShot,simulate,oppX,SHOTS,DIFF};
+window.__nb={netKillZone,netKillOdds,hitCenter,reachOf,toScreen,proj,clouds,netPlay,solveNet,update,pointTo,setupServe,contactQuality,SHOTS,solveShot,solveDrop,canSmash,hitShuttle,SMASH_Y,NET_TOP,proj,SPR,spritesReady,drawDino,ctx,render,game,players:()=>players,shuttle,newMatch,startFromMenu,solveShot,simulate,oppX,SHOTS,DIFF};
 </script>
 </body>
 </html>

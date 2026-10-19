@@ -13,6 +13,8 @@ A little browser badminton game starring Nailoong. No install needed: open the l
 - In 1-player mode you can also use the arrows with Z / X / C (or , . /)
 - P: pause · M: mute · F: fullscreen · G: toggle landing ring
 - Timing and contact decide shot quality (Perfect / Good / Early / Late)
+- Net kill: Smash (K / . / touch Smash) near the net on a loose net shot that hangs above the tape. Timing matters: late or low goes into the net, early or too hard goes long. Tight net shots below the tape can't be killed
+- Drop/Net (L) on a floater at the net plays a softer push kill
 - 1-player (Easy / Normal / Hard) or 2-player on one keyboard; touch buttons on mobile
 
 ## Feedback welcome!
