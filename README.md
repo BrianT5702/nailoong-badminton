@@ -7,8 +7,10 @@ A little browser badminton game starring Nailoong. No install needed: open the l
 | | Move | Jump | Clear (punch / high, by timing) | Smash | Drop / Net shot |
 |---|---|---|---|---|---|
 | Player 1 | A / D | Space | J | K | L |
+| Player 2 | ← / → | ↑ (or Numpad 0) | , or Enter (Numpad 1) | . (Numpad 2) | / (Numpad 3) |
 
-- Shift or Q (or double-tap a direction): lunge for far shots
+- Lunge for far shots: Player 1 Left Shift or Q, Player 2 Right Shift or ; (Numpad 5); or double-tap a direction
+- In 1-player mode you can also use the arrows with Z / X / C (or , . /)
 - P: pause · M: mute · F: fullscreen · G: toggle landing ring
 - Timing and contact decide shot quality (Perfect / Good / Early / Late)
 - 1-player (Easy / Normal / Hard) or 2-player on one keyboard; touch buttons on mobile
