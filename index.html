@@ -304,12 +304,29 @@ const RACKET={
    and sent on the impact bus (no glue compression). Switch the character with SMASH_BOMB: 'A' heavy boom, 'B' tight firecracker
    pop + string thwack, 'C' maximal stadium BANG with a long boom tail (default), 'off' = the plain v14.2 recorded crack. ---- */
 let SMASH_BOMB='C';   // perfect-smash variant: 'A' | 'B' | 'C' | 'off'  (v14.3 default C)
-// smp=recorded-sample level, sHold/sTail=its hold & fade (s, shorter than v14.2 so the impact is front-loaded) | pop=[level, decay s, high-pass Hz] | thump=[level, f0, f1, sweep s, decay s] | thwack=[level, Hz, decay s] | crack=[level, decay s]
+let GOOD_PONG=.5;   // pong level in a good (not perfect) smash
+let SMASH_PONG=2;     // v14.4 string-bed 'PONG' strength in the perfect smash: 1 clearly louder | 2 very loud, dominant (default) | 3 maximal, longer ring
+const PONG={1:{g:2.2,ring:1,body:.85}, 2:{g:4.4,ring:1.15,body:.8}, 3:{g:6.0,ring:1.7,body:.72}};   // g=pong level, ring=ring-time factor, body=bomb body trim so the pong is not masked
+/* v14.4 'PONG': the shuttle springing off the taut string bed. Three inharmonic partials (1x, 1.6x, 2.7x) with a fast attack, 60-150 ms ring and a
+   slight downward bend, a band-passed string 'snap', and a comb resonator tuned to the fundamental on the recorded crack for tension.
+   Gently tanh-saturated on its own (not the heavy bomb saturator) so it stays tonal. */
+function pongHit(c,to,t,lv,ring,f0,heavy,src){
+  const sh=c.createWaveShaper(), cur=new Float32Array(1024); for(let i=0;i<1024;i++){ const x=i/511.5-1; cur[i]=Math.tanh(1.7*x)/Math.tanh(1.7); } sh.curve=cur; sh.oversample='4x';
+  const inp=c.createGain(); inp.gain.value=.55; const outG=c.createGain(); outG.gain.value=lv; inp.connect(sh); sh.connect(outG); outG.connect(to);
+  const f=f0*(1-.07*heavy)*(1+(Math.random()*2-1)*.015), R=ring*(1+.25*heavy);
+  for(const [m,a,d] of [[1,1,.12],[1.6,.55,.075],[2.7,.32,.045]]){ const o=c.createOscillator(), g=c.createGain(); o.type='sine'; o.frequency.setValueAtTime(f*m*1.05,t); o.frequency.exponentialRampToValueAtTime(f*m*.97,t+.035);
+    o.connect(g); g.connect(inp); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(a,t+.0012); g.gain.exponentialRampToValueAtTime(.0005,t+.0012+d*R); o.start(t); o.stop(t+d*R+.03); }
+  { const n=c.createBufferSource(), fl=c.createBiquadFilter(), g=c.createGain(); n.buffer=noiseOf(c); fl.type='bandpass'; fl.frequency.value=f*2.2; fl.Q.value=2.2; n.connect(fl); fl.connect(g); g.connect(inp);
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.9,t+.0006); g.gain.exponentialRampToValueAtTime(.0005,t+.014); n.start(t,Math.random()*.2); n.stop(t+.03); }   // string snap
+  if(src){ const bp=c.createBiquadFilter(), dl=c.createDelay(.05), fb=c.createGain(), cg=c.createGain(); bp.type='bandpass'; bp.frequency.value=f*1.6; bp.Q.value=.9; dl.delayTime.value=1/f; fb.gain.value=.62; cg.gain.value=.45;
+    src.connect(bp); bp.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(cg); cg.connect(inp); setTimeout(()=>{ try{ fb.disconnect(); }catch(e){} },(t-c.currentTime+.6)*1000); }   // comb resonator on the real crack
+}
+// smp=recorded-sample level, sHold/sTail=its hold & fade (s, shorter than v14.2 so the impact is front-loaded) | pop=[level, decay s, high-pass Hz] | thump=[level, f0, f1, sweep s, decay s] | thwack=[pong level, pong fundamental Hz, snap decay s] | crack=[level, decay s]
 // boom=[level, decay s, low-pass Hz] (rumbling noise) | room=[wet, length s] (synthetic hall reverb) | drive=saturator amount | out=output level
 const BOMB={
-  A:{smp:1.0, sHold:.03, sTail:.22, pop:[1.6,.004,1400], thump:[1.5,165,50,.08,.15], thwack:[.6,700,.03],  crack:[.55,.008], boom:[.35,.30,420], room:[.32,.35], drive:2.8, out:1.55},
-  B:{smp:.85, sHold:.012,sTail:.11, pop:[2.6,.0035,1800],thump:[1.1,210,70,.045,.075],thwack:[1.0,900,.022],crack:[.8,.006],  boom:[.15,.14,600], room:[.18,.16], drive:3.8, out:2.4},
-  C:{smp:1.0, sHold:.04, sTail:.28, pop:[1.9,.005,1200], thump:[1.8,150,42,.11,.24], thwack:[.6,620,.035], crack:[.6,.01],   boom:[.6,.42,360],  room:[.5,.6],   drive:3.0, out:1.45}
+  A:{smp:1.0, sHold:.03, sTail:.22, pop:[1.6,.004,1400], thump:[1.5,165,50,.08,.15], thwack:[1.0,700,.03],  crack:[.55,.008], boom:[.35,.30,420], room:[.32,.35], drive:2.8, out:1.55},
+  B:{smp:.85, sHold:.012,sTail:.11, pop:[2.6,.0035,1800],thump:[1.1,210,70,.045,.075],thwack:[1.0,860,.022],crack:[.8,.006],  boom:[.15,.14,600], room:[.18,.16], drive:3.8, out:2.4},
+  C:{smp:1.0, sHold:.04, sTail:.28, pop:[1.9,.005,1200], thump:[1.8,150,42,.11,.24], thwack:[1.0,640,.035], crack:[.6,.01],   boom:[.6,.42,360],  room:[.5,.6],   drive:3.0, out:1.45}
 };
 function roomIR(c,len){ const k='__ir'+len; if(c[k]) return c[k]; const n=Math.round(c.sampleRate*len), b=c.createBuffer(2,n,c.sampleRate);
   for(let ch=0;ch<2;ch++){ const d=b.getChannelData(ch); let lp=0; for(let i=0;i<n;i++){ const t=i/c.sampleRate; lp=lp*.55+(Math.random()*2-1)*.45; d[i]=lp*Math.exp(-t*6.9/len)*(t<.012?t/.012:1); } }
@@ -317,7 +334,7 @@ function roomIR(c,len){ const k='__ir'+len; if(c[k]) return c[k]; const n=Math.r
 function bombHit(c,dest,t,B,gain,heavy,sampleNode){
   const H=1+.25*heavy, pre=c.createGain(), sh=c.createWaveShaper(), post=c.createGain(), cur=new Float32Array(2048), dr=B.drive;
   for(let i=0;i<2048;i++){ const x=i/1023.5-1; cur[i]=Math.tanh(dr*x)/Math.tanh(dr); } sh.curve=cur; sh.oversample='4x';
-  pre.gain.value=.5; post.gain.value=B.out*gain*(1+.12*heavy); pre.connect(sh); sh.connect(post);
+  pre.gain.value=.5; post.gain.value=B.out*gain*(1+.12*heavy)*((PONG[SMASH_PONG]||PONG[2]).body); pre.connect(sh); sh.connect(post);
   const safe=c.createWaveShaper(), sc=new Float32Array(2048); for(let i=0;i<2048;i++){ const x=(i/1023.5-1)*2, a=Math.abs(x); sc[i]=Math.sign(x)*(a<.6?a:.6+.29*Math.tanh((a-.6)/.29)); }
   safe.curve=sc; safe.oversample='4x'; const pad=c.createGain(); pad.gain.value=.5; post.connect(pad); pad.connect(safe); safe.connect(dest);   // soft safety clip (max -1 dBFS): no digital overs
   const sg=c.createGain(); sg.gain.value=B.smp; sampleNode.connect(sg); sg.connect(pre);                          // the real recorded hit
@@ -327,11 +344,12 @@ function bombHit(c,dest,t,B,gain,heavy,sampleNode){
   nz('highpass',B.pop[2],.7,B.pop[0],B.pop[1]);                                                                  // gunshot/firecracker pop (driven into the saturator)
   { const o=c.createOscillator(), g=c.createGain(), [lv,f0,f1,sw,dec]=B.thump; o.type='sine'; o.frequency.setValueAtTime(f0*(1-.1*heavy),t); o.frequency.exponentialRampToValueAtTime(f1*(1-.12*heavy),t+sw*H);
     o.connect(g); g.connect(pre); env(g,lv*H,.0015,dec*H); o.start(t); o.stop(t+dec*H+.05); }                     // body thump: kick-drum pitch drop (the saturator adds audible harmonics)
-  { const o=c.createOscillator(), g=c.createGain(), [lv,f,dec]=B.thwack; o.type='triangle'; o.frequency.setValueAtTime(f*1.15,t); o.frequency.exponentialRampToValueAtTime(f*.9,t+dec);
-    o.connect(g); g.connect(pre); env(g,lv*.6,.001,dec); o.start(t); o.stop(t+dec+.03); nz('bandpass',f,3.5,lv,dec*.8); }   // taut string-bed twang / thwack
+  { const PG=PONG[SMASH_PONG]||PONG[2]; pongHit(c,pad,t,PG.g*B.thwack[0]*gain*(1+.15*heavy),PG.ring,B.thwack[1],heavy,sampleNode);   // v14.4 loud string-bed PONG
+    nz('bandpass',B.thwack[1],3.5,B.thwack[0]*.5,B.thwack[2]*.8); }                                         // a little thwack noise still into the bomb
   nz('highpass',3600,.7,B.crack[0],B.crack[1]);                                                                  // bright crack on top
   const room=c.createConvolver(); room.buffer=roomIR(c,B.room[1]*(1+.3*heavy)); const wet=c.createGain(); wet.gain.value=B.room[0]*(1+.3*heavy);
-  post.connect(room); room.connect(wet); wet.connect(pad);                                                       // stadium room
+  const carve=c.createBiquadFilter(); carve.type='peaking'; carve.frequency.value=750; carve.Q.value=.7; carve.gain.value=-8;   // v14.4: hall carved where the pong lives
+  post.connect(room); room.connect(carve); carve.connect(wet); wet.connect(pad);                                                       // stadium room
   nz('lowpass',B.boom[2],.8,B.boom[0]*H,B.boom[1]*H,post,.006);                                                   // boom rumble tail
 }
 function racketHit(c,dest,t,kind,gain=1,heavy=0){
@@ -345,6 +363,7 @@ function racketHit(c,dest,t,kind,gain=1,heavy=0){
   s.connect(ls); ls.connect(hs); let last=hs;
   if(P.lp){ const lp=c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=P.lp; lp.Q.value=.8; last.connect(lp); last=lp; }
   last.connect(e); if(bomb) bombHit(c,c.__impact||dest,t,BOMB[SMASH_BOMB],gain,heavy,e); else e.connect(out); s.start(t); s.stop(t+P.tail+.02);
+  if(kind==='good') pongHit(c,out,t,GOOD_PONG,.8,740,heavy,null);   // v14.4: a moderate pong, clearly a step below the perfect one
   if(kind==='poor'){   // off-centre frame hit: woody/plastic clack + carbon frame ring and rattle
     const nz=(f,q,peak,dec,at=0,type='bandpass')=>{ const n=c.createBufferSource(), fl=c.createBiquadFilter(), g=c.createGain(), t0=t+at; n.buffer=noiseOf(c); fl.type=type; fl.frequency.value=f; fl.Q.value=q;
       n.connect(fl); fl.connect(g); g.connect(out); g.gain.setValueAtTime(0,t0); g.gain.linearRampToValueAtTime(peak,t0+.0008); g.gain.exponentialRampToValueAtTime(.0005,t0+dec); n.start(t0,Math.random()*.3); n.stop(t0+dec+.02); };
