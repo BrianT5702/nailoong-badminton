@@ -241,18 +241,20 @@ function resize(){
 addEventListener('resize',resize); resize();
 
 /* ================= Audio ================= */
-let actx=null, master=null, muted=false, busSfx=null, busMusic=null, busCrowd=null;
+let actx=null, master=null, muted=false, busSfx=null, busMusic=null, busCrowd=null, busImpact=null, impMaster=null, duck=null;
 // v14 mixer: Music / SFX+Voices / Crowd (saved). Music defaults to ~22% of the SFX level.
 // v14.1 louder defaults (settings key bumped to nb_vol2 so the new defaults apply once; later changes are kept). Sliders go 0-200%.
 const VOL={music:.48,sfx:1,crowd:1.25}, MASTER_G=1.0; try{ Object.assign(VOL,JSON.parse(localStorage.getItem('nb_vol2')||'{}')); localStorage.removeItem('nb_vol'); }catch(e){}
-function applyVol(){ if(!actx) return; busSfx.gain.value=VOL.sfx; busMusic.gain.value=VOL.music; busCrowd.gain.value=VOL.crowd; }
+function applyVol(){ if(!actx) return; busSfx.gain.value=VOL.sfx; busImpact.gain.value=VOL.sfx; busMusic.gain.value=VOL.music; busCrowd.gain.value=VOL.crowd; }
 try{ muted = localStorage.getItem('nb_muted')==='1'; }catch(e){}
 function ensureAudio(){
   if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); master=actx.createGain(); master.gain.value=muted?0:MASTER_G;
     const comp=actx.createDynamicsCompressor(); comp.threshold.value=-16; comp.knee.value=8; comp.ratio.value=3.5; comp.attack.value=.003; comp.release.value=.18;   // glue + loudness
     const lim=actx.createDynamicsCompressor(); lim.threshold.value=-2; lim.knee.value=0; lim.ratio.value=20; lim.attack.value=.001; lim.release.value=.08;     // brick-wall-ish limiter: no clipping
     master.connect(comp); comp.connect(lim); lim.connect(actx.destination);
-    busSfx=actx.createGain(); busMusic=actx.createGain(); busCrowd=actx.createGain(); [busSfx,busMusic,busCrowd].forEach(b=>b.connect(master)); applyVol();
+    busSfx=actx.createGain(); busMusic=actx.createGain(); busCrowd=actx.createGain(); duck=actx.createGain(); busSfx.connect(master); busMusic.connect(duck); busCrowd.connect(duck); duck.connect(master);
+    // v14.3 impact bus: the perfect-smash 'bomb' skips the glue compressor (so it is not flattened) and only meets the brick-wall limiter
+    busImpact=actx.createGain(); impMaster=actx.createGain(); impMaster.gain.value=muted?0:MASTER_G; busImpact.connect(impMaster); impMaster.connect(lim); actx.__impact=busImpact; applyVol();
     noiseBuf=actx.createBuffer(1,actx.sampleRate*.5,actx.sampleRate); { const d=noiseBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; }
     startMusic(); startMurmur(); }catch(e){actx=null;} }
   if(actx && actx.state==='suspended') actx.resume();
@@ -298,16 +300,51 @@ const RACKET={
   touch:  {g:.17, r:1.2, j:.04, ls:[250,-10],hs:[3000,-6],lp:2600, hold:.01, tail:.05},
   poor:   {g:.24, r:.88, j:.03, ls:[200,-2], hs:[2000,-8],lp:1300, hold:.01, tail:.05}
 };
+/* ---- v14.3 'bomb' perfect smash: the real recorded hit + a layered explosive impact (string-bed recoil), summed through a soft saturator
+   and sent on the impact bus (no glue compression). Switch the character with SMASH_BOMB: 'A' heavy boom, 'B' tight firecracker
+   pop + string thwack, 'C' maximal stadium BANG with a long boom tail (default), 'off' = the plain v14.2 recorded crack. ---- */
+let SMASH_BOMB='C';   // perfect-smash variant: 'A' | 'B' | 'C' | 'off'  (v14.3 default C)
+// smp=recorded-sample level, sHold/sTail=its hold & fade (s, shorter than v14.2 so the impact is front-loaded) | pop=[level, decay s, high-pass Hz] | thump=[level, f0, f1, sweep s, decay s] | thwack=[level, Hz, decay s] | crack=[level, decay s]
+// boom=[level, decay s, low-pass Hz] (rumbling noise) | room=[wet, length s] (synthetic hall reverb) | drive=saturator amount | out=output level
+const BOMB={
+  A:{smp:1.0, sHold:.03, sTail:.22, pop:[1.6,.004,1400], thump:[1.5,165,50,.08,.15], thwack:[.6,700,.03],  crack:[.55,.008], boom:[.35,.30,420], room:[.32,.35], drive:2.8, out:1.55},
+  B:{smp:.85, sHold:.012,sTail:.11, pop:[2.6,.0035,1800],thump:[1.1,210,70,.045,.075],thwack:[1.0,900,.022],crack:[.8,.006],  boom:[.15,.14,600], room:[.18,.16], drive:3.8, out:2.4},
+  C:{smp:1.0, sHold:.04, sTail:.28, pop:[1.9,.005,1200], thump:[1.8,150,42,.11,.24], thwack:[.6,620,.035], crack:[.6,.01],   boom:[.6,.42,360],  room:[.5,.6],   drive:3.0, out:1.45}
+};
+function roomIR(c,len){ const k='__ir'+len; if(c[k]) return c[k]; const n=Math.round(c.sampleRate*len), b=c.createBuffer(2,n,c.sampleRate);
+  for(let ch=0;ch<2;ch++){ const d=b.getChannelData(ch); let lp=0; for(let i=0;i<n;i++){ const t=i/c.sampleRate; lp=lp*.55+(Math.random()*2-1)*.45; d[i]=lp*Math.exp(-t*6.9/len)*(t<.012?t/.012:1); } }
+  return c[k]=b; }
+function bombHit(c,dest,t,B,gain,heavy,sampleNode){
+  const H=1+.25*heavy, pre=c.createGain(), sh=c.createWaveShaper(), post=c.createGain(), cur=new Float32Array(2048), dr=B.drive;
+  for(let i=0;i<2048;i++){ const x=i/1023.5-1; cur[i]=Math.tanh(dr*x)/Math.tanh(dr); } sh.curve=cur; sh.oversample='4x';
+  pre.gain.value=.5; post.gain.value=B.out*gain*(1+.12*heavy); pre.connect(sh); sh.connect(post);
+  const safe=c.createWaveShaper(), sc=new Float32Array(2048); for(let i=0;i<2048;i++){ const x=(i/1023.5-1)*2, a=Math.abs(x); sc[i]=Math.sign(x)*(a<.6?a:.6+.29*Math.tanh((a-.6)/.29)); }
+  safe.curve=sc; safe.oversample='4x'; const pad=c.createGain(); pad.gain.value=.5; post.connect(pad); pad.connect(safe); safe.connect(dest);   // soft safety clip (max -1 dBFS): no digital overs
+  const sg=c.createGain(); sg.gain.value=B.smp; sampleNode.connect(sg); sg.connect(pre);                          // the real recorded hit
+  const env=(g,peak,a,dec,t0=t)=>{ g.gain.setValueAtTime(0,t0); g.gain.linearRampToValueAtTime(peak,t0+a); g.gain.exponentialRampToValueAtTime(.0005,t0+a+dec); };
+  const nz=(type,f,q,peak,dec,to=pre,a=.0006)=>{ const n=c.createBufferSource(), fl=c.createBiquadFilter(), g=c.createGain(); n.buffer=noiseOf(c); fl.type=type; fl.frequency.value=f; fl.Q.value=q;
+    n.connect(fl); fl.connect(g); g.connect(to); env(g,peak,a,dec); n.start(t,Math.random()*.2); n.stop(t+a+dec+.03); };
+  nz('highpass',B.pop[2],.7,B.pop[0],B.pop[1]);                                                                  // gunshot/firecracker pop (driven into the saturator)
+  { const o=c.createOscillator(), g=c.createGain(), [lv,f0,f1,sw,dec]=B.thump; o.type='sine'; o.frequency.setValueAtTime(f0*(1-.1*heavy),t); o.frequency.exponentialRampToValueAtTime(f1*(1-.12*heavy),t+sw*H);
+    o.connect(g); g.connect(pre); env(g,lv*H,.0015,dec*H); o.start(t); o.stop(t+dec*H+.05); }                     // body thump: kick-drum pitch drop (the saturator adds audible harmonics)
+  { const o=c.createOscillator(), g=c.createGain(), [lv,f,dec]=B.thwack; o.type='triangle'; o.frequency.setValueAtTime(f*1.15,t); o.frequency.exponentialRampToValueAtTime(f*.9,t+dec);
+    o.connect(g); g.connect(pre); env(g,lv*.6,.001,dec); o.start(t); o.stop(t+dec+.03); nz('bandpass',f,3.5,lv,dec*.8); }   // taut string-bed twang / thwack
+  nz('highpass',3600,.7,B.crack[0],B.crack[1]);                                                                  // bright crack on top
+  const room=c.createConvolver(); room.buffer=roomIR(c,B.room[1]*(1+.3*heavy)); const wet=c.createGain(); wet.gain.value=B.room[0]*(1+.3*heavy);
+  post.connect(room); room.connect(wet); wet.connect(pad);                                                       // stadium room
+  nz('lowpass',B.boom[2],.8,B.boom[0]*H,B.boom[1]*H,post,.006);                                                   // boom rumble tail
+}
 function racketHit(c,dest,t,kind,gain=1,heavy=0){
   const P=RACKET[kind]||RACKET.clear, out=c.createGain(); out.gain.value=gain*(1+.12*heavy); out.connect(dest);
   // recorded hit
   const s=c.createBufferSource(); s.buffer=smashSample(c); s.playbackRate.value=P.r*(1-.04*heavy)*(1+(Math.random()*2-1)*P.j);
   const ls=c.createBiquadFilter(); ls.type='lowshelf'; ls.frequency.value=P.ls[0]; ls.gain.value=P.ls[1]+5*heavy;
   const hs=c.createBiquadFilter(); hs.type='highshelf'; hs.frequency.value=P.hs[0]; hs.gain.value=P.hs[1];
-  const e=c.createGain(); e.gain.setValueAtTime(P.g,t); e.gain.setValueAtTime(P.g,t+P.hold); e.gain.exponentialRampToValueAtTime(.0005,t+P.tail);
+  const bomb=kind==='perfect'&&SMASH_BOMB!=='off'&&BOMB[SMASH_BOMB], hold=bomb?bomb.sHold*(1+.5*heavy):P.hold, tail=bomb?bomb.sTail*(1+.3*heavy):P.tail;
+  const e=c.createGain(); e.gain.setValueAtTime(P.g,t); e.gain.setValueAtTime(P.g,t+hold); e.gain.exponentialRampToValueAtTime(.0005,t+tail);
   s.connect(ls); ls.connect(hs); let last=hs;
   if(P.lp){ const lp=c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=P.lp; lp.Q.value=.8; last.connect(lp); last=lp; }
-  last.connect(e); e.connect(out); s.start(t); s.stop(t+P.tail+.02);
+  last.connect(e); if(bomb) bombHit(c,c.__impact||dest,t,BOMB[SMASH_BOMB],gain,heavy,e); else e.connect(out); s.start(t); s.stop(t+P.tail+.02);
   if(kind==='poor'){   // off-centre frame hit: woody/plastic clack + carbon frame ring and rattle
     const nz=(f,q,peak,dec,at=0,type='bandpass')=>{ const n=c.createBufferSource(), fl=c.createBiquadFilter(), g=c.createGain(), t0=t+at; n.buffer=noiseOf(c); fl.type=type; fl.frequency.value=f; fl.Q.value=q;
       n.connect(fl); fl.connect(g); g.connect(out); g.gain.setValueAtTime(0,t0); g.gain.linearRampToValueAtTime(peak,t0+.0008); g.gain.exponentialRampToValueAtTime(.0005,t0+dec); n.start(t0,Math.random()*.3); n.stop(t0+dec+.02); };
@@ -321,7 +358,8 @@ function racketHit(c,dest,t,kind,gain=1,heavy=0){
   }
   return t+P.tail;
 }
-function racket(kind,gain=1,heavy=0){ if(!actx||muted||game.mode==='demo') return; racketHit(actx,busSfx,actx.currentTime+.002,kind,gain,heavy); }
+function racket(kind,gain=1,heavy=0){ if(!actx||muted||game.mode==='demo') return; const t=actx.currentTime+.002; racketHit(actx,busSfx,t,kind,gain,heavy);
+  if(kind==='perfect'&&SMASH_BOMB!=='off'&&duck){ const g=duck.gain; g.cancelScheduledValues(t); g.setValueAtTime(g.value,t); g.linearRampToValueAtTime(heavy?.3:.4,t+.008); g.setTargetAtTime(1,t+.09,.12); } }   // duck music+crowd so the hit lands
 /* ---- v14 synthesized voices: no official Nailoong audio is publicly licensed, so these are WebAudio baby-dino sounds ---- */
 const VOWEL={a:[820,1250],o:[520,900],u:[380,820],i:[330,2300],e:[560,1900]};
 function vox(side,segs,vol=.27,delay=0){   // segs: [[dur, pitchMul0, pitchMul1, vowel], ...]
@@ -401,7 +439,7 @@ const sfx={
       aww:[[.5,1.15,.72,'a']], hup:[[.11,1.05,.8,'u']], squeal:[[.32,1,1.9,'i'],[.12,1.85,1.7,'i'],[.18,1.75,1.95,'e']]}; vox(side,V[kind]||V.cheer,kind==='hup'?.2:.27); },
   cheer(level){ crowdCheer(level); }, ooh(){ crowdOoh(); }
 };
-function setMuted(m){ muted=m; try{localStorage.setItem('nb_muted',m?'1':'0');}catch(e){} if(master) master.gain.value=m?0:MASTER_G; drawMuteIcon(); }
+function setMuted(m){ muted=m; try{localStorage.setItem('nb_muted',m?'1':'0');}catch(e){} if(master) master.gain.value=m?0:MASTER_G; if(impMaster) impMaster.gain.value=m?0:MASTER_G; drawMuteIcon(); }
 function initVols(){ document.querySelectorAll('input.vol').forEach(e=>{ const k=e.dataset.k; e.value=Math.round(VOL[k]*100);
   e.addEventListener('input',()=>{ ensureAudio(); setVol(k,e.value/100); }); e.addEventListener('keydown',ev=>ev.stopPropagation()); }); }
 function setVol(k,v){ VOL[k]=clamp(v,0,2); try{ localStorage.setItem('nb_vol2',JSON.stringify(VOL)); }catch(e){} applyVol();
