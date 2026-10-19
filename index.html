@@ -303,19 +303,19 @@ function setupServe(side){
   const P0=players[0],P1=players[1];
   P0.x = side===0?300:340; P1.x = side===1?980:940;
   for(const p of players){ p.y=GROUND; p.vx=p.vy=0; p.onGround=true; p.swingT=-1; p.lungeT=p.recT=0; }
-  shuttle.vx=shuttle.vy=0; shuttle.trail=[]; shuttle.netHit=false; shuttle.type=null; shuttle.boostT=0;
+  shuttle.vx=shuttle.vy=0; shuttle.trail=[]; shuttle.netHit=false; shuttle.type=null; shuttle.boostT=0; shuttle.gMul=1;
 }
 
 /* ================= Shuttle physics ================= */
-const SMASH_BOOST=.12, BOOST_K=.35;   // smashes cut through the air before drag bites
+const SMASH_BOOST=.12, BOOST_K=.35, PUNCH_BOOST=.15, PUNCH_BK=.4, PUNCH_G=4.5, PUNCH_MAXSP=4200;   // v12 punch: low-drag launch, then a heavy steep dive (arcade)   // punch clears also cut through the air early (v12)   // smashes cut through the air before drag bites
 function stepS(s,dt){
-  const sp=Math.hypot(s.vx,s.vy), k=K*(s.boostT>0?BOOST_K:1);
+  const sp=Math.hypot(s.vx,s.vy), k=K*(s.boostT>0?(s.bK||BOOST_K):1);
   if(s.boostT>0) s.boostT-=dt;
-  s.vx-=k*sp*s.vx*dt; s.vy+=(G-k*sp*s.vy)*dt;
+  s.vx-=k*sp*s.vx*dt; s.vy+=(G*(s.gMul||1)-k*sp*s.vy)*dt;
   s.x+=s.vx*dt; s.y+=s.vy*dt;
 }
-function simulate(x,y,vx,vy,maxT=6,boostT=0){
-  const s={x,y,vx,vy,boostT}, dt=1/120; let crossY=null, t=0, minY=y;
+function simulate(x,y,vx,vy,maxT=6,boostT=0,gMul=1,bK=BOOST_K){
+  const s={x,y,vx,vy,boostT,gMul,bK}, dt=1/120; let crossY=null, t=0, minY=y;
   while(t<maxT){
     const px=s.x; stepS(s,dt); t+=dt;
     if(crossY===null && (px-NET_X)*(s.x-NET_X)<=0 && px!==s.x){ crossY=lerp(s.y,s.y,0); crossY=s.y; }
@@ -411,6 +411,24 @@ function aimFrac(p,type){
   const sh=SHOTS[type]; let fr=rand(sh.fr[0],sh.fr[1]);
   if(p.ai){ const d=DIFF[p.ai.diff]; fr+=rand(-1,1)*d.err/900; if(Math.random()<d.outChance) fr=rand(1.03,1.12); }
   return fr;
+}
+// v12 attacking punch clear: fastest trajectory that lands at tx and passes the opponent's mid/front court at least
+// minClear px above the floor (just over a jumping opponent's reach), with a low-drag launch window.
+const JUMP_REACH_H=Math.round(100+JUMP_V*JUMP_V/(2*PG)+REACH*.95);   // ~285 px: highest contact of a jumping player
+function solvePunch(x0,y0,dir,tx,minClear,ox){
+  // clearance is needed where the opponent actually stands (front/mid court), not over the whole court
+  const oc=clamp((ox-NET_X)*dir,40,(tx-NET_X)*dir-110), z0=NET_X+dir*(oc-45), z1=NET_X+dir*(oc+45); let best=null;
+  for(let ang=2; ang<=46; ang+=2){ const r=ang*Math.PI/180, c=Math.cos(r)*dir, sn=-Math.sin(r);
+    let lo=600,hi=PUNCH_MAXSP;
+    for(let i=0;i<16;i++){ const m=(lo+hi)/2, sim=simulate(x0,y0,c*m,sn*m,4,PUNCH_BOOST,PUNCH_G,PUNCH_BK); if((sim.landX-x0)*dir<(tx-x0)*dir) lo=m; else hi=m; }
+    const sp=(lo+hi)/2, q={x:x0,y:y0,vx:c*sp,vy:sn*sp,boostT:PUNCH_BOOST,gMul:PUNCH_G,bK:PUNCH_BK}; let t=0, minH=1e9, cross=null, px;
+    while(t<4){ px=q.x; stepS(q,1/120); t+=1/120;
+      if(cross===null && (px-NET_X)*(q.x-NET_X)<=0) cross=q.y;
+      if((q.x-z0)*dir>=0 && (q.x-z1)*dir<=0) minH=Math.min(minH,GROUND-q.y);
+      if(q.y>=GROUND) break; }
+    if(cross===null || cross>NET_TOP-14 || Math.abs(q.x-tx)>30 || minH<minClear) continue;
+    if(!best || t<best.t) best={vx:c*sp,vy:sn*sp,t,minH,sp}; }
+  return best;
 }
 // Drop: lands in the front service area, skimming the tape with the lowest possible peak.
 function solveDrop(x0,y0,dir,tx,q=1){
@@ -554,6 +572,19 @@ function hitShuttle(p,d=0,reach=REACH){
     game.shake=perfect?.6:big?.4:.2; sfx.smash();
     popup(s.x,s.y-30,big?'SMASH!!':'Smash!','#ff5f8f',big?46:36);
     for(let i=0;i<(big?20:12);i++) spark(s.x,s.y,'#ffe066');
+  } else if(type==='punch'){
+    // perfect = fastest + deep; good = a touch slower/higher; mistimed = too low (interceptable) or too long (out)
+    if(!p.ai){ const tp=clamp(1-Math.abs(p.swingT-SW_PEAK-.01)/.04,0,1); q*=.55+.45*tp; }   // punch timing window is tight
+    const base=dir>0?COURT_R:COURT_L; let tx, clr=JUMP_REACH_H+12;
+    if(q>=.8){ tx=base-dir*rand(14,42); }
+    else if(q>=.6){ tx=base-dir*rand(22,70); clr+=rand(15,40); }
+    else { const long=(p.swingT-SW_PEAK>.015)?Math.random()<.65:Math.random()<.3;
+      if(long){ tx=base+dir*rand(10,25+(.6-q)*160); clr+=rand(0,30); p.punchMiss='long'; }
+      else { tx=base-dir*rand(40,130); clr=JUMP_REACH_H-rand(30,90)*(1.2-q); p.punchMiss='low'; } }
+    if(p.ai){ const d=DIFF[p.ai.diff]; tx+=rand(-1,1)*d.err*.4*dir; if(Math.random()<d.outChance) tx=base+dir*rand(10,60); }
+    v=solvePunch(s.x,s.y,dir,tx,clr,opp.x)||solvePunch(s.x,s.y,dir,tx,clr-60,opp.x);
+    if(!v){ v=solveShot(s.x,s.y,oppX(p.side,aimFrac(p,'punch')*(.72+.28*q)),SHOTS.punch.ang); v.noBoost=true; }
+    sfx.hit(1); for(let i=0;i<9;i++) spark(s.x,s.y,'#fff6a8'); if(q>=.8) game.shake=Math.max(game.shake,.12);
   } else if(type==='netkill'){ /* handled above */
   } else if(type==='drop'||type==='block'){
     sfx.hit(.45); for(let i=0;i<5;i++) spark(s.x,s.y,'#fff6a8');
@@ -563,7 +594,7 @@ function hitShuttle(p,d=0,reach=REACH){
     sfx.hit(type==='clear'||type==='lift'||type==='punch'?1:.7);
     for(let i=0;i<7;i++) spark(s.x,s.y,'#fff6a8');
   }
-  s.vx=v.vx; s.vy=v.vy; s.netHit=false; s.netCord=false; s.boostT=type==='smash'?SMASH_BOOST:0; s.tumbleT=type==='net'?.7:0;
+  s.vx=v.vx; s.vy=v.vy; s.netHit=false; s.netCord=false; const pb=type==='punch'&&!v.noBoost; s.boostT=type==='smash'?SMASH_BOOST:pb?PUNCH_BOOST:0; s.gMul=pb?PUNCH_G:1; s.bK=pb?PUNCH_BK:BOOST_K; s.tumbleT=type==='net'?.7:0;
   s.type=type; s.bigSmash=big; s.q=q;
   game.lastQ={q:+q.toFixed(3),label:Q.label,type,speed:Math.round(Math.hypot(v.vx,v.vy))};
   if(Q.label && game.mode!=='demo'){ const c=Q.label==='Perfect!'?'#ffb000':Q.label==='Good'?'#58b368':'#9a8fb0';
@@ -586,7 +617,7 @@ function doServe(p){
     v=solveShot(s.x,s.y,NET_X+dir*dist,SHOTS.short.ang);
     if(q<.6 && Math.random()<(.6-q)*.8){ const k=1-rand(.05,.16); v={vx:v.vx*k,vy:v.vy*k}; }   // a sloppy short serve can find the tape
   } else v=solveShot(s.x,s.y,oppX(p.side,aimFrac(p,'long')),SHOTS.long.ang);
-  s.vx=v.vx; s.vy=v.vy; s.type='serve'; s.serveType=type; s.q=q; s.boostT=0; s.tumbleT=0; game.state='rally'; game.lastHitter=p.side; game.hitId++; game.rally=1; p.hitDone=true;
+  s.vx=v.vx; s.vy=v.vy; s.type='serve'; s.serveType=type; s.q=q; s.boostT=0; s.gMul=1; s.bK=BOOST_K; s.tumbleT=0; game.state='rally'; game.lastHitter=p.side; game.hitId++; game.rally=1; p.hitDone=true;
   (game.serveLog=game.serveLog||[]).push({side:p.side,type,q:+q.toFixed(2),ai:!!p.ai});
   sfx.serve(); for(let i=0;i<6;i++) spark(s.x,s.y,'#fff6a8');
 }
@@ -652,10 +683,17 @@ function aiThink(p,dt){
         if(s.type==='kill'){ a.react=d.sReact*rand(.8,1.2); a.miss=Math.random()<d.sMiss*1.2; a.jump=false; }
         if(s.type==='netkill'){ a.react=d.sReact*rand(.9,1.3); a.miss=Math.random()<Math.min(.95,d.sMiss+.6); a.jump=false; }
         if(s.type==='smash'){ const sq=s.q===undefined?1:s.q; a.react=d.sReact*rand(.8,1.25)*(.5+.5*sq); a.miss=Math.random()<(s.bigSmash?d.bigMiss:d.sMiss)*(.25+.75*sq); a.jump=false; }
-        if(s.type==='drop'||s.type==='block'||s.type==='net') a.jump=false; }
+        if(s.type==='drop'||s.type==='block'||s.type==='net') a.jump=false;
+        if(s.type==='punch'){   // v12: a fast punch over a front/mid-court player is a real threat
+          const front=Math.abs(p.x-NET_X)<(NET_X-COURT_L)*.45, sq=s.q===undefined?.7:s.q;
+          a.react=d.react*rand(.9,1.2)+(front?.06:0);
+          const pm=({easy:.35,normal:.15,hard:.06})[a.diff]*(front?1.6:1)*(.4+.8*sq);
+          a.miss=a.miss||Math.random()<pm;
+          if(front && Math.random()<.75) a.lateId=game.hitId;          // scramble: weak return
+          a.jroll=Math.random()<d.jump*(sq<.6?1.2:.35); } }
       // predict
       if(a.seenL!==game.hitId){ a.seenL=game.hitId; a.canLunge=Math.random()<d.lunge; }
-      const q={x:s.x,y:s.y,vx:s.vx,vy:s.vy}; let ix=null, jx=null, t=0, tI=5, xi=null, ti=0;
+      const q={x:s.x,y:s.y,vx:s.vx,vy:s.vy,boostT:s.boostT||0,gMul:s.gMul||1,bK:s.bK||BOOST_K}; let ix=null, jx=null, t=0, tI=5, xi=null, ti=0;
       while(t<5){ stepS(q,1/60); t+=1/60;
         const mine=p.side===0?q.x<NET_X:q.x>NET_X;
         if(mine && xi===null && q.y>GROUND-285 && q.y<GROUND-135){ xi=q.x; ti=t; }   // jump-intercept window
@@ -759,7 +797,7 @@ function step(dt){
       const t=(NET_X-px)/(s.x-px), cy=lerp(py,s.y,t);
       if(cy>NET_TOP-3){
         const sp=Math.hypot(s.vx,s.vy), sg=Math.sign(s.vx), onTape=cy<NET_TOP+9;
-        sfx.net(); s.tumbleT=.5; game.netShake=Math.min(1.4,.5+sp/900);
+        sfx.net(); s.tumbleT=.5; s.gMul=1; s.boostT=0; game.netShake=Math.min(1.4,.5+sp/900);
         if(onTape && sp<900 && Math.random()<.32){   // net cord: clips the tape, loses its pace and trickles over
           s.x=NET_X+sg*4; s.y=Math.min(s.y,NET_TOP-4); s.vx=sg*rand(18,55); s.vy=rand(-70,10); s.netCord=true; game.netCords=(game.netCords||0)+1;
           popup(NET_X,NET_TOP-36,'Net cord!','#a0785a',24);
@@ -1121,7 +1159,7 @@ function drawShuttleGround(){
   ctx.fillStyle=`rgba(25,55,35,${.18+.3*k})`; ell(s.x,GROUND+1,1.6+1.6*k,.8+.6*k); ctx.fill();
   guideLand=null;
   if(guideOn()&&game.state==='rally'&&!s.netHit&&s.vy>0&&GROUND-s.y>40){
-    const sim=simulate(s.x,s.y,s.vx,s.vy,4,s.boostT||0); guideLand=sim.landX;
+    const sim=simulate(s.x,s.y,s.vx,s.vy,4,s.boostT||0,s.gMul||1,s.bK||BOOST_K); guideLand=sim.landX;
     const pul=1+.12*Math.sin(game.time*10);
     ctx.save(); ctx.strokeStyle='rgba(255,255,255,.85)'; ctx.lineWidth=2.2; ctx.setLineDash([5,4]);
     ctx.beginPath(); ctx.ellipse(sim.landX,GROUND+1,17*pul,5.5*pul,0,0,7); ctx.stroke();
@@ -1351,7 +1389,7 @@ function frame(now){
 newMatch('demo','normal',11);
 requestAnimationFrame(frame);
 // test/debug hook
-window.__nb={netKillZone,netKillOdds,hitCenter,reachOf,toScreen,proj,clouds,netPlay,solveNet,update,pointTo,setupServe,contactQuality,SHOTS,solveShot,solveDrop,canSmash,hitShuttle,SMASH_Y,NET_TOP,proj,SPR,spritesReady,drawDino,ctx,render,game,players:()=>players,shuttle,newMatch,startFromMenu,solveShot,simulate,oppX,SHOTS,DIFF};
+window.__nb={solvePunch,JUMP_REACH_H,netKillZone,netKillOdds,hitCenter,reachOf,toScreen,proj,clouds,netPlay,solveNet,update,pointTo,setupServe,contactQuality,SHOTS,solveShot,solveDrop,canSmash,hitShuttle,SMASH_Y,NET_TOP,proj,SPR,spritesReady,drawDino,ctx,render,game,players:()=>players,shuttle,newMatch,startFromMenu,solveShot,simulate,oppX,SHOTS,DIFF};
 </script>
 </body>
 </html>
