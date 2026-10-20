@@ -83,6 +83,24 @@
   .vols label{display:flex;align-items:center;justify-content:space-between;gap:.5em}
   .vols input{width:8.5em;accent-color:#ff8fb1}
   #onlineScreen .card{max-width:22em}
+  .kc.unb{background:#ffe3ea;border-color:#e0567f;color:#d0335f;box-shadow:0 .13em 0 #e0567f}
+  .kbLink{color:#d9668a}
+  #kbScreen .kbcard{max-width:40em;padding:.6em 1.2em .8em;font-size:.78em;max-height:96%;overflow:auto}
+  .kbhint{font-size:.82em;color:#a08060;margin:.2em 0 .4em}
+  .kbt{border-collapse:collapse;width:100%;margin:.2em 0}
+  .kbt th{font-size:.75em;color:#c4a070;font-weight:normal;text-align:left;padding:0 .3em}
+  .kbt td{padding:.12em .3em;color:#7a5a3a;border-top:.06em solid #fbe9c0;text-align:left}
+  .kbt td.n{font-weight:bold;color:#d9668a;white-space:nowrap;width:1%}
+  .kbt td.unbound{background:#ffe3ea}
+  .kbu{color:#d0335f;font-weight:bold;font-size:.8em;margin-right:.3em}
+  button.kbk{font-size:.82em;padding:.12em .55em;margin:.08em .12em;min-width:2.2em;border-radius:.5em;background:#fff;border:.07em solid #e8c25a}
+  button.kbk.add{background:#fff8e6;color:#c4a070}
+  button.kbk.cap{background:#ff8fb1;color:#fff;border-color:#e0567f;animation:kbp 1s infinite}
+  button.kbk:focus-visible,#kbScreen button:focus-visible{outline:.15em solid #ff7aa2;outline-offset:.08em}
+  @keyframes kbp{50%{opacity:.6}}
+  .kbmsg{min-height:1.3em;font-size:.86em;color:#3f9a55;margin:.3em 0}
+  .kbmsg.warn{color:#d0456f;font-weight:bold}
+  .kbbtns{display:flex;gap:.4em;justify-content:center;flex-wrap:wrap}
   #onlineScreen .code{font-size:2.4em;font-weight:bold;letter-spacing:.18em;color:#ff7aa2;margin:.05em 0 .1em;font-family:"Courier New",monospace;
     background:#fff1f6;border-radius:.4em;padding:.05em .3em;user-select:text;-webkit-user-select:text}
   #onlineScreen input{font:inherit;font-size:1.2em;width:6.2em;text-align:center;letter-spacing:.15em;text-transform:uppercase;border:.12em solid #ffd93b;
@@ -124,22 +142,22 @@
         <button data-guide="auto" class="sel">Easy only</button><button data-guide="on">On</button><button data-guide="off">Off</button></div>
       <div class="vols"><label>&#9835; Music<input type="range" class="vol" data-k="music" min="0" max="200"></label><label>&#128266; SFX/voices<input type="range" class="vol" data-k="sfx" min="0" max="200"></label><label>&#128079; Crowd<input type="range" class="vol" data-k="crowd" min="0" max="200"></label></div>
       <button class="big" id="startBtn">Play! &#9829;</button>
-      <br><button class="small" id="fsTitleBtn">&#x26F6; Fullscreen</button>
+      <br><button class="small" id="fsTitleBtn">&#x26F6; Fullscreen</button> <button class="small" id="kbTitleBtn">&#9000; Controls</button>
     </div>
     <div class="card ctrl" id="ctrlCard">
       <h3>&#9829; How to play &#9829;</h3>
       <div class="grp"><div class="gh">Move</div>
         <table><tr><th></th><th>P1</th><th class="altH">Arrows</th><th></th></tr>
-        <tr><td class="n">Run</td><td class="k"><span class="kc">A</span><span class="kc">D</span></td><td class="k"><span class="kc">&larr;</span><span class="kc">&rarr;</span></td><td>builds speed, skids to a stop</td></tr>
-        <tr><td class="n">Jump</td><td class="k"><span class="kc w">Space</span></td><td class="k"><span class="kc">&uarr;</span></td><td>reach high shuttles</td></tr>
-        <tr><td class="n">Lunge</td><td class="k"><span class="kc">Shift</span><span class="kc">Q</span></td><td class="k altLunge"><span class="kc">R-Shift</span><span class="kc">B</span></td><td>dash + longer reach (or double-tap a direction)</td></tr></table></div>
+        <tr><td class="n">Run</td><td class="k" data-kb="p1.left p1.right" data-max="1"></td><td class="k" data-kb="alt.left alt.right" data-max="1"></td><td>builds speed, skids to a stop</td></tr>
+        <tr><td class="n">Jump</td><td class="k" data-kb="p1.jump"></td><td class="k" data-kb="alt.jump"></td><td>reach high shuttles</td></tr>
+        <tr><td class="n">Lunge</td><td class="k" data-kb="p1.lunge"></td><td class="k" data-kb="alt.lunge"></td><td>dash + longer reach (or double-tap a direction)</td></tr></table></div>
       <div class="grp"><div class="gh">Shots</div>
         <table>
-        <tr><td class="n">Clear</td><td class="k"><span class="kc">J</span></td><td class="k altK"><span class="kc">Z</span></td><td><b>On time, out in front</b> &rarr; fast flat <b>punch clear</b>.<br>Late, behind you or low &rarr; <b>high clear / lift</b>.</td></tr>
-        <tr><td class="n">Smash</td><td class="k"><span class="kc">K</span></td><td class="k altK"><span class="kc">X</span></td><td>jump + hit a high shuttle.<br><b>Standing = fast flat drive</b>: skims the net deep, but risky (bad timing or a low contact &rarr; into the net).<br><b>Near the net on a loose net shot = Net kill</b> (timing matters: late/low &rarr; into the net, early &rarr; long)</td></tr>
-        <tr><td class="n">Drop / Net</td><td class="k"><span class="kc">L</span></td><td class="k altK"><span class="kc">C</span></td><td>mid/back court: <b>drop</b> just over the net.<br>At the net: tumbling <b>net shot</b> (or a soft <b>push kill</b> if it floats above the tape)</td></tr></table></div>
-      <div class="tip">&#9201; <b>Timing tip:</b> swing just before the shuttle reaches you, in front of your body, for a <b>Perfect!</b> shot. Serve with <span class="kc">J</span> (long) or <span class="kc">L</span> (short).</div>
-      <div class="foot"><span class="kc">P</span> pause &middot; <span class="kc">M</span> mute all &middot; <span class="kc">F</span> fullscreen</div>
+        <tr><td class="n">Clear</td><td class="k" data-kb="p1.clear"></td><td class="k" data-kb="alt.clear"></td><td><b>On time, out in front</b> &rarr; fast flat <b>punch clear</b>.<br>Late, behind you or low &rarr; <b>high clear / lift</b>.</td></tr>
+        <tr><td class="n">Smash</td><td class="k" data-kb="p1.smash"></td><td class="k" data-kb="alt.smash"></td><td>jump + hit a high shuttle.<br><b>Standing = fast flat drive</b>: skims the net deep, but risky (bad timing or a low contact &rarr; into the net).<br><b>Near the net on a loose net shot = Net kill</b> (timing matters: late/low &rarr; into the net, early &rarr; long)</td></tr>
+        <tr><td class="n">Drop / Net</td><td class="k" data-kb="p1.drop"></td><td class="k" data-kb="alt.drop"></td><td>mid/back court: <b>drop</b> just over the net.<br>At the net: tumbling <b>net shot</b> (or a soft <b>push kill</b> if it floats above the tape)</td></tr></table></div>
+      <div class="tip">&#9201; <b>Timing tip:</b> swing just before the shuttle reaches you, in front of your body, for a <b>Perfect!</b> shot. Serve with <span data-kb="p1.clear" data-max="1"></span> (long) or <span data-kb="p1.drop" data-max="1"></span> (short).</div>
+      <div class="foot"><span data-kb="global.pause" data-max="1"></span> pause &middot; <span data-kb="global.mute" data-max="1"></span> mute all &middot; <span data-kb="global.fullscreen" data-max="1"></span> fullscreen &middot; <span data-kb="global.guide" data-max="1"></span> landing ring &middot; <a href="#" class="kbLink" onclick="kbOpen(game.paused?'pause':'title');return false">change keys</a></div>
     </div>
   </div>
 
@@ -167,17 +185,27 @@
       </div>
       <div class="status" id="onStatus"></div>
       <div class="ping" id="onPing"></div>
-      <div class="hint">Host plays Nailoong, guest plays Berry. Both use <span class="kc">A</span><span class="kc">D</span> <span class="kc w">Space</span> <span class="kc">J</span><span class="kc">K</span><span class="kc">L</span> <span class="kc">Shift</span> (or touch).<br>Direct peer-to-peer link: your own moves are instant; your opponent's moves reach you about half your ping later.</div>
+      <div class="hint">Host plays Nailoong, guest plays Berry. Each of you uses your own Player 1 keys: <span data-kb="p1.left p1.right p1.jump p1.clear p1.smash p1.drop p1.lunge" data-max="1"></span> (or touch; set them in Controls).<br>Direct peer-to-peer link: your own moves are instant; your opponent's moves reach you about half your ping later.</div>
       <button class="big alt" id="onBack">Back</button>
     </div>
   </div>
 
   <div class="overlay hidden" id="pauseScreen">
-    <div class="card" style="max-width:30em;padding:.6em 1.4em .9em"><h1 style="font-size:1.7em" id="pauseTitle">Paused</h1>
-      <div class="ctrl" id="pauseHelp" style="font-size:.72em;text-align:left;max-width:29em"></div>
+    <div class="card" style="max-width:42em;max-height:97%;overflow:auto;padding:.5em 1.4em .8em"><h1 style="font-size:1.6em" id="pauseTitle">Paused</h1>
+      <div class="ctrl" id="pauseHelp" style="font-size:.7em;text-align:left;max-width:41em"></div>
       <div class="vols"><label>&#9835; Music<input type="range" class="vol" data-k="music" min="0" max="200"></label><label>&#128266; SFX/voices<input type="range" class="vol" data-k="sfx" min="0" max="200"></label><label>&#128079; Crowd<input type="range" class="vol" data-k="crowd" min="0" max="200"></label></div>
       <button class="big" id="resumeBtn">Resume</button>
+      <button class="big alt" id="kbPauseBtn" style="font-size:1em">&#9000; Controls</button>
       <button class="big alt" id="quitBtn">Main Menu</button></div>
+  </div>
+
+  <div class="overlay hidden" id="kbScreen">
+    <div class="card kbcard"><h1 style="font-size:1.6em">Controls <span>/ Key Bindings</span></h1>
+      <div class="kbhint">Click a key (or Tab / arrows + Enter), then press the new key. Esc cancels, Delete removes. Up to 4 keys per action. Saved in this browser.</div>
+      <div id="kbBody"></div>
+      <div id="kbMsg" class="kbmsg"></div>
+      <div class="kbbtns"><button id="kbResetP1">Reset P1</button><button id="kbResetP2">Reset P2</button><button id="kbResetG">Reset global</button><button id="kbResetAll">Reset all</button></div>
+      <button class="big" id="kbDone">Done</button></div>
   </div>
 
   <div class="overlay hidden" id="winScreen">
@@ -472,33 +500,144 @@ drawMuteIcon(); initVols();
 
 /* ================= Input ================= */
 const keys={}, pressed={};
-const BLOCK=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','Slash','Quote','ShiftLeft','ShiftRight'];
+const BLOCK=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','PageUp','PageDown'];   // never scroll the page
+/* ================= v14.5 Key bindings (customizable, saved) =================
+   Bindings use KeyboardEvent.code (layout-safe). Up to KB_MAX keys per action. Stored in localStorage under KB_STORE.
+   In 1-player and online play your player answers to BOTH the P1 and the P2 keys (as before: P1 keys + arrows/numpad). */
+const KB_STORE='nailoong.keybinds.v1', KB_MAX=4;
+const KB_ACT=[['left','Move left'],['right','Move right'],['jump','Jump'],['clear','Clear (punch / high)'],['smash','Smash / flat attack'],['drop','Drop / net shot'],['lunge','Lunge']];
+const KB_GLB=[['pause','Pause / menu'],['mute','Mute all'],['fullscreen','Fullscreen'],['guide','Landing ring']];
+const KB_DEFAULT={
+  p1:{left:['KeyA'],right:['KeyD'],jump:['Space'],clear:['KeyJ'],smash:['KeyK'],drop:['KeyL'],lunge:['ShiftLeft','KeyQ']},
+  p2:{left:['ArrowLeft'],right:['ArrowRight'],jump:['ArrowUp','Numpad0'],clear:['Comma','Numpad1','Enter','NumpadEnter'],smash:['Period','Numpad2','KeyX'],drop:['Slash','Numpad3','KeyC'],lunge:['ShiftRight','Numpad5','Semicolon','KeyB']},
+  global:{pause:['KeyP','Escape'],mute:['KeyM'],fullscreen:['KeyF'],guide:['KeyG']}
+};
+const KB_GROUPS=['p1','p2','global'], KB_GNAME={p1:'P1',p2:'P2',global:''};
+const kbClone=o=>JSON.parse(JSON.stringify(o));
+const kbLabel=(g,a)=>{ const l=(g==='global'?KB_GLB:KB_ACT).find(x=>x[0]===a); return (KB_GNAME[g]?KB_GNAME[g]+' ':'')+(l?l[1]:a); };
+function kbDedupe(B,prio){   // a key may only do one thing: keep it in the priority group, drop later duplicates
+  const seen=new Set(), order=prio?[prio,...KB_GROUPS.filter(g=>g!==prio)]:KB_GROUPS, lost=[];
+  for(const g of order) for(const a in B[g]){ const before=B[g][a].length; B[g][a]=B[g][a].filter(k=>!seen.has(k)&&seen.add(k)); if(B[g][a].length<before) lost.push([g,a]); }
+  return lost;
+}
+function kbLoad(){
+  const d=kbClone(KB_DEFAULT);
+  try{ const raw=localStorage.getItem(KB_STORE); if(!raw) return d; const o=JSON.parse(raw); if(!o||typeof o!=='object'||o.v!==1) return d;
+    for(const g of KB_GROUPS) for(const a in d[g]){ const v=o[g]&&o[g][a];
+      if(Array.isArray(v)&&v.length<=KB_MAX&&v.every(k=>typeof k==='string'&&/^[A-Za-z0-9]{1,24}$/.test(k))) d[g][a]=[...new Set(v)]; }
+    kbDedupe(d);
+    const used=new Set(); for(const g of KB_GROUPS) for(const a in d[g]) d[g][a].forEach(k=>used.add(k));
+    for(const g of KB_GROUPS) for(const a in d[g]) if(!d[g][a].length){ d[g][a]=KB_DEFAULT[g][a].filter(k=>!used.has(k)); d[g][a].forEach(k=>used.add(k)); }   // refill emptied actions with free defaults
+    return d;
+  }catch(e){ return kbClone(KB_DEFAULT); }
+}
+let BINDS=kbLoad(), KB_BOUND=new Set();
+function kbSave(){ try{ localStorage.setItem(KB_STORE,JSON.stringify({v:1,p1:BINDS.p1,p2:BINDS.p2,global:BINDS.global})); }catch(e){} }
+function kbRebuild(){ KB_BOUND=new Set(); for(const g of KB_GROUPS) for(const a in BINDS[g]) for(const k of BINDS[g][a]) KB_BOUND.add(k); }
+kbRebuild();
+const kbHas=(g,a,code)=>!!(BINDS[g][a]&&BINDS[g][a].includes(code));
+function kbFind(code){ for(const g of KB_GROUPS) for(const a in BINDS[g]){ const i=BINDS[g][a].indexOf(code); if(i>=0) return {g,a,i}; } return null; }
+const KB_NAMES={Space:'Space',Enter:'Enter',Escape:'Esc',Tab:'Tab',Backspace:'Backspace',CapsLock:'Caps Lock',ShiftLeft:'Left Shift',ShiftRight:'Right Shift',
+  ControlLeft:'Left Ctrl',ControlRight:'Right Ctrl',AltLeft:'Left Alt',AltRight:'Right Alt',MetaLeft:'Left Win',MetaRight:'Right Win',ContextMenu:'Menu',
+  ArrowLeft:'\u2190',ArrowRight:'\u2192',ArrowUp:'\u2191',ArrowDown:'\u2193',Comma:',',Period:'.',Slash:'/',Semicolon:';',Quote:"'",BracketLeft:'[',BracketRight:']',
+  Backslash:'\\',IntlBackslash:'\\',Minus:'-',Equal:'=',Backquote:'`',Insert:'Insert',Delete:'Delete',Home:'Home',End:'End',PageUp:'Page Up',PageDown:'Page Down',
+  NumpadEnter:'Num Enter',NumpadAdd:'Num +',NumpadSubtract:'Num -',NumpadMultiply:'Num *',NumpadDivide:'Num /',NumpadDecimal:'Num .',NumLock:'Num Lock'};
+function kbName(code){ if(!code) return ''; if(KB_NAMES[code]) return KB_NAMES[code]; let m;
+  if((m=code.match(/^Key([A-Z])$/))) return m[1]; if((m=code.match(/^Digit(\d)$/))) return m[1]; if((m=code.match(/^Numpad(\d)$/))) return 'Num '+m[1];
+  return code.replace(/([a-z])([A-Z0-9])/g,'$1 $2'); }
+const kbEsc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function kbChips(list,max=2){ if(!list||!list.length) return '<span class="kc unb">unbound</span>';
+  return list.slice(0,max).map(k=>{ const n=kbName(k); return `<span class="kc${n.length>2?' w':''}">${kbEsc(n)}</span>`; }).join(''); }
+const kbFirst=(g,a)=>BINDS[g][a]&&BINDS[g][a].length?kbName(BINDS[g][a][0]):'(unbound)';
+// put `code` into slot i of g.a (i===len = add). Conflicts: the other action gets this action's old key (swap) or loses it; returns a message.
+function kbAssign(g,a,i,code){
+  const cur=BINDS[g][a], old=cur[i]; if(old===code) return '';
+  const hit=kbFind(code); let msg='';
+  if(hit && !(hit.g===g&&hit.a===a)){
+    const other=BINDS[hit.g][hit.a];
+    if(old && !other.includes(old)){ other[hit.i]=old; msg=`${kbName(code)} was used by ${kbLabel(hit.g,hit.a)}: swapped, it now uses ${kbName(old)}.`; }
+    else { other.splice(hit.i,1); msg=`${kbName(code)} was used by ${kbLabel(hit.g,hit.a)}: removed from there.`+(other.length?'':` ${kbLabel(hit.g,hit.a)} is now UNBOUND.`); }
+  } else if(hit){ cur.splice(hit.i,1); if(hit.i<i) i--; }   // same action, other slot: just move it
+  if(i>=cur.length) cur.push(code); else cur[i]=code;
+  kbChanged(); return msg;
+}
+function kbRemove(g,a,i){ const cur=BINDS[g][a]; if(i<cur.length) cur.splice(i,1); kbChanged(); return cur.length?'':`${kbLabel(g,a)} is now UNBOUND.`; }
+function kbReset(g){   // g = 'p1' | 'p2' | 'global' | 'all'
+  if(g==='all'){ BINDS=kbClone(KB_DEFAULT); kbChanged(); return 'All keys reset to defaults.'; }
+  BINDS[g]=kbClone(KB_DEFAULT[g]); const lost=kbDedupe(BINDS,g).filter(([gg])=>gg!==g); kbChanged();
+  const unb=lost.filter(([gg,a])=>!BINDS[gg][a].length);
+  return `${g==='global'?'Global keys':g.toUpperCase()} reset to defaults.`+(lost.length?` Freed keys from: ${lost.map(([gg,a])=>kbLabel(gg,a)).join(', ')}.`:'')+(unb.length?` UNBOUND: ${unb.map(([gg,a])=>kbLabel(gg,a)).join(', ')}.`:'');
+}
+function kbChanged(){ kbSave(); kbRebuild(); for(const k in keys) keys[k]=false; for(const k in pressed) delete pressed[k]; if(typeof refreshHelp==='function') refreshHelp(); }
+
+/* ---- the Controls screen ---- */
+const kbUI={open:false,cap:null,from:null,msg:''};
+function kbRender(){
+  const cell=(g,a)=>{ const ks=BINDS[g][a]; let h=ks.map((k,i)=>`<button class="kbk${kbUI.cap&&kbUI.cap.g===g&&kbUI.cap.a===a&&kbUI.cap.i===i?' cap':''}" data-g="${g}" data-a="${a}" data-i="${i}" title="Click to change, then press a key (Delete removes, Esc cancels)">${kbUI.cap&&kbUI.cap.g===g&&kbUI.cap.a===a&&kbUI.cap.i===i?'Press a key\u2026':kbEsc(kbName(k))}</button>`).join('');
+    const adding=kbUI.cap&&kbUI.cap.g===g&&kbUI.cap.a===a&&kbUI.cap.i===ks.length;
+    if(ks.length<KB_MAX) h+=`<button class="kbk add${adding?' cap':''}" data-g="${g}" data-a="${a}" data-i="${ks.length}" title="Add a key">${adding?'Press a key\u2026':'+'}</button>`;
+    return `<td class="${ks.length?'':'unbound'}">${ks.length?'':'<span class="kbu">unbound</span>'}${h}</td>`; };
+  let h='<table class="kbt"><tr><th>Action</th><th>Player 1</th><th>Player 2</th></tr>';
+  for(const [a,l] of KB_ACT) h+=`<tr><td class="n">${l}</td>${cell('p1',a)}${cell('p2',a)}</tr>`;
+  h+='</table><table class="kbt kbg"><tr><th>Global</th><th></th></tr>';
+  for(const [a,l] of KB_GLB) h+=`<tr><td class="n">${l}</td>${cell('global',a)}</tr>`;
+  h+='</table>';
+  $('kbBody').innerHTML=h;
+  $('kbMsg').textContent=kbUI.cap?`Press a key for ${kbLabel(kbUI.cap.g,kbUI.cap.a)} \u2026 (Esc cancels, Delete/Backspace removes this key)`:kbUI.msg;
+  $('kbMsg').classList.toggle('warn',!kbUI.cap&&/UNBOUND|used by/.test(kbUI.msg));
+  document.querySelectorAll('#kbBody button.kbk').forEach(b=>b.onclick=()=>kbStartCap(b.dataset.g,b.dataset.a,+b.dataset.i));
+}
+function kbFocus(sel){ const b=sel&&document.querySelector(sel); if(b){ b.focus(); return true; } return false; }
+function kbStartCap(g,a,i){ kbUI.cap={g,a,i}; kbRender(); kbFocus(`#kbBody button[data-g="${g}"][data-a="${a}"][data-i="${i}"]`); }
+function kbEndCap(code){ const c=kbUI.cap; kbUI.cap=null;
+  if(code===null) kbUI.msg='Cancelled.'; else if(code==='remove') kbUI.msg=c.i<BINDS[c.g][c.a].length?(kbRemove(c.g,c.a,c.i)||`Removed a key from ${kbLabel(c.g,c.a)}.`):'Cancelled.';
+  else kbUI.msg=kbAssign(c.g,c.a,c.i,code)||`${kbLabel(c.g,c.a)} = ${kbName(code)}`;
+  kbRender(); kbFocus(`#kbBody button[data-g="${c.g}"][data-a="${c.a}"][data-i="${Math.min(c.i,BINDS[c.g][c.a].length)}"]`)||kbFocus('#kbDone'); }
+function kbOpen(from){
+  kbUI.from=from; kbUI.open=true; kbUI.cap=null; kbUI.msg='Click a key (or Tab/arrows + Enter) to change it.';
+  if(from==='pause') $('pauseScreen').classList.add('hidden'); else $('titleScreen').classList.add('hidden');
+  $('kbScreen').classList.remove('hidden'); kbRender(); kbFocus('#kbBody button.kbk');
+}
+function kbClose(){
+  kbUI.open=false; kbUI.cap=null; $('kbScreen').classList.add('hidden'); refreshHelp();
+  if(kbUI.from==='pause'){ $('pauseScreen').classList.remove('hidden'); if(game.mode!=='online') $('pauseHelp').innerHTML=$('ctrlCard').innerHTML; kbFocus('#kbPauseBtn'); }
+  else { $('titleScreen').classList.remove('hidden'); kbFocus('#kbTitleBtn'); }
+}
+// capture phase: while the Controls screen is open the game never sees the keys
 addEventListener('keydown',e=>{
+  if(!kbUI.open) return; e.stopImmediatePropagation();
+  if(kbUI.cap){ e.preventDefault(); if(e.repeat) return;
+    if(e.code==='Escape') kbEndCap(null); else if(e.code==='Backspace'||e.code==='Delete') kbEndCap('remove'); else if(e.code&&e.code!=='Unidentified') kbEndCap(e.code); return; }
+  if(e.code==='Escape'){ e.preventDefault(); kbClose(); return; }
+  const dirs={ArrowDown:1,ArrowRight:1,ArrowUp:-1,ArrowLeft:-1};
+  if(dirs[e.code]){ e.preventDefault(); const bs=[...document.querySelectorAll('#kbScreen button')], i=bs.indexOf(document.activeElement); (bs[(i+dirs[e.code]+bs.length)%bs.length]||bs[0]).focus(); }
+},true);
+addEventListener('keyup',e=>{ if(kbUI.open){ e.stopImmediatePropagation(); keys[e.code]=false; } },true);
+
+const kbPlaying=()=>game.mode!=='demo'&&!game.paused&&game.state!=='win'&&$('pauseScreen').classList.contains('hidden')&&$('onlineScreen').classList.contains('hidden');
+addEventListener('keydown',e=>{
+  const tg=e.target; if(tg&&(tg.tagName==='TEXTAREA'||tg.isContentEditable||tg.tagName==='INPUT'&&tg.type!=='range')) return;   // typing a room code: leave keys alone
   ensureAudio();
-  if(BLOCK.includes(e.code)) e.preventDefault();
+  const mod=e.ctrlKey||e.metaKey||e.altKey;
+  if(!mod&&(BLOCK.includes(e.code)||KB_BOUND.has(e.code)&&kbPlaying())) e.preventDefault();
   if(!keys[e.code]) pressed[e.code]=true;
   keys[e.code]=true;
-  if(e.code==='KeyM') setMuted(!muted);
-  if(e.code==='KeyG' && !e.repeat) setGuide(GUIDE==='on'?'off':'on',true);
-  if(e.code==='KeyF' && !e.repeat) toggleFs();
-  if(e.target&&e.target.tagName==='INPUT') return;
-  if((e.code==='Escape'||e.code==='KeyP') && game.mode!=='demo' && game.state!=='win') togglePause();
-  if(e.code==='Enter' && game.mode==='demo' && !$('titleScreen').classList.contains('hidden')){ e.preventDefault(); startFromMenu(); }
+  if(mod) return;
+  if(kbHas('global','mute',e.code)) setMuted(!muted);
+  if(kbHas('global','guide',e.code) && !e.repeat) setGuide(GUIDE==='on'?'off':'on',true);
+  if(kbHas('global','fullscreen',e.code) && !e.repeat) toggleFs();
+  if(tg&&tg.tagName==='INPUT') return;
+  if(kbHas('global','pause',e.code) && !e.repeat && game.mode!=='demo' && game.state!=='win') togglePause();
+  if(e.code==='Enter' && game.mode==='demo' && !$('titleScreen').classList.contains('hidden') && !(tg&&tg.tagName==='BUTTON')){ e.preventDefault(); startFromMenu(); }
 });
 addEventListener('keyup',e=>{ keys[e.code]=false; });
 addEventListener('blur',()=>{ for(const k in keys) keys[k]=false; if(game.mode!=='demo'&&game.mode!=='online'&&game.state!=='win'&&!game.paused) togglePause(); });
 const touch=[{},{}], touchPressed=[{},{}], taps=[{d:0,t:0},{d:0,t:0}];
 const any=(...c)=>c.some(k=>keys[k]), anyP=(...c)=>c.some(k=>pressed[k]);
-// Key map. P1: A/D move (Shift/Q or double-tap = lunge), Space jump, J clear (timing picks punch vs high clear), K smash, L drop / net play.
-// In 1P the arrows + Z/X/C (or , . /) also drive P1.
-const KEYMAP={
-  p1:{lunge:['ShiftLeft','KeyQ'],left:['KeyA'],right:['KeyD'],jump:['Space'],clear:['KeyJ'],smash:['KeyK'],drop:['KeyL']},
-  p1alt:{lunge:['ShiftRight','KeyB'],left:['ArrowLeft'],right:['ArrowRight'],jump:['ArrowUp'],clear:['KeyZ','Comma','Numpad1','Enter','NumpadEnter'],smash:['KeyX','Period','Numpad2'],drop:['KeyC','Slash','Numpad3']},
-  p2:{lunge:['ShiftRight','Numpad5','Semicolon'],left:['ArrowLeft'],right:['ArrowRight'],jump:['ArrowUp','Numpad0'],clear:['Comma','Numpad1','Enter','NumpadEnter'],smash:['Period','Numpad2'],drop:['Slash','Numpad3']}
-};
+// Key map: see BINDS (v14.5, user-customizable). In 1P / online your player also answers to the P2 keys.
 function humanInput(side){
   const t=touch[side], tp=touchPressed[side], two=game.mode==='2p';
-  const maps=side===0?(two?[KEYMAP.p1]:[KEYMAP.p1,KEYMAP.p1alt]):[KEYMAP.p2];
+  const maps=side===0?(two?[BINDS.p1]:[BINDS.p1,BINDS.p2]):[BINDS.p2];
   const i={left:!!t.left,right:!!t.right,jump:!!tp.jump,shot:null,lunge:!!tp.dash};
   const tap=taps[side], now=performance.now()/1000;
   for(const m of maps){
@@ -1644,7 +1783,7 @@ function drawHUD(){
   // first-time hint toast (fades in and out)
   if(hintT>0){ const a=clamp(Math.min(hintT,7-hintT)*1.5,0,1); ctx.globalAlpha=a*.92; pill(cx,H-38,620,34,'rgba(255,255,255,.92)','#ffd0df'); ctx.globalAlpha=a;
     ctx.font=`bold 14px ${UIF}`; ctx.fillStyle='#a35a78'; ctx.textAlign='center';
-    ctx.fillText(isTouch?'Tip: Clear on time = punch, late = high clear \u00b7 Drop/Net at the net = net shot \u00b7 Smash near the net on a loose net shot = Net kill':'Tip: J on time = punch, late = high clear \u00b7 L at the net = net shot \u00b7 K near the net on a loose net shot = Net kill (timing matters)',cx,H-37); ctx.globalAlpha=1; }
+    ctx.fillText(isTouch?'Tip: Clear on time = punch, late = high clear \u00b7 Drop/Net at the net = net shot \u00b7 Smash near the net on a loose net shot = Net kill':`Tip: ${kbFirst('p1','clear')} on time = punch, late = high clear \u00b7 ${kbFirst('p1','drop')} at the net = net shot \u00b7 ${kbFirst('p1','smash')} near the net on a loose net shot = Net kill (timing matters)`,cx,H-37); ctx.globalAlpha=1; }
 }
 const CAM={x:632,z:.9};
 const toScreen=(x,y)=>[(x-CAM.x)*CAM.z+W/2,(y-H)*CAM.z+H];
@@ -1690,11 +1829,13 @@ document.querySelectorAll('#titleScreen button[data-mode],#titleScreen button[da
     setCtrlMode(menuSel.mode);
   });
 });
-function setCtrlMode(mode){
-  const two=mode==='2p', alt=two?[',','.','/']:['Z','X','C'];
-  document.querySelectorAll('.altH').forEach(e=>e.textContent=two?'P2':'Arrows');
-  document.querySelectorAll('.altK').forEach((e,i)=>e.innerHTML=`<span class="kc">${alt[i%3]}</span>`);
-  document.querySelectorAll('.altLunge').forEach(e=>e.innerHTML=two?'<span class="kc">R-Shift</span><span class="kc">;</span>':'<span class="kc">R-Shift</span><span class="kc">B</span>');
+function setCtrlMode(mode){ refreshHelp(mode); }
+/* v14.5: every on-screen key hint is generated from the current bindings */
+function refreshHelp(mode){
+  mode=mode||(game&&game.mode!=='demo'?game.mode:menuSel.mode); const two=mode==='2p';
+  document.querySelectorAll('[data-kb]').forEach(el=>{ const parts=el.dataset.kb.split(/\s+/); el.innerHTML=parts.map(p=>{ let [g,a]=p.split('.'); if(g==='alt') g='p2'; return kbChips(BINDS[g][a],+(el.dataset.max||2)); }).join(' '); });
+  document.querySelectorAll('.altH').forEach(e=>e.textContent=two?'P2':(mode==='online'?'Also':'Also (1P)'));
+  if(typeof game!=='undefined'&&game.paused&&!$('pauseScreen').classList.contains('hidden')&&game.mode!=='online') $('pauseHelp').innerHTML=$('ctrlCard').innerHTML;
 }
 /* ---- fullscreen (works from file:// too) ---- */
 function isFs(){ return !!(document.fullscreenElement||document.webkitFullscreenElement); }
@@ -1703,7 +1844,7 @@ function toggleFs(){ try{ if(isFs()) (document.exitFullscreen||document.webkitEx
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>setTimeout(resize,50)));
 $('fsBtn').onclick=()=>{ toggleFs(); $('fsBtn').blur(); };
 $('fsTitleBtn').onclick=()=>{ toggleFs(); $('fsTitleBtn').blur(); };
-function hideAll(){ ['titleScreen','pauseScreen','winScreen','onlineScreen'].forEach(id=>$(id).classList.add('hidden')); }
+function hideAll(){ ['titleScreen','pauseScreen','winScreen','onlineScreen','kbScreen'].forEach(id=>$(id).classList.add('hidden')); kbUI.open=false; kbUI.cap=null; }
 function startFromMenu(){
   if(menuSel.mode==='online'){ ensureAudio(); onShow('main'); onStatus(''); setTimeout(()=>$('onCode').focus(),0); return; }
   ensureAudio(); hideAll();
@@ -1738,6 +1879,9 @@ function showWin(){
 $('startBtn').onclick=startFromMenu;
 $('againBtn').onclick=()=>{ if(game.mode==='online') return onlineAgain(); hideAll(); newMatch(game.mode,game.diff,game.target); buildTouch(); if(document.activeElement) document.activeElement.blur(); };
 $('menuBtn').onclick=toMenu; $('quitBtn').onclick=toMenu;
+refreshHelp();
+$('kbTitleBtn').onclick=()=>kbOpen('title'); $('kbPauseBtn').onclick=()=>kbOpen('pause'); $('kbDone').onclick=kbClose;
+for(const [id,g] of [['kbResetP1','p1'],['kbResetP2','p2'],['kbResetG','global'],['kbResetAll','all']]) $(id).onclick=()=>{ kbUI.cap=null; kbUI.msg=kbReset(g); kbRender(); $(id).focus(); };
 $('resumeBtn').onclick=()=>{ togglePause(); document.activeElement&&document.activeElement.blur(); };
 $('pauseBtn').onclick=()=>{ ensureAudio(); togglePause(); $('pauseBtn').blur(); };
 $('muteBtn').onclick=()=>{ ensureAudio(); setMuted(!muted); $('muteBtn').blur(); };
