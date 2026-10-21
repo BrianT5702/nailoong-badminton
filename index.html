@@ -60,6 +60,7 @@
   .tb{font-size:.95em}
   #titleScreen{gap:1em}
   #titleScreen .card.menu{max-width:17em}
+  #titleScreen .card.menu{font-size:.84em;max-width:20em}#titleScreen .card.menu h1{font-size:2em}#titleScreen .card.menu .sub{margin:.2em 0 .4em}#titleScreen .row{margin:.3em 0}
   .card.ctrl{max-width:34em;text-align:left;padding:.75em 1.1em .85em;font-size:.8em}
   .ctrl h3{margin:0 0 .45em;font-size:1.25em;color:#ff7aa2;text-align:center;letter-spacing:.03em}
   .ctrl .grp{background:#fff8e6;border-radius:.8em;padding:.4em .6em;margin:.35em 0}
@@ -143,6 +144,11 @@
   .item button{font-size:.78em;padding:.2em .6em}.sw{width:3em;height:1.6em;border-radius:.5em;border:.12em solid #e8c25a}
   #shopReset{font-size:.75em;margin-top:.5em}#shopReset.danger{background:#ff6f8f;color:#fff;box-shadow:0 .15em 0 #c0335f}
   .wcoins{font-weight:bold;color:#c48a12;margin:.2em 0 .3em;font-size:.95em}
+  .chalwrap{display:flex;gap:.8em;text-align:left}#chalList{flex:1.4;max-height:22em;overflow:auto}
+  .chrow{display:flex;gap:.5em;align-items:center;background:#fff8e6;border-radius:.6em;padding:.25em .5em;margin:.2em 0;font-size:.9em}
+  .chrow.done{background:#e8f7e8}.chrow .ck{font-weight:bold;color:#3f9a55;width:1em}.chrow div{flex:1}.chrow small{color:#a08060}.chrow .rw{white-space:nowrap;color:#c48a12;font-weight:bold}
+  .rech{margin:.2em 0;color:#ff7aa2}table.rec{border-collapse:collapse;font-size:.88em}table.rec td{padding:.15em .4em;border-top:.06em solid #fbe9c0;vertical-align:top}
+  .chdone{color:#3f9a55;font-size:.9em}
 </style>
 </head>
 <body>
@@ -170,12 +176,14 @@
       <div class="row"><label>Difficulty</label>
         <button data-diff="easy">Easy</button><button data-diff="normal" class="sel">Normal</button><button data-diff="hard">Hard</button></div>
       <div class="row"><label>Points</label>
-        <button data-pts="11" class="sel">11</button><button data-pts="21">21</button></div>
+        <button data-pts="11" class="sel">11</button><button data-pts="15">15</button><button data-pts="21">21</button></div>
+      <div class="row"><label>Match</label><button data-bo="1" class="sel">1 game</button><button data-bo="3">Best of 3</button></div>
+      <div class="row"><label>Fun</label><button data-fun="none" class="sel" title="Normal badminton">Normal</button><button data-fun="smash" title="Every high shot becomes a smash">Smash only</button><button data-fun="giant" title="A huge, slow, floaty shuttle">Giant</button><button data-fun="lowg" title="Moon gravity: higher jumps, floaty shots">Low grav</button></div>
       <div class="row"><label>Landing ring</label>
         <button data-guide="auto" class="sel">Easy only</button><button data-guide="on">On</button><button data-guide="off">Off</button></div>
       <div class="vols"><label>&#9835; Music<input type="range" class="vol" data-k="music" min="0" max="200"></label><label>&#128266; SFX/voices<input type="range" class="vol" data-k="sfx" min="0" max="200"></label><label>&#128079; Crowd<input type="range" class="vol" data-k="crowd" min="0" max="200"></label></div>
       <button class="big" id="startBtn">Play! &#9829;</button>
-      <div class="row"><button class="small" id="careerBtn">&#127942; Career</button><button class="small" id="shopBtn">&#128717; Shop</button><span class="coinpill">&#129689; <span class="coins">0</span></span></div>
+      <div class="row"><button class="small" id="careerBtn">&#127942; Career</button><button class="small" id="shopBtn">&#128717; Shop</button><button class="small" id="chalBtn">&#127919; Challenges</button><span class="coinpill">&#129689; <span class="coins">0</span></span></div>
       <button class="small" id="fsTitleBtn">&#x26F6; Fullscreen</button> <button class="small" id="kbTitleBtn">&#9000; Controls</button>
     </div>
     <div class="card ctrl" id="ctrlCard">
@@ -209,7 +217,7 @@
         <div class="sub" style="margin:.2em 0 0">Room code</div>
         <div class="code" id="onCodeBig">-----</div>
         <button class="small" id="onCopy">Copy invite link</button>
-        <div class="row"><label>Points</label><button data-opts="11" class="sel">11</button><button data-opts="21">21</button></div>
+        <div class="row"><label>Points</label><button data-opts="11" class="sel">11</button><button data-opts="15">15</button><button data-opts="21">21</button></div>
         <button class="big" id="onStart" disabled>Start match &#9829;</button>
       </div>
       <div id="onGuest" class="hidden">
@@ -262,6 +270,12 @@
       <div class="sub">&#129689; <b class="coins">0</b> coins. Earn coins by winning matches, career stages and challenges.</div>
       <div class="chtabs" id="shopTabs"></div><div id="shopBody" class="shgrid"></div><div class="kbmsg" id="shopMsg"></div>
       <div class="kbbtns"><button class="big alt" id="shopBack">Back</button><button id="shopReset">Reset progress&hellip;</button></div></div>
+  </div>
+
+  <div class="overlay hidden" id="chalScreen">
+    <div class="card shcard"><h1 style="font-size:1.6em">Challenges <span>&amp; Records</span></h1><div class="sub" id="chalSub"></div>
+      <div class="chalwrap"><div id="chalList"></div><div><h3 class="rech">Records</h3><table class="rec" id="recList"></table></div></div>
+      <button class="big alt" id="chalBack">Back</button></div>
   </div>
 
   <div class="overlay hidden" id="winScreen">
@@ -563,11 +577,11 @@ const BLOCK=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','PageUp','Pa
    In 1-player and online play your player answers to BOTH the P1 and the P2 keys (as before: P1 keys + arrows/numpad). */
 const KB_STORE='nailoong.keybinds.v1', KB_MAX=4;
 const KB_ACT=[['left','Move left'],['right','Move right'],['jump','Jump'],['clear','Clear (punch / high)'],['smash','Smash / flat attack'],['drop','Drop / net shot'],['lunge','Lunge'],['special','Special move']];
-const KB_GLB=[['pause','Pause / menu'],['mute','Mute all'],['fullscreen','Fullscreen'],['guide','Landing ring']];
+const KB_GLB=[['pause','Pause / menu'],['mute','Mute all'],['fullscreen','Fullscreen'],['guide','Landing ring'],['replay','Instant replay']];
 const KB_DEFAULT={
   p1:{left:['KeyA'],right:['KeyD'],jump:['Space'],clear:['KeyJ'],smash:['KeyK'],drop:['KeyL'],lunge:['ShiftLeft','KeyQ'],special:['KeyI']},
   p2:{left:['ArrowLeft'],right:['ArrowRight'],jump:['ArrowUp','Numpad0'],clear:['Comma','Numpad1','Enter','NumpadEnter'],smash:['Period','Numpad2','KeyX'],drop:['Slash','Numpad3','KeyC'],lunge:['ShiftRight','Numpad5','Semicolon','KeyB'],special:['Quote','Numpad6']},
-  global:{pause:['KeyP','Escape'],mute:['KeyM'],fullscreen:['KeyF'],guide:['KeyG']}
+  global:{pause:['KeyP','Escape'],mute:['KeyM'],fullscreen:['KeyF'],guide:['KeyG'],replay:['KeyR']}
 };
 const KB_GROUPS=['p1','p2','global'], KB_GNAME={p1:'P1',p2:'P2',global:''};
 const kbClone=o=>JSON.parse(JSON.stringify(o));
@@ -683,6 +697,7 @@ addEventListener('keydown',e=>{
   if(kbHas('global','mute',e.code)) setMuted(!muted);
   if(kbHas('global','guide',e.code) && !e.repeat) setGuide(GUIDE==='on'?'off':'on',true);
   if(kbHas('global','fullscreen',e.code) && !e.repeat) toggleFs();
+  if(kbHas('global','replay',e.code) && !e.repeat && (game.state==='point'||game.state==='serve') && game.mode!=='online' && game.mode!=='demo' && !game.paused) startReplay();
   if(tg&&tg.tagName==='INPUT') return;
   if(kbHas('global','pause',e.code) && !e.repeat && game.mode!=='demo' && game.state!=='win') togglePause();
   if(e.code==='Enter' && game.mode==='demo' && !$('titleScreen').classList.contains('hidden') && !(tg&&tg.tagName==='BUTTON')){ e.preventDefault(); startFromMenu(); }
@@ -807,7 +822,7 @@ function newMatch(mode,diff,target,c0,c1){
   const nm=(id,t)=>CH[id].name+(mode==='2p'?` (${t})`:'');
   players=[ makePlayer(0,c0, nm(c0,'P1'), mode==='demo'?'normal':null),
             makePlayer(1,c1, nm(c1,'P2'), (mode==='2p'||mode==='online')?null:(mode==='demo'?'normal':diff)) ];
-  game.bo=1; game.games=[0,0]; game.career=null;
+  game.bo=1; game.games=[0,0]; game.career=null; applyFun('none'); game.mt=mtNew(); game.maxRally=0; game.rec=[]; game.lastRec=null; game.replay=null; game.pendReplay=false;
   if(mode==='1p'||mode==='2p'||mode==='online'){ const P=players[mode==='online'?NET.side:0], rk=cosmOf('racket'), bd=cosmOf('band');   // v15.2 cosmetics (your player only)
     if(rk.frame) Object.assign(P.skin,{frame:rk.frame,grip:rk.grip}); if(bd.col) P.band=bd.col; }
   particles=[]; popups=[]; banner=null; game.hitStop=0;
@@ -824,11 +839,13 @@ function setupServe(side){
 /* ================= Shuttle physics ================= */
 let PUNCH_CLR=-48;   // v14.2: punch is solved to pass ~0.6 m under a full jump reach at the opponent (was +12 px above): flatter and ~12% quicker, still interceptable by a jump or a back-court chase
 const BOOST_K=1, PUNCH_MAXSP=70*PX_M;   // v14: no drag windows / gravity multipliers any more; punch launch capped at 70 m/s off the racket
+const PHYS={g:1,k:1,pg:1,reach:1};   // v15.3 fun modes (all 1 = normal physics)
+function applyFun(f){ game.fun=FUN[f]?f:'none'; PHYS.g=f==='lowg'?.55:1; PHYS.pg=f==='lowg'?.6:1; PHYS.k=f==='giant'?1.9:1; PHYS.reach=f==='giant'?1.3:1; }
 function stepS(s,dt){   // midpoint (RK2) step of dv/dt = g - k|v|v; same model for every shot and for the AI's predictions
-  const vx=s.vx, vy=s.vy, sp=Math.hypot(vx,vy), h=dt/2;
-  const mx=vx-K*sp*vx*h, my=vy+(G-K*sp*vy)*h, ms=Math.hypot(mx,my);
+  const Kx=K*PHYS.k, Gx=G*PHYS.g, vx=s.vx, vy=s.vy, sp=Math.hypot(vx,vy), h=dt/2;
+  const mx=vx-Kx*sp*vx*h, my=vy+(Gx-Kx*sp*vy)*h, ms=Math.hypot(mx,my);
   s.x+=mx*dt; s.y+=my*dt;
-  s.vx=vx-K*ms*mx*dt; s.vy=vy+(G-K*ms*my)*dt;
+  s.vx=vx-Kx*ms*mx*dt; s.vy=vy+(Gx-Kx*ms*my)*dt;
 }
 function simulate(x,y,vx,vy,maxT=6){
   const s={x,y,vx,vy}, dt=1/120; let crossY=null, t=0, minY=y;
@@ -907,7 +924,8 @@ function clearType(p,s){
   const e=p.swingT-SW_PEAK, front=(s.x-hitCenter(p).x)*p.f>-12;   // at/ahead of the sweet spot, not behind the body
   return (e>=-.03 && e<=.05 && front)?'punch':'clear';
 }
-function shotFor(p){ const t=shotFor0(p); return p.ai&&p.ai.style?styleShot(p,t):t; }
+function shotFor(p){ let t=shotFor0(p); if(p.ai&&p.ai.style) t=styleShot(p,t); if(game.fun==='smash') t=smashOnly(p,t); return t; }
+function smashOnly(p,t){ const s=shuttle; if(ATTACK_T.has(t)||ATTACK_T.has(s.type)) return t; if(canSmash(p,s)) return 'smash'; if(s.y<FLAT_MIN_Y) return 'flat'; return t; }
 function shotFor0(p){
   const s=shuttle, low=s.y>NET_TOP+55, vsSmash=shuttle.type==='smash'||shuttle.type==='kill'||shuttle.type==='netkill';
   if(p.ai){
@@ -1177,6 +1195,9 @@ function hitShuttle(p,d=0,reach=REACH){
   if(Q.label && game.mode!=='demo' && !((type==='smash'||type==='netkill'||type==='flat')&&fxTier===2)){ const c=Q.label==='Perfect!'?'#ffb000':Q.label==='Good'?'#58b368':'#9a8fb0';
     popup(p.x+p.f*8,p.y-150,Q.label,c,Q.label==='Perfect!'?30:22); if(Q.label==='Perfect!') for(let i=0;i<10;i++) spark(s.x,s.y,'#fff27a'); }
   game.lastHitter=p.side; game.hitId++; game.rally++;
+  game.maxRally=Math.max(game.maxRally||0,game.rally);
+  if((game.rally===10||game.rally===20||game.rally===30)&&game.mode!=='demo'&&!NET.fxSkip){ popup(NET_X,170,game.rally>=20?'AMAZING RALLY!':'Great rally!','#ff5f8f',30); crowdCheer(game.rally>=20?3:2); game.cheer=Math.max(game.cheer,1.5); }
+  mtHit(p,type,Q,v||{vx:0,vy:0},nkOut);
   p.hitDone=true; p.lastShot=type; game.lastShot=type;
   (game.shotLog=game.shotLog||[]).push({side:p.side,type,big,r:game.rally,q:+q.toFixed(2),x:Math.round(s.x),y:Math.round(s.y)}); if(game.shotLog.length>400) game.shotLog.shift();
   if((type==='drop'||type==='block') && !p.ai) popup(s.x,s.y-30,type==='block'?'Block':'Drop','#7aa0d8',26);
@@ -1194,7 +1215,7 @@ function doServe(p){
     v=solveShot(s.x,s.y,NET_X+dir*dist,SHOTS.short.ang);
     if(q<.6 && Math.random()<(.6-q)*.8){ const k=1-rand(.05,.16); v={vx:v.vx*k,vy:v.vy*k}; }   // a sloppy short serve can find the tape
   } else v=solveShot(s.x,s.y,oppX(p.side,aimFrac(p,'long')),SHOTS.long.ang);
-  s.fx=-1; s.vx=v.vx; s.vy=v.vy; s.type='serve'; s.serveType=type; s.q=q; s.boostT=0; s.gMul=1; s.bK=BOOST_K; s.tumbleT=0; game.state='rally'; game.lastHitter=p.side; game.hitId++; game.rally=1; p.hitDone=true;
+  s.fx=-1; s.vx=v.vx; s.vy=v.vy; game.rec=[]; s.type='serve'; s.serveType=type; s.q=q; s.boostT=0; s.gMul=1; s.bK=BOOST_K; s.tumbleT=0; game.state='rally'; game.lastHitter=p.side; game.hitId++; game.rally=1; p.hitDone=true;
   (game.serveLog=game.serveLog||[]).push({side:p.side,type,q:+q.toFixed(2),ai:!!p.ai});
   sfx.serve(); for(let i=0;i<6;i++) spark(s.x,s.y,'#fff6a8');
 }
@@ -1225,7 +1246,7 @@ function updatePlayer(p,dt){
   if(p.wantShot && (p.swingT<0||p.swingT>.3) && game.state!=='point' && game.state!=='win'){ p.lastSwing=game.time; p.swingT=0; p.hitDone=false; p.justSwung=true; p.req=p.wantShot; }
   p.wantShot=null;
   if(p.swingT>=0){ p.swingT+=dt; if(p.swingT>.4) p.swingT=-1; }
-  if(!p.onGround){ p.vy+=PG*dt; }
+  if(!p.onGround){ p.vy+=PG*PHYS.pg*dt; }
   p.x+=p.vx*dt; p.y+=p.vy*dt;
   if(p.y>=GROUND){ if(!p.onGround){ p.squash=1; sfx.land(); dust(p.x,GROUND,5);} p.y=GROUND; p.vy=0; p.onGround=true; }
   // never cross the net: the body's net-side edge (wider arms-up pose in the air) stays NET_GAP behind the net line;
@@ -1243,7 +1264,7 @@ function updatePlayer(p,dt){
 function hitCenter(p){ const l=(p.lungeT>0||p.recT>0)?1:0;
   const nk=p.req==='smash'&&p.swingT>=0&&Math.abs(p.x-NET_X)<NK_PX;   // net kill: arm up, racket above the tape
   return {x:p.x+p.f*25+(l?(p.lungeDir||0)*9:0), y:p.y-(nk?(p.onGround?122:140):(p.onGround?75:100))+l*12}; }   // airborne = arm stretched overhead
-function reachOf(p){ return (p.ai?REACH:REACH+5)+1.6*chD(p,4)+((p.lungeT>0||p.recT>0)?LUNGE_REACH:0); }
+function reachOf(p){ return ((p.ai?REACH:REACH+5)+1.6*chD(p,4)+((p.lungeT>0||p.recT>0)?LUNGE_REACH:0))*PHYS.reach; }
 
 /* ================= AI ================= */
 function aiThink(p,dt){
@@ -1381,7 +1402,11 @@ function updateParticles(dt){
 function pointTo(side,reason){
   const loser=1-side;
   if(game.mode!=='demo'){
-    game.score[side]++;
+    game.score[side]++; mtPoint(side);
+    { const st=shuttle.type, win=game.lastHitter===side&&!shuttle.netHit;   // v15.3 slow-mo + camera punch + auto replay on special points (offline)
+      if(game.mode!=='online'&&win&&((st==='smash'&&(shuttle.fx===2||shuttle.bigSmash))||st==='netkill'||shuttle.special)){ game.camP=1; game.slow=.5; game.pendReplay=true; }
+      if(game.mode!=='online'&&game.rally>=15) game.pendReplay=true;
+      game.lastRec=game.rec; game.rec=[]; }
     const human1p=game.mode==='1p';
     if(human1p&&side===1) sfx.lose(); else sfx.point();
     gainMeter(players[side],6); gainMeter(players[loser],3);
@@ -1395,10 +1420,11 @@ function pointTo(side,reason){
     sfx.voice(side,Math.random()<.5?'giggle':'cheer'); sfx.voice(loser,'aww');
   }
   game.state='point'; game.timer=game.mode==='demo'?.9:1.5; game.pointWinner=side;
-  const s=game.score[side], o=game.score[loser], cap=game.target===21?30:15;
-  if(game.mode!=='demo' && ((s>=game.target && s-o>=2) || s>=cap)) game.winner=side;
+  const s=game.score[side], o=game.score[loser], cap={11:15,15:21,21:30}[game.target]||game.target+9;   // deuce: win by 2, capped
+  if(game.mode!=='demo' && ((s>=game.target && s-o>=2) || s>=cap)){ game.winner=side; mtGame(side); }
 }
 function update(dt){
+  if(game.replay){ updateParticles(dt); replayStep(dt); return; }
   game.time+=dt;
   updateParticles(dt);
   if(game.shake>0) game.shake=Math.max(0,game.shake-dt);
@@ -1418,6 +1444,7 @@ function update(dt){
   for(const tp of touchPressed) for(const k in tp) delete tp[k];
   const n=Math.ceil(dt/(1/120)), h=dt/n;
   for(let i=0;i<n;i++) step(h);
+  if(game.state==='rally'||game.state==='point') recFrame();
   if(onl) netHostAfter(dt);
 }
 function step(dt){
@@ -1498,6 +1525,7 @@ function step(dt){
   } else if(game.state==='point'){
     game.timer-=dt;
     if(game.timer<=0){
+      if(game.pendReplay){ game.pendReplay=false; if(startReplay()) return; }
       if(game.winner>=0) showWin(); else setupServe(game.pointWinner);
     }
   }
@@ -1972,7 +2000,7 @@ function drawShuttle(){
       ctx.strokeStyle=`rgba(255,255,255,${al})`; ctx.lineWidth=.8+1.8*f*al; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
     ctx.restore(); }
   // ~1.5x v8 (still well under v5's oversized shuttle); cork leads
-  ctx.save(); ctx.translate(s.x,s.y); ctx.rotate(s.rot); ctx.scale(.6,.6);
+  ctx.save(); ctx.translate(s.x,s.y); ctx.rotate(s.rot); { const z=game.fun==='giant'?1.25:.6; ctx.scale(z,z); }
   // soft dark halo so the white skirt pops on clouds / sky / banners / lines
   ctx.shadowColor='rgba(20,15,45,.75)'; ctx.shadowBlur=4*scale*dpr;
   ctx.fillStyle='#ffffff'; ctx.strokeStyle='#2f2a45'; ctx.lineWidth=2.2;
@@ -2092,7 +2120,7 @@ function render(){
   drawParticles();
   ctx.restore();
   drawOffscreen();
-  drawHUD(); drawBanner();
+  drawHUD(); drawRallyCounter(); if(!game.replay) drawBanner(); drawReplayBadge();
   drawNetBadge();
 }
 
@@ -2318,8 +2346,85 @@ function shopBuy(k,id){
 function shopReset(){ if(!shopUI.confirm){ shopUI.confirm=true; shopRender(); kbFocus('#shopReset'); return; }
   PROG=progDefault(); progSave(); shopUI.confirm=false; shopMsg('Progress reset: coins, unlocks, cosmetics, career and records cleared.'); shopRender(); }
 
+/* ================= v15.3 Challenges, records, fun modes, replay ================= */
+const FUN={none:{name:'Normal'},smash:{name:'Smash Only'},giant:{name:'Giant Shuttle'},lowg:{name:'Low Gravity'}};
+const CHAL=[
+  {id:'first',name:'First victory',desc:'Win any match (1P, career or online).',c:30,t:M=>M.won},
+  {id:'easy',name:'Warm-up',desc:'Beat Easy.',c:20,t:M=>M.won&&M.diff==='easy'},
+  {id:'normal',name:'Getting good',desc:'Beat Normal.',c:40,t:M=>M.won&&M.diff==='normal'},
+  {id:'hard',name:'Hard nut',desc:'Beat Hard.',c:80,t:M=>M.won&&M.diff==='hard'},
+  {id:'nostreak',name:'Steady nerves',desc:'Beat Hard without ever losing 3 points in a row.',c:120,t:M=>M.won&&(M.diff==='hard'||M.diff==='champ')&&M.maxLost<3},
+  {id:'nk3',name:'Net hunter',desc:'3 net kills in one match.',c:50,t:M=>M.netKills>=3},
+  {id:'smash75',name:'Rocket smash',desc:'Smash at 75 m/s or faster.',c:40,t:M=>M.fastest>=75},
+  {id:'rally20',name:'Marathon',desc:'Win a rally of 20+ shots.',c:50,t:M=>M.wonRally>=20},
+  {id:'perfect10',name:'Perfectionist',desc:'10 Perfect! shots in one match.',c:40,t:M=>M.perfects>=10},
+  {id:'special3',name:'Show-off',desc:'Use your special 3 times in one match.',c:30,t:M=>M.specials>=3},
+  {id:'comeback',name:'Comeback kid',desc:'Win a game after trailing by 5 or more.',c:60,t:M=>M.won&&M.comeback},
+  {id:'dominant',name:'Dominant',desc:'Win a game while conceding 3 points or fewer.',c:50,t:M=>M.won&&M.minConceded<=3},
+  {id:'bo3',name:'Best of three',desc:'Win a best-of-3 match.',c:50,t:M=>M.won&&M.bo>1},
+  {id:'career3',name:'Climbing',desc:'Beat career stage 3.',c:50,t:()=>PROG.career.stage>=3},
+  {id:'champion',name:'Champion!',desc:'Beat Champion Nailoong in the career final.',c:150,t:()=>PROG.career.cleared>0},
+  {id:'streak3',name:'On fire',desc:'Win 3 matches in a row.',c:60,t:()=>(PROG.stats.streak||0)>=3},
+  {id:'five',name:'Versatile',desc:'Win with 5 different characters.',c:80,t:()=>Object.keys(PROG.stats.perChar||{}).length>=5,prog:()=>`${Object.keys(PROG.stats.perChar||{}).length}/5`},
+  {id:'allchars',name:'Whole roster',desc:'Win with every character.',c:300,t:()=>CHARS.every(c=>(PROG.stats.perChar||{})[c.id]),prog:()=>`${CHARS.filter(c=>(PROG.stats.perChar||{})[c.id]).length}/${CHARS.length}`},
+  {id:'online',name:'Long-distance love',desc:'Win an online match.',c:40,t:M=>M.won&&M.mode==='online'},
+  {id:'fun',name:'Just for fun',desc:'Win a fun-mode match (Smash Only, Giant Shuttle or Low Gravity).',c:30,t:M=>M.won&&M.fun!=='none'},
+  {id:'ten',name:'Regular',desc:'Play 10 matches.',c:40,t:()=>(PROG.stats.played||0)>=10,prog:()=>`${Math.min(10,PROG.stats.played||0)}/10`}
+];
+function mtNew(){ return {netKills:0,fastest:0,wonRally:0,perfects:0,specials:0,maxLost:0,lostRun:0,comeback:false,minConceded:99,maxDef:0}; }
+const meSide=()=>game.mode==='online'?NET.side:0;
+const tracking=()=>game.mode==='1p'||game.mode==='online'||(game.mode==='2p');
+function mtHit(p,type,Q,v,nk){ if(!game.mt||p.side!==meSide()||p.ai||game.mode==='demo') return; const M=game.mt;
+  if(type==='smash'){ const sp=Math.hypot(v.vx,v.vy)/PX_M; M.fastest=Math.max(M.fastest,sp); }
+  if(nk==='kill') M.netKills++; if(Q&&Q.label==='Perfect!') M.perfects++; }
+function mtPoint(side){ const M=game.mt; if(!M||game.mode==='demo') return; const me=meSide();
+  if(side===me){ M.wonRally=Math.max(M.wonRally,game.rally); M.lostRun=0; } else { M.lostRun++; M.maxLost=Math.max(M.maxLost,M.lostRun); }
+  M.maxDef=Math.max(M.maxDef,game.score[1-me]-game.score[me]); }
+function mtGame(w){ const M=game.mt; if(!M) return; const me=meSide(); if(w===me){ if(M.maxDef>=5) M.comeback=true; M.minConceded=Math.min(M.minConceded,game.score[1-me]); } M.maxDef=0; }
+// called from showWin: records + challenges; returns extra reward lines
+function afterMatch(w){
+  if(game.mode==='demo'||game.mode==='2p'||!game.mt) return;
+  const me=meSide(), S=PROG.stats, M=Object.assign({},game.mt,{won:w===me,diff:game.mode==='online'?'online':game.diff,mode:game.mode,bo:game.bo,fun:game.fun||'none'});
+  M.specials=(game.spLog||[]).filter(e=>e.side===me).length;
+  S.played=(S.played||0)+1; if(M.won){ S.won=(S.won||0)+1; S.streak=(S.streak||0)+1; S.bestStreak=Math.max(S.bestStreak||0,S.streak); const id=players[me].ch.id; (S.perChar=S.perChar||{})[id]=(S.perChar[id]||0)+1; } else S.streak=0;
+  S.fastest=Math.max(S.fastest||0,+M.fastest.toFixed(1)); S.longestRally=Math.max(S.longestRally||0,game.maxRally||0); S.netKills=(S.netKills||0)+M.netKills; S.specials=(S.specials||0)+M.specials;
+  const done=[]; for(const c of CHAL){ if(PROG.chal[c.id]) continue; let ok=false; try{ ok=!!c.t(M); }catch(e){} if(ok){ PROG.chal[c.id]=Date.now(); PROG.coins+=c.c; done.push(c); } }
+  progSave();
+  if(done.length){ const e=$('winCoins'); e.innerHTML+=done.map(c=>`<div class="chdone">\u2714 Challenge: ${kbEsc(c.name)} +${c.c} \uD83E\uDE99</div>`).join(''); }
+  game.mt=null; }
+function chalOpen(){ hideAll(); $('chalScreen').classList.remove('hidden'); chalRender(); kbFocus('#chalBack'); }
+function chalRender(){ const S=PROG.stats, n=CHAL.filter(c=>PROG.chal[c.id]).length;
+  $('chalList').innerHTML=CHAL.map(c=>{ const d=!!PROG.chal[c.id]; return `<div class="chrow${d?' done':''}"><span class="ck">${d?'\u2714':'\u25CB'}</span><div><b>${kbEsc(c.name)}</b><br><small>${kbEsc(c.desc)}${c.prog&&!d?' \u00b7 '+c.prog():''}</small></div><span class="rw">+${c.c} \uD83E\uDE99</span></div>`; }).join('');
+  $('chalSub').textContent=`${n} / ${CHAL.length} complete`;
+  const pc=Object.entries(S.perChar||{}).sort((a,b)=>b[1]-a[1]).map(([id,k])=>`${CH[id]?CH[id].name:id} ${k}`).join(', ')||'none yet';
+  $('recList').innerHTML=[['Matches played',S.played||0],['Matches won',S.won||0],['Win streak (now / best)',`${S.streak||0} / ${S.bestStreak||0}`],['Fastest smash',S.fastest?`${S.fastest} m/s (${Math.round(S.fastest*3.6)} km/h)`:'\u2013'],
+    ['Longest rally',S.longestRally||0],['Net kills (total)',S.netKills||0],['Specials used',S.specials||0],['Wins per character',pc]].map(([a,b])=>`<tr><td>${a}</td><td><b>${kbEsc(String(b))}</b></td></tr>`).join(''); }
+/* ---- instant replay (offline): the last point, slow motion, skippable ---- */
+const REC_N=480;
+function recFrame(){ if(game.mode==='online'||game.mode==='demo') return; const r=game.rec||(game.rec=[]);
+  r.push({p:players.map(p=>[p.x,p.y,p.vx,p.vy,p.onGround,p.swingT,p.f,p.run,p.squash,p.lungeT,p.recT,p.lungeDir,p.hitT,p.hitPt,p.req,p.mood,p.moodT]),
+    s:[shuttle.x,shuttle.y,shuttle.vx,shuttle.vy,shuttle.rot,shuttle.type,shuttle.fx,shuttle.fxc,shuttle.netHit,shuttle.tumbleT],t:game.time});
+  if(r.length>REC_N) r.shift(); }
+const RP_P=['x','y','vx','vy','onGround','swingT','f','run','squash','lungeT','recT','lungeDir','hitT','hitPt','req','mood','moodT'], RP_S=['x','y','vx','vy','rot','type','fx','fxc','netHit','tumbleT'];
+function startReplay(){ const fr=game.lastRec; if(!fr||fr.length<20||game.replay) return false;
+  game.replay={fr,i:0,acc:0,save:{p:players.map(p=>RP_P.map(k=>p[k])),s:RP_S.map(k=>shuttle[k]),trail:shuttle.trail,time:game.time}}; shuttle.trail=[]; return true; }
+function replayStep(dt){ const R=game.replay; R.acc+=dt*.5; while(R.acc>=1/60&&R.i<R.fr.length-1){ R.acc-=1/60; R.i++; }   // half speed
+  const f=R.fr[R.i]; players.forEach((p,k)=>RP_P.forEach((key,j)=>p[key]=f.p[k][j])); RP_S.forEach((key,j)=>shuttle[key]=f.s[j]); game.time=f.t;
+  if(shuttle.y<GROUND-5){ shuttle.trail.push({x:shuttle.x,y:shuttle.y,l:.3,v:Math.hypot(shuttle.vx,shuttle.vy),a:ATTACK_T.has(shuttle.type)?1:0,fx:ATTACK_T.has(shuttle.type)?shuttle.fx:-1,c:shuttle.fxc}); if(shuttle.trail.length>40) shuttle.trail.shift(); }
+  for(const t of shuttle.trail) t.l-=dt*.5; shuttle.trail=shuttle.trail.filter(t=>t.l>0);
+  if(R.i>=R.fr.length-1) endReplay(); }
+function endReplay(){ const R=game.replay; if(!R) return; players.forEach((p,k)=>RP_P.forEach((key,j)=>p[key]=R.save.p[k][j])); RP_S.forEach((key,j)=>shuttle[key]=R.save.s[j]); shuttle.trail=R.save.trail; game.time=R.save.time; game.replay=null; }
+function drawReplayBadge(){ if(!game.replay) return; const a=.75+.25*Math.sin(performance.now()/200);
+  ctx.save(); ctx.globalAlpha=a; pill(110,78,150,30,'rgba(220,40,80,.9)'); ctx.fillStyle='#fff'; ctx.font=`bold 15px ${UIF}`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('\u25CF REPLAY',110,79);
+  ctx.globalAlpha=.85; ctx.fillStyle='#fff'; ctx.font=`bold 12px ${UIF}`; ctx.fillText(isTouch?'tap to skip':'any key to skip',110,104); ctx.restore(); }
+addEventListener('keydown',e=>{ if(game.replay&&!e.repeat){ e.preventDefault(); e.stopImmediatePropagation(); endReplay(); } },true);
+addEventListener('pointerdown',()=>{ if(game.replay) endReplay(); },true);
+function drawRallyCounter(){ if(game.mode==='demo'||game.state!=='rally'||game.rally<5||game.replay) return; const big=game.rally>=10;
+  ctx.save(); ctx.font=`bold ${big?20:16}px ${UIF}`; ctx.textAlign='center'; ctx.textBaseline='middle'; const t=`${game.rally} shot rally`+(game.rally>=20?' \uD83D\uDD25':'');
+  const w=ctx.measureText(t).width+26; ctx.globalAlpha=.9; pill(W/2,96,w,big?32:26,big?'rgba(255,143,177,.92)':'rgba(255,255,255,.85)'); ctx.fillStyle=big?'#fff':'#c98a00'; ctx.fillText(t,W/2,97); ctx.restore(); }
+
 /* ================= Screens & UI ================= */
-let menuSel={mode:'1p',diff:'normal',pts:11};
+let menuSel={mode:'1p',diff:'normal',pts:11,bo:1,fun:'none'};
 // landing ring: 'auto' = only on Easy, 'on', 'off' (G toggles in game)
 let GUIDE='auto'; try{ GUIDE=localStorage.getItem('nb_guide')||'auto'; }catch(e){}
 function setGuide(g,announce){ GUIDE=g; try{localStorage.setItem('nb_guide',g);}catch(e){}
@@ -2329,12 +2434,12 @@ document.querySelectorAll('#titleScreen button[data-guide]').forEach(b=>b.addEve
 setGuide(GUIDE);
 const guideOn=()=>GUIDE==='on'||(GUIDE==='auto'&&game.mode==='1p'&&game.diff==='easy');
 $('giftLine').textContent=GIFT_LINE;
-document.querySelectorAll('#titleScreen button[data-mode],#titleScreen button[data-diff],#titleScreen button[data-pts]').forEach(b=>{
+document.querySelectorAll('#titleScreen button[data-mode],#titleScreen button[data-diff],#titleScreen button[data-pts],#titleScreen button[data-bo],#titleScreen button[data-fun]').forEach(b=>{
   b.addEventListener('click',()=>{ ensureAudio(); sfx.click&&tone(800,.05,'sine',.12,1100);
-    const k=b.dataset.mode?'mode':b.dataset.diff?'diff':'pts';
-    menuSel[k]=k==='pts'?+b.dataset.pts:b.dataset[k];
+    const k=b.dataset.mode?'mode':b.dataset.diff?'diff':b.dataset.bo?'bo':b.dataset.fun?'fun':'pts';
+    menuSel[k]=k==='pts'||k==='bo'?+b.dataset[k]:b.dataset[k];
     document.querySelectorAll(`#titleScreen button[data-${k}]`).forEach(o=>o.classList.toggle('sel',o===b));
-    document.querySelectorAll('#titleScreen button[data-diff],#titleScreen button[data-pts]').forEach(o=>o.disabled=menuSel.mode==='2p'&&!!o.dataset.diff||menuSel.mode==='online');
+    document.querySelectorAll('#titleScreen button[data-diff],#titleScreen button[data-pts],#titleScreen button[data-bo],#titleScreen button[data-fun]').forEach(o=>o.disabled=menuSel.mode==='2p'&&!!o.dataset.diff||menuSel.mode==='online');
     $('startBtn').innerHTML=menuSel.mode==='online'?'Online &#9829;':'Play! &#9829;';
     setCtrlMode(menuSel.mode);
   });
@@ -2354,7 +2459,7 @@ function toggleFs(){ try{ if(isFs()) (document.exitFullscreen||document.webkitEx
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>setTimeout(resize,50)));
 $('fsBtn').onclick=()=>{ toggleFs(); $('fsBtn').blur(); };
 $('fsTitleBtn').onclick=()=>{ toggleFs(); $('fsTitleBtn').blur(); };
-function hideAll(){ ['titleScreen','pauseScreen','winScreen','onlineScreen','kbScreen','chScreen','careerScreen','shopScreen'].forEach(id=>$(id).classList.add('hidden')); kbUI.open=false; kbUI.cap=null; chUI.open=false; }
+function hideAll(){ ['titleScreen','pauseScreen','winScreen','onlineScreen','kbScreen','chScreen','careerScreen','shopScreen','chalScreen'].forEach(id=>$(id).classList.add('hidden')); kbUI.open=false; kbUI.cap=null; chUI.open=false; }
 function startFromMenu(){
   if(menuSel.mode==='online'){ ensureAudio(); onShow('main'); onStatus(''); netCharLine(); setTimeout(()=>$('onCode').focus(),0); return; }
   ensureAudio(); chOpen(menuSel.mode,'title');
@@ -2363,7 +2468,7 @@ function startMatchNow(c0,c1){
   ensureAudio(); hideAll(); game.career=null;
   try{ const n=+(localStorage.getItem('nbHints')||0); if(n<3){ hintT=7; localStorage.setItem('nbHints',n+1); } }catch(e){ if(!hintShown){ hintT=7; hintShown=true; } } if(document.activeElement) document.activeElement.blur();
   if(!chUnlocked(chPick.p1)) chPick.p1='nailoong';
-  newMatch(menuSel.mode,menuSel.diff,menuSel.pts,c0||chPick.p1,c1||(menuSel.mode==='2p'?chPick.p2:resolveOpp())); for(const k in keys) keys[k]=false; for(const k in pressed) delete pressed[k];
+  newMatch(menuSel.mode,menuSel.diff,menuSel.pts,c0||chPick.p1,c1||(menuSel.mode==='2p'?chPick.p2:resolveOpp())); game.bo=menuSel.bo; applyFun(menuSel.fun); for(const k in keys) keys[k]=false; for(const k in pressed) delete pressed[k];
   buildTouch(); tone(660,.1,'triangle',.15); tone(990,.15,'triangle',.15,null,.1);
 }
 function toMenu(){ if(game.mode==='online'||NET.on) netLeave(); hideAll(); $('titleScreen').classList.remove('hidden'); $('touch').classList.add('hidden'); newMatch('demo','normal',11); }
@@ -2398,12 +2503,13 @@ function showWin(){
   if(typeof afterMatch==='function') afterMatch(w);
 }
 $('startBtn').onclick=startFromMenu;
+$('chalBtn').onclick=()=>{ ensureAudio(); chalOpen(); }; $('chalBack').onclick=()=>toMenu();
 $('careerBtn').onclick=()=>{ ensureAudio(); careerOpen(); }; $('shopBtn').onclick=()=>{ ensureAudio(); shopOpen(); };
 $('crBack').onclick=()=>toMenu(); $('crNext').onclick=()=>chOpen('career','career'); $('shopBack').onclick=()=>toMenu(); $('shopReset').onclick=shopReset;
-addEventListener('keydown',e=>{ if(e.code==='Escape'&&(!$('careerScreen').classList.contains('hidden')||!$('shopScreen').classList.contains('hidden'))){ e.preventDefault(); e.stopImmediatePropagation(); toMenu(); } },true);
+addEventListener('keydown',e=>{ if(e.code==='Escape'&&(!$('careerScreen').classList.contains('hidden')||!$('chalScreen').classList.contains('hidden')||!$('shopScreen').classList.contains('hidden'))){ e.preventDefault(); e.stopImmediatePropagation(); toMenu(); } },true);
 refreshCoins();
 $('chGo').onclick=()=>chClose(true); $('chBack').onclick=()=>chClose(false); $('onChar').onclick=()=>chOpen('online','online');
-$('againBtn').onclick=()=>{ if(game.mode==='online') return onlineAgain(); if(game.career) return game.winner===0?careerOpen():careerFight(); hideAll(); newMatch(game.mode,game.diff,game.target,game.cids[0],game.cids[1]); buildTouch(); if(document.activeElement) document.activeElement.blur(); };
+$('againBtn').onclick=()=>{ if(game.mode==='online') return onlineAgain(); if(game.career) return game.winner===0?careerOpen():careerFight(); hideAll(); const pf=game.fun, pb=game.bo; newMatch(game.mode,game.diff,game.target,game.cids[0],game.cids[1]); game.bo=pb; applyFun(pf); buildTouch(); if(document.activeElement) document.activeElement.blur(); };
 $('menuBtn').onclick=toMenu; $('quitBtn').onclick=toMenu;
 refreshHelp();
 $('kbTitleBtn').onclick=()=>kbOpen('title'); $('kbPauseBtn').onclick=()=>kbOpen('pause'); $('kbDone').onclick=kbClose;
@@ -2752,7 +2858,7 @@ function frame(now){
 newMatch('demo','normal',11);
 requestAnimationFrame(frame);
 // test/debug hook
-window.__nb={NET,guestUpdate,netGuestInput,buildTouch,solvePunch,JUMP_REACH_H,netKillZone,netKillOdds,hitCenter,reachOf,toScreen,proj,clouds,netPlay,solveNet,update,pointTo,setupServe,contactQuality,SHOTS,solveShot,solveDrop,canSmash,hitShuttle,SMASH_Y,NET_TOP,proj,SPR,spritesReady,drawDino,ctx,render,game,PROG:()=>PROG,progLoad,addCoins,careerFight,careerOpen,shopOpen,LADDER,THEMES,matchReward,players:()=>players,shuttle,newMatch,startFromMenu:()=>menuSel.mode==='online'?startFromMenu():startMatchNow(),chOpen,chPick,CHARS,CH,trySpecial,ST,charSprites,solveShot,simulate,oppX,SHOTS,DIFF};
+window.__nb={NET,guestUpdate,netGuestInput,buildTouch,solvePunch,JUMP_REACH_H,netKillZone,netKillOdds,hitCenter,reachOf,toScreen,proj,clouds,netPlay,solveNet,update,pointTo,setupServe,contactQuality,SHOTS,solveShot,solveDrop,canSmash,hitShuttle,SMASH_Y,NET_TOP,proj,SPR,spritesReady,drawDino,ctx,render,game,PROG:()=>PROG,CHAL,applyFun,PHYS,startReplay,endReplay,afterMatch,chalOpen,progLoad,addCoins,careerFight,careerOpen,shopOpen,LADDER,THEMES,matchReward,players:()=>players,shuttle,newMatch,startFromMenu:()=>menuSel.mode==='online'?startFromMenu():startMatchNow(),chOpen,chPick,CHARS,CH,trySpecial,ST,charSprites,solveShot,simulate,oppX,SHOTS,DIFF};
 </script>
 </body>
 </html>

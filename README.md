@@ -54,3 +54,11 @@ Racket hits use a real jump-smash sound recorded on Brian's own court, embedded 
 ## Feedback welcome!
 
 Tried it? Tell Brian what felt fun, what felt off, and any bugs you spotted.
+
+## v15.2 / v15.3 – Career, shop, challenges
+- **Career**: 8-stage ladder (Doraemon → Pikachu → Naruto → Batman → Hulk → Wonder Woman → Thor → golden **Champion Nailoong**), best-of-1 early, best-of-3 from stage 5. Beating a stage unlocks that hero.
+- **Coins & shop/locker**: buy characters, racket colours, headbands and court themes. Progress is stored locally (`nailoong.progress.v1`); Reset is in the shop (asks twice).
+- **Challenges & records**: 21 challenges with coin rewards; records for matches, streaks, fastest smash, longest rally, net kills, specials.
+- **Match options**: 11 / 15 / 21 points, 1 game or best of 3, deuce with caps (15 / 21 / 30).
+- **Fun modes** (offline): Smash only, Giant shuttle, Low gravity. Doubles: not yet (TODO).
+- **Game feel**: slow-mo + camera punch on big winners, instant replay (**R**, or automatic after great points – any key skips), rally counter with "Great rally!", confetti on match win.
