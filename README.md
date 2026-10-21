@@ -2,6 +2,20 @@
 
 A little browser badminton game starring Nailoong. No install needed: open the link and play on a laptop, phone or tablet.
 
+## Characters (v15)
+
+Press **Play!** and pick your character (and your opponent, or Random). Every character has six stats (Power, Speed, Jump, Control, Reach, Stamina) and one **special move**.
+
+- **Nailoong** is the reference all-rounder: every stat is 6/10, no weakness.
+- Nailoong-universe characters use the official art, drawn unedited: **Nailoong**, **Berry** and **Bombloong** (暴暴龙, from nailoong.com).
+- The comic/cartoon guests (Spider-Man, Hulk, Iron Man, Captain America, Thor, Black Panther, Flash, Batman, Superman, Wonder Woman, Naruto, Goku, Pikachu, Doraemon) are **original fan-made chibi drawings** made in code by this game, recognisable by their colours and costume motifs. No studio art or logos are used.
+- Every non-champion character has the same 36-point stat budget, so strengths come with weaknesses.
+- **Stamina** (green bar under you): running, jumping, lunging and smashing cost it; it comes back when you stand still and quickly between points. Below 30% you are slower, jump lower, your timing window shrinks and smashes are weaker. At 0 you can't jump-smash.
+- **Special meter** (gold bar): good shots and points fill it. When it is full press **Special** (default **I** for P1, **'** or **Num 6** for P2) to use your character's special.
+- The roster is one table (`CHARS` in index.html): one entry per character with its art, stats and special, so characters are easy to add, rename or remove.
+
+**Fan game notice:** this is a free, non-commercial fan game made as a gift. Nailoong, Bombloong and related characters belong to 第七印象 (Seventh Impression). All other characters belong to their respective owners (Marvel/Disney, DC/Warner Bros., Shueisha, The Pokémon Company, Fujiko Pro, etc.). No affiliation or endorsement is implied.
+
 ## How to play
 
 **All keys can be changed:** press **⌨ Controls** on the title screen or in the pause menu (or "change keys" under the help). Click a key, press the new one (Esc cancels, Delete removes, up to 4 keys per action). If a key is already used, the two actions swap keys or the old one is freed. Anything left unbound shows in red. Your keys are saved in your browser (`localStorage`, key `nailoong.keybinds.v1`), so they're still there next time. The in-game help always shows your current keys. The table below lists the **default** keys.
