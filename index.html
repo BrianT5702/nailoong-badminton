@@ -169,7 +169,7 @@
   .seg button{white-space:nowrap;min-width:5em;box-shadow:none;background:transparent;border-radius:.8em;padding:.38em .9em}
   .seg button.sel{background:#ffd93b;box-shadow:0 .12em 0 #d9a400}
   .seg button:focus-visible{outline:.14em solid #ff7aa2}
-  .card.qm{width:37em}.qm .seg button{padding:.38em .55em;min-width:0}
+  .card.qm{width:37em}.qsub{margin:-.2em 0 .4em;font-size:.85em}.qm .seg button{padding:.38em .55em;min-width:0}
   #setMsg:empty{display:none}
   .kbcap{text-align:left;font-size:.85em;color:#a08060;margin:.5em 0 .1em}.kbcap b{color:#ff7aa2}
   .qm .opt .seg{flex:1}.qm .opt .seg button{flex:1}
@@ -219,7 +219,7 @@
       <button class="big play" id="startBtn">&#9654;&nbsp; Play</button>
       <div class="tiles">
         <button class="tile" id="careerBtn"><i>&#127942;</i><b>Career</b></button>
-        <button class="tile" id="qmBtn"><i>&#127992;</i><b>Quick Match</b></button>
+        <button class="tile" id="qm2Btn"><i>&#128101;</i><b>2 Players</b></button>
         <button class="tile" id="onlineBtn"><i>&#127760;</i><b>Online</b></button>
         <button class="tile" id="charsBtn"><i>&#11088;</i><b>Characters</b></button>
         <button class="tile" id="shopBtn"><i>&#128717;&#65039;</i><b>Shop</b></button>
@@ -233,7 +233,7 @@
   </div>
 
   <div class="overlay hidden" id="qmScreen">
-    <div class="card scr qm"><h1 class="h2">Quick <span>Match</span></h1>
+    <div class="card scr qm"><h1 class="h2">Match <span>Setup</span></h1><div class="sub qsub">Pick players, difficulty and game mode, then choose your character.</div>
       <div class="opt"><label>Players</label><div class="seg" data-g="mode"><button data-mode="1p" class="sel">1 Player</button><button data-mode="2p">2 Players</button></div></div>
       <div class="opt"><label>Difficulty</label><div class="seg"><button data-diff="easy">Easy</button><button data-diff="normal" class="sel">Normal</button><button data-diff="hard">Hard</button></div></div>
       <div class="opt"><label>Points</label><div class="seg"><button data-pts="11" class="sel">11</button><button data-pts="15">15</button><button data-pts="21">21</button></div></div>
@@ -801,7 +801,7 @@ addEventListener('keydown',e=>{
   if(kbHas('global','replay',e.code) && !e.repeat && (game.state==='point'||game.state==='serve') && game.mode!=='online' && game.mode!=='demo' && !game.paused) startReplay();
   if(tg&&tg.tagName==='INPUT') return;
   if(kbHas('global','pause',e.code) && !e.repeat && game.mode!=='demo' && game.state!=='win') togglePause();
-  if(e.code==='Enter' && game.mode==='demo' && !$('titleScreen').classList.contains('hidden') && !(tg&&tg.tagName==='BUTTON')){ e.preventDefault(); startFromMenu(); }
+  if(e.code==='Enter' && game.mode==='demo' && !$('titleScreen').classList.contains('hidden') && !(tg&&tg.tagName==='BUTTON')){ e.preventDefault(); $('startBtn').click(); }
 });
 addEventListener('keyup',e=>{ keys[e.code]=false; });
 addEventListener('blur',()=>{ for(const k in keys) keys[k]=false; if(game.mode!=='demo'&&game.mode!=='online'&&game.state!=='win'&&!game.paused) togglePause(); });
@@ -2440,7 +2440,7 @@ function chRender(){
   chInfo(cur);
   document.querySelectorAll('#chTabs button').forEach(b=>b.onclick=()=>{ chUI.tab=b.dataset.tab; chRender(); kbFocus('#chGrid .chc.sel')||kbFocus('#chGrid .chc'); });
   document.querySelectorAll('#chGrid .chc').forEach(b=>{ b.onclick=()=>chChoose(b.dataset.ch); b.onfocus=()=>chInfo(b.dataset.ch); b.onmouseenter=()=>chInfo(b.dataset.ch); b.onmouseleave=()=>chInfo(chPick[chUI.tab]); });
-  $('chGo').innerHTML=chUI.mode==='online'?'Done':chUI.mode==='career'?'Fight! &#9829;':'Play! &#9829;';
+  $('chGo').innerHTML=chUI.mode==='online'?'Done':chUI.mode==='career'?'Fight! &#9829;':'Start match &#9829;';
 }
 function chInfo(id){ const e=$('chInfo'); if(id==='random'){ e.innerHTML='<h3>Random</h3><p>A random opponent each match.</p>'; return; }
   const ch=CH[id]; if(!ch) return; const lock=chUI.mode!=='online'&&!chUnlocked(id)&&chUI.tab!=='opp';
@@ -2762,7 +2762,10 @@ const MENU_SCR=['qmScreen','setScreen','howScreen'];
 function showScr(id,focus){ hideAll(); $(id).classList.remove('hidden'); if(focus) kbFocus(focus); }
 function backToTitle(){ hideAll(); $('titleScreen').classList.remove('hidden'); }
 function openOnline(){ ensureAudio(); hideAll(); onShow('main'); onStatus(''); netCharLine(); setTimeout(()=>$('onCode').focus(),0); }
-$('qmBtn').onclick=()=>{ ensureAudio(); if(menuSel.mode==='online') menuSel.mode=document.querySelector('#qmScreen button[data-mode].sel').dataset.mode; showScr('qmScreen','#qmGo'); funDescUpd(); };
+function openSetup(mode){ if(mode){ menuSel.mode=mode; } $('qmScreen').querySelector(`button[data-mode="${menuSel.mode==='2p'?'2p':'1p'}"]`).click(); showScr('qmScreen','#qmGo'); funDescUpd(); }
+$('qm2Btn').onclick=()=>{ ensureAudio(); openSetup('2p'); };
+$('startBtn').onclick=()=>{ ensureAudio(); openSetup(menuSel.mode==='online'?'1p':null); };
+const _qmOld=()=>{ ensureAudio(); if(menuSel.mode==='online') menuSel.mode=document.querySelector('#qmScreen button[data-mode].sel').dataset.mode; showScr('qmScreen','#qmGo'); funDescUpd(); };
 $('qmBack').onclick=backToTitle;
 $('qmGo').onclick=()=>{ ensureAudio(); hideAll(); chOpen(menuSel.mode,'qm'); };
 $('onlineBtn').onclick=openOnline;
@@ -2790,7 +2793,11 @@ addEventListener('keydown',e=>{ const dirs={ArrowDown:1,ArrowRight:1,ArrowUp:-1,
   const scr=['titleScreen',...MENU_SCR].find(id=>!$(id).classList.contains('hidden')); if(!scr) return; const t=e.target; if(t&&t.tagName==='INPUT') return;
   const bs=[...document.querySelectorAll(`#${scr} button`)].filter(b=>!b.disabled&&b.offsetParent); if(!bs.length) return;
   e.preventDefault(); const i=bs.indexOf(document.activeElement); (bs[(i<0?0:i+dirs[e.code]+bs.length)%bs.length]).focus(); });
-$('titleFoot').textContent='Press Enter to play \u00b7 arrows to move \u00b7 Esc to go back';
+$('titleFoot').textContent='Play = choose players, difficulty & game mode, then your character \u00b7 Enter to start \u00b7 Esc to go back';
+// v15.2: remember the last match setup
+const MS_KEY='nailoong.match.v1';
+try{ const o=JSON.parse(localStorage.getItem(MS_KEY)||'null'); if(o) for(const [k,attr] of [['mode','mode'],['diff','diff'],['pts','pts'],['bo','bo'],['fun','fun']]){ const b=o[k]!=null&&document.querySelector(`#qmScreen button[data-${attr}="${o[k]}"]`); if(b) b.click(); } }catch(e){}
+document.querySelectorAll('#qmScreen .seg button').forEach(b=>b.addEventListener('click',()=>{ try{ localStorage.setItem(MS_KEY,JSON.stringify({mode:menuSel.mode,diff:menuSel.diff,pts:menuSel.pts,bo:menuSel.bo,fun:menuSel.fun})); }catch(e){} }));
 funDescUpd(); setRender();
 refreshHelp();
 $('kbTitleBtn').onclick=()=>kbOpen('settings'); $('kbPauseBtn').onclick=()=>kbOpen('pause'); $('kbDone').onclick=kbClose;
