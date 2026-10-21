@@ -62,3 +62,12 @@ Tried it? Tell Brian what felt fun, what felt off, and any bugs you spotted.
 - **Match options**: 11 / 15 / 21 points, 1 game or best of 3, deuce with caps (15 / 21 / 30).
 - **Fun modes** (offline): Smash only, Giant shuttle, Low gravity. Doubles: not yet (TODO).
 - **Game feel**: slow-mo + camera punch on big winners, instant replay (**R**, or automatic after great points – any key skips), rally counter with "Great rally!", confetti on match win.
+
+## v15.1 – New hero art, menus, special effects, stamina
+- **Hero art**: the 14 guest heroes are new cute chibi mascot renders (original fan art made for this game, generated from text descriptions in the Nailoong toy style; no studio art or logos copied), 512 px tall WebP embedded in the file.
+- **Menus**: clean title screen (Play, Career, Quick Match, Online, Characters, Shop, Challenges, How to Play, Settings), a Quick Match setup screen with a **Game mode** row (Normal / Smash Only / Giant Shuttle / Low Gravity, with a description), a Settings screen (volumes, landing ring, slow-motion effects on/off, fullscreen, controls, reset progress) and a tabbed How to Play. Esc goes back on every screen.
+- **Special moves** now have big effects: name banner, screen-edge glow, aura, and themed shot effects (lightning, spin glitter/web, shield dome, afterimages, wind aura, repulsor trail, milk sparkle). The online guest sees them too.
+- **Slow motion** is now a short freeze-frame (60–110 ms) plus a 0.25 s ease back to full speed, offline only; can be switched off in Settings.
+- **Stamina**: moving is free; every shot costs a little (jump smash 12, smash 9, net kill 7, special 10, punch 5, drop/net 4, clear/lift 2.5), lunge 5, jump 4. Gold ⚡ stamina bar and purple-pink ★ special bar under each player.
+- Controls screen: "Menu keys" (pause, mute, fullscreen, landing ring, replay) and clearer reset buttons.
+- Storage: `nailoong.settings.v1` (slow-motion setting).
