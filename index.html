@@ -170,6 +170,9 @@
   .seg button.sel{background:#ffd93b;box-shadow:0 .12em 0 #d9a400}
   .seg button:focus-visible{outline:.14em solid #ff7aa2}
   .card.qm{width:40em}
+  .rkpick{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:.25em;justify-content:center}.rkpick button{padding:.1em;border-radius:50%;border:2px solid transparent;background:#fff}.rkpick button.sel{border-color:#ff6f9f}.rkpick i{display:block;width:2.2em;height:2.2em;border-radius:50%;background-size:cover}
+  .rkhead{grid-column:1/-1;text-align:center;font-size:.85em;color:#806040}.item.rki img{height:3.2em;max-width:100%}.item .rkm{font-size:.68em;color:#a08060;min-height:2.4em}
+  .chinfo .sfx{display:grid;grid-template-columns:1fr 1fr;gap:.1em .5em;font-size:.72em;color:#806040;margin:.25em 0}.chinfo .sfx b{color:#e0558a}
   .chinfo .rk{display:flex;align-items:center;gap:.4em;font-size:.75em;color:#a08060;margin:.2em 0}.chinfo .rk img{height:4.2em}
   .crcard{display:flex;flex-direction:column;max-height:94%;overflow:hidden!important}#crList{overflow:auto;flex:1;min-height:0;padding:0 .2em}.crcard .crow{padding:.2em .5em;margin:.2em 0}.crcard h1{margin:.1em 0 0}.crcard>*{flex-shrink:0}.crcard>#crList{flex-shrink:1}.crcard .sub{margin:.15em 0 .3em}
   .unl{font-size:.78em;margin-top:.15em;display:flex;flex-wrap:wrap;gap:.3em;align-items:center;color:#a08060}.uc{display:inline-flex;align-items:center;gap:.2em;background:#fff;border-radius:1em;padding:.05em .45em .05em .1em;opacity:.7}.uc.got{opacity:1;color:#3f9a55}.uc i{width:1.4em;height:1.4em;border-radius:50%;background:#fff center/cover;display:inline-block}.ua{color:#d9668a;font-weight:bold}.lvl{font-size:.75em;background:#ffd93b;border-radius:.6em;padding:0 .4em;color:#6b3f00}.own.lk{color:#c08060}.qsub{margin:-.2em 0 .4em;font-size:.85em}.qm .seg button{padding:.38em .55em;min-width:0}
@@ -907,7 +910,7 @@ const SPECIALS={
   wind:'Second wind: stamina refills to full and you run faster for 3 s.',
   drive:'Your next clear is a perfect, extra-fast punch clear.'
 };
-const chD=(p,i)=>((p&&p.ch?p.ch.st[i]:6)-6);   // stat delta vs the reference (0 = Nailoong)
+const chD=(p,i)=>((p&&p.ch?p.ch.st[i]:6)-6)+(p&&p.rk?(p.rk.d[i]||0):0);   // stat delta vs the reference (0 = Nailoong) + v15.4 racket modifier   // stat delta vs the reference (0 = Nailoong)
 
 /* ================= State ================= */
 const game={mode:'demo',diff:'normal',target:11,state:'serve',score:[0,0],server:0,lastHitter:-1,hitId:0,timer:0,rally:0,
@@ -938,7 +941,7 @@ DIFF.easy=Object.assign({},DIFF.oldNormal); DIFF.normal=diffLerp(DIFF.oldNormal,
 
 function makePlayer(side,chId,name,ai){
   const ch=CH[chId]||CH.nailoong, skinKey=ch.src==='berry'?'berry':'nai';
-  return {ch,st:ST.max,meter:0,armed:null,perfN:0,boostT:0,side,f:side===0?1:-1,x:0,y:GROUND,vx:0,vy:0,onGround:true,swingT:-1,hitDone:false,justSwung:false,
+  return {ch,st:ST.max+7*((ch.st?ch.st[5]:6)-6),meter:0,armed:null,perfN:0,boostT:0,side,f:side===0?1:-1,x:0,y:GROUND,vx:0,vy:0,onGround:true,swingT:-1,hitDone:false,justSwung:false,
     skin:Object.assign({},SKINS[skinKey],{frame:ch.frame,grip:ch.grip,name:ch.name,logo:ch.id}),name,squash:0,blink:rand(1,3),blinkT:0,mood:null,moodT:0,run:0,input:{},wantJump:false,wantShot:null,req:'clear',
     ai:ai?{seen:-1,react:0,err:0,miss:false,jump:false,leave:false,diff:ai}:null,
     minX:side===0?COURT_L-30:NET_X+NET_GAP+FRONT_G,maxX:side===0?NET_X-NET_GAP-FRONT_G:COURT_R+30};
@@ -950,6 +953,7 @@ function newMatch(mode,diff,target,c0,c1){
   const nm=(id,t)=>CH[id].name+(mode==='2p'?` (${t})`:'');
   players=[ makePlayer(0,c0, nm(c0,'P1'), mode==='demo'?'normal':null),
             makePlayer(1,c1, nm(c1,'P2'), (mode==='2p'||mode==='online')?null:(mode==='demo'?'normal':diff)) ];
+  if(mode==='1p'||mode==='2p') applyRk(players[0],rkEq(c0)); if(mode==='2p') applyRk(players[1],rkEq(c1));   // v15.4 your saved racket for that character
   game.bo=1; game.games=[0,0]; game.career=null; applyFun('none'); game.mt=mtNew(); game.maxRally=0; game.rec=[]; game.lastRec=null; game.replay=null; game.pendReplay=false;
   if(mode==='1p'||mode==='2p'||mode==='online'){ const P=players[mode==='online'?NET.side:0], rk=cosmOf('racket'), bd=cosmOf('band');   // v15.2 cosmetics (your player only)
     if(rk.frame) Object.assign(P.skin,{frame:rk.frame,grip:rk.grip}); if(bd.col) P.band=bd.col; }
@@ -1169,7 +1173,7 @@ function solveNet(x0,y0,dir,q=1){
 }
 const SW_START=.03, SW_PEAK=.11, SW_END=.22;
 function contactQuality(p,d,reach){
-  if(p.ai){ const r=DIFF[p.ai.diff].q, late=p.ai.lateId===game.hitId; return {q:clamp(rand(r[0],r[1])+.015*chD(p,3)-(tired(p)?.06:0),0,1)*(late?.65:1),label:null}; }
+  if(p.ai){ const r=DIFF[p.ai.diff].q, late=p.ai.lateId===game.hitId; return {q:clamp(rand(r[0],r[1])+.025*chD(p,3)-(tired(p)?.06:0),0,1)*(late?.65:1),label:null}; }
   const e=p.swingT-SW_PEAK, tq=clamp(1-Math.abs(e)/(.1*pCtl(p)),0,1);
   const cq=clamp(1-(d-reach*.35)/(reach*.65),0,1);
   const q=tq*.55+cq*.45;
@@ -1215,7 +1219,7 @@ function hitShuttle(p,d=0,reach=REACH){
         if(sim.crossY===null||sim.crossY>cy) lo=m; else { hi=m; c={vx,vy,sim}; } } return c; };   // lowest launch angle whose path crosses the net at height cy
     for(let sp=spMax; sp>=14*PX_M && !v; sp-=1.5*PX_M){ const c=atCross(sp,NET_TOP-margin); if(c && (c.sim.landX-back)*dir<=0 && (c.sim.landX-NET_X)*dir>2.2*PX_M) v={vx:c.vx,vy:c.vy}; }
     let pNet=tier===2?.22*below:tier===1?.08+.35*below:.4+.3*clamp((.6-q)/.4,0,1)+.15*below;
-    pNet*=clamp(1-.08*chD(p,3),.4,1.6); if(spec==='thunder') pNet*=.3;
+    pNet*=clamp(1-.1*chD(p,3),.4,1.6); if(tired(p)) pNet+=p.st<ST.vlow?.25:.12; if(spec==='thunder') pNet*=.3;   // v15.4: tired flat attacks find the tape more
     if(p.ai) pNet=Math.max(pNet,DIFF[p.ai.diff].smart?.05:.12);   // even Hard nets the odd one: it's a risky shot
     const roll=Math.random(); let fo=null;
     if(!v) type='drive';
@@ -1359,7 +1363,7 @@ function updatePlayer(p,dt){
   const live=game.state!=='point'&&game.state!=='win';
   if(i.lunge && live && p.onGround && p.lungeCD<=0 && !(p.lungeT>0)){
     const ld=dir||(Math.abs(p.vx)>30?Math.sign(p.vx):p.f);
-    p.vx=ld*LUNGE_V*(p.ai?DIFF[p.ai.diff].speed:1)*(1+.02*chD(p,1))*(tired(p)?.9:1); staCost(p,ST.lunge); p.lungeT=LUNGE_T; p.recT=LUNGE_REC; p.lungeCD=LUNGE_CD; p.lungeDir=ld;
+    p.vx=ld*LUNGE_V*(p.ai?DIFF[p.ai.diff].speed:1)*(1+.04*chD(p,4))*(tired(p)?.9:1); staCost(p,ST.lunge); p.lungeT=LUNGE_T; p.recT=LUNGE_REC; p.lungeCD=LUNGE_CD; p.lungeDir=ld;
     sfx.jump(); dust(p.x,GROUND,8); }
   let tv=dir*sp, skid=false;
   if(p.lungeT>0){ p.lungeT-=dt; tv=p.vx; }                          // committed: no steering mid-lunge
@@ -1395,7 +1399,7 @@ function updatePlayer(p,dt){
 function hitCenter(p){ const l=(p.lungeT>0||p.recT>0)?1:0;
   const nk=p.req==='smash'&&p.swingT>=0&&Math.abs(p.x-NET_X)<NK_PX;   // net kill: arm up, racket above the tape
   return {x:p.x+p.f*25+(l?(p.lungeDir||0)*9:0), y:p.y-(nk?(p.onGround?122:140):(p.onGround?75:100))+l*12}; }   // airborne = arm stretched overhead
-function reachOf(p){ return ((p.ai?REACH:REACH+5)+1.6*chD(p,4)+((p.lungeT>0||p.recT>0)?LUNGE_REACH:0))*PHYS.reach; }
+function reachOf(p){ return ((p.ai?REACH:REACH+5)+3*chD(p,4)+((p.lungeT>0||p.recT>0)?LUNGE_REACH*(1+.08*chD(p,4)):0))*PHYS.reach; }
 
 /* ================= AI ================= */
 function aiThink(p,dt){
@@ -1422,6 +1426,7 @@ function aiThink(p,dt){
         if(s.type==='flat'){ const sq=s.q===undefined?1:s.q, pace=clamp((Math.hypot(s.vx,s.vy)/PX_M-16)/26,0,1);   // v14.2: fast flat attack: the faster and cleaner, the more often even Hard is beaten for pace
           a.react=d.sReact*rand(.8,1.15)*(.6+.4*sq); a.miss=Math.random()<Math.min(.92,(d.fMiss??.4)*FLAT_MISS/2.4)*pace*sq; a.jump=false; }
         if(s.type==='drop'||s.type==='block'||s.type==='net') a.jump=false;
+        if(ATTACK_T.has(s.type)&&a.miss&&tired(players[1-p.side])&&Math.random()<(players[1-p.side].st<ST.vlow?.6:.35)) a.miss=false;   // v15.4: a tired attacker's smash is slower and easier to pick up
         if(ATTACK_T.has(s.type)){ const k=(1+.07*chD(players[1-p.side],0))*(1-.06*chD(p,4));   // v15: power of the hitter vs reach of the defender
           if(k>1&&!a.miss&&Math.random()<(k-1)*.35) a.miss=true; else if(k<1&&a.miss&&Math.random()<(1-k)*1.5) a.miss=false;
           if(s.special==='thunder'){ a.react*=1.3; if(Math.random()<.45) a.miss=true; } }
@@ -2031,6 +2036,11 @@ function drawRacket(sk,fs=1){
   ell(hx,0,rx,Math.max(.5,ry)); ctx.strokeStyle='#22222b'; ctx.lineWidth=1.45; ctx.stroke();
   ctx.strokeStyle=sk.frame; ctx.lineWidth=.95; ell(hx,0,rx,Math.max(.5,ry)); ctx.stroke();
   ctx.strokeStyle='rgba(255,255,255,.45)'; ctx.lineWidth=.3; ctx.beginPath(); ctx.ellipse(hx,0,rx,Math.max(.5,ry),0,-2.5,-1.2); ctx.stroke();
+  if(sk.rkT){ ctx.save(); const R_=Math.max(.5,ry);   // v15.4 type cue + level trim
+    if(sk.rkT==='atk'){ ctx.strokeStyle='#e8303a'; ctx.lineWidth=1.1; ctx.beginPath(); ctx.ellipse(hx,0,rx-.9,Math.max(.3,R_-.9),0,-2.2,-.95); ctx.stroke(); ctx.beginPath(); ctx.ellipse(hx,0,rx-.9,Math.max(.3,R_-.9),0,.95,2.2); ctx.stroke(); }
+    else if(sk.rkT==='spd'){ ctx.strokeStyle='rgba(80,200,255,.9)'; ctx.lineWidth=.45; ctx.beginPath(); for(const y of [-.45,0,.45]){ ctx.moveTo(hx-rx-1.2,y*R_); ctx.lineTo(hx-rx-5.5+Math.abs(y)*3,y*R_); } ctx.stroke(); }
+    else { ctx.strokeStyle='rgba(255,255,255,.85)'; ctx.lineWidth=.35; ell(hx,0,rx-1,Math.max(.3,R_-1)); ctx.stroke(); }
+    ctx.fillStyle=RK_TRIM[sk.rkL]||'#ccc'; ctx.strokeStyle='#4a3a10'; ctx.lineWidth=.25; ctx.beginPath(); ctx.ellipse(hx+rx+.2,0,1.8,Math.max(.8,3.2*fs),0,0,7); ctx.fill(); ctx.stroke(); ctx.restore(); }
   if(sk.logo&&fs>.3){ ctx.save(); ctx.translate(hx,0); ctx.scale(1,fs); rkLogo(sk.logo); ctx.restore(); }   // v15.3 per-character string-bed symbol
   ctx.restore();
 }
@@ -2062,8 +2072,8 @@ function rkLogo(id){ const c=ctx; c.lineJoin='round'; c.lineCap='round';
     case 'golden': c.beginPath(); [[-3.6,2.4],[-3.6,-1.6],[-1.8,.2],[0,-3],[1.8,.2],[3.6,-1.6],[3.6,2.4]].forEach(([x,y])=>c.lineTo(x,y)); c.closePath(); c.fillStyle='#ffd23a'; c.fill(); c.strokeStyle='#8a5a00'; c.lineWidth=.3; c.stroke(); break;
   } }
 const RKURL={};
-function racketURL(ch){ if(RKURL[ch.id]) return RKURL[ch.id]; const cv=mkCv(220,84), sv=ctx; ctx=cv.getContext('2d'); ctx.translate(14,42); const k_=3.5/(SPR_H/118*RK); ctx.scale(k_,k_);
-  drawRacket({frame:ch.frame,grip:ch.grip,logo:ch.id},1); ctx=sv; return RKURL[ch.id]=cv.toDataURL(); }
+function racketURL(ch,rk=''){ const K=ch.id+':'+rk; if(RKURL[K]) return RKURL[K]; const cv=mkCv(220,84), sv=ctx; ctx=cv.getContext('2d'); ctx.translate(14,42); const k_=3.5/(SPR_H/118*RK); ctx.scale(k_,k_);
+  drawRacket({frame:ch.frame,grip:ch.grip,logo:ch.id,rkT:RKT[rk]?RKT[rk].t:null,rkL:RKT[rk]?RKT[rk].lv:0},1); ctx=sv; return RKURL[K]=cv.toDataURL(); }
 function drawDino(p){
   const sk=p.skin;
   let sx=1, sy=1;
@@ -2306,20 +2316,21 @@ function render(){
 const SET_KEY='nailoong.settings.v1'; const SET={slowmo:true}; try{ Object.assign(SET,JSON.parse(localStorage.getItem(SET_KEY)||'{}')); }catch(e){}
 function saveSet(){ try{ localStorage.setItem(SET_KEY,JSON.stringify(SET)); }catch(e){} }
 function hitFreeze(t){ if(game.mode==='online'||!SET.slowmo) return; game.hitStop=Math.max(game.hitStop||0,t); }
-const ST={max:100,run:0,lunge:5,jump:4,regenStand:8,regenMove:8,regenFast:3,regenBreak:30,low:30,vlow:12,
-  shot:{jsmash:12,smash:9,flat:10,netkill:7,kill:7,special:10,punch:5,drive:5,drop:4,block:4,net:4,push:4,clear:2.5,lift:2.5,serve:1}};
+const ST={max:100,run:0,lunge:5,jump:4,regenStand:5,regenMove:5,regenFast:3,regenBreak:12,low:30,vlow:12,
+  shot:{jsmash:20,smash:15,flat:17,netkill:12,kill:12,special:16,punch:8,drive:8,drop:7,block:7,net:7,push:7,clear:4,lift:4,serve:1.5}};   // v15.4: ~1.6-1.8x v15.3
 const tired=p=>p.st<ST.low;
-const pSpd=p=>(1+.04*chD(p,1))*(tired(p)?.88:1)*(p.boostT>0?(p.boostK||1.35):1);
-const pJmp=p=>(1+.022*chD(p,2))*(tired(p)?.88:1);
-const pPow=p=>(1+.025*chD(p,0))*(p.st<ST.vlow&&game.mode!=='demo'?.84:tired(p)?.9:1);
-const pCtl=p=>(1+.06*chD(p,3))*(p.st<ST.vlow&&game.mode!=='demo'?.65:tired(p)?.8:1);
-function staCost(p,v){ if(game.mode==='demo'||game.noStamina) return; p.st=Math.max(0,p.st-v*(1-.08*chD(p,5))); }
+const stMax=p=>ST.max+7*chD(p,5);   // v15.4: stamina stat = bigger tank (79..121) + faster regen
+const pSpd=p=>(1+.045*chD(p,1))*(tired(p)?.88:1)*(p.boostT>0?(p.boostK||1.35):1);
+const pJmp=p=>(1+.04*chD(p,2))*(tired(p)?.88:1);
+const pPow=p=>(1+.04*chD(p,0))*(p.st<ST.vlow&&game.mode!=='demo'?.76:tired(p)?.86:1);
+const pCtl=p=>(1+.08*chD(p,3))*(p.st<ST.vlow&&game.mode!=='demo'?.55:tired(p)?.72:1);
+function staCost(p,v){ if(game.mode==='demo'||game.noStamina) return; p.st=Math.max(0,p.st-v*(1-.05*chD(p,5))*(1+(p.rk?p.rk.cost:0))); }
 function staminaTick(p,dt){
   p.boostT=Math.max(0,(p.boostT||0)-dt); p.spFx=Math.max(0,(p.spFx||0)-dt);
   const rg=(1+.08*chD(p,5))*dt;
-  if(game.state!=='rally'){ p.st=Math.min(ST.max,p.st+ST.regenBreak*rg); return; }
+  if(game.state!=='rally'){ p.st=Math.min(stMax(p),p.st+ST.regenBreak*rg); return; }
   const mv=Math.abs(p.vx);
-  if(p.onGround&&!(p.lungeT>0)) p.st=Math.min(ST.max,p.st+(mv<40?ST.regenStand:mv<PSPEED*.55?ST.regenMove:ST.regenFast)*rg);
+  if(p.onGround&&!(p.lungeT>0)) p.st=Math.min(stMax(p),p.st+(mv<40?ST.regenStand:mv<PSPEED*.55?ST.regenMove:ST.regenFast)*rg);
 }
 function gainMeter(p,v){ if(game.mode==='demo'||p.armed||p.perfN>0) return; const was=p.meter; p.meter=Math.min(100,p.meter+v);
   if(was<100&&p.meter>=100){ popup(p.x,p.y-175,'\u2605 Special ready!',p.ch.col,20); if(!NET.fxSkip) tone(880,.08,'triangle',.12,1320); } }
@@ -2328,7 +2339,7 @@ function trySpecial(p){
   const t=p.ch.sp; p.meter=0; p.spFx=.8; p.spN=(p.spN||0)+1; game.spUsed=(game.spUsed||0)+1;
   if(t==='perfect') p.perfN=3;
   else if(t==='dash'){ p.lungeCD=0; p.recT=0; p.lungeT=0; p.boostT=1.6; p.boostK=1.4; dust(p.x,GROUND,10); }
-  else if(t==='wind'){ p.st=ST.max; p.boostT=3; p.boostK=1.2; }
+  else if(t==='wind'){ p.st=stMax(p); p.boostT=3; p.boostK=1.2; }
   else p.armed=t;   // thunder / spin / wall / drive wait for the right shot
   for(let i=0;i<10;i++) spark(p.x,p.y-90,p.ch.col);   // v15.1: the big name banner + aura come from the SPFX layer
   if(!NET.fxSkip){ tone(520,.18,'sawtooth',.08,1040); tone(780,.22,'triangle',.12,1560,.06); }
@@ -2339,7 +2350,7 @@ function trySpecial(p){
 function drawPlayerBars(p){
   if(game.mode==='demo') return;
   // v15.1: ⚡ stamina = gold (flashes orange/red when tired), ★ special = purple→pink, glowing "★ READY" when full
-  const w=84, x=p.x-w/2+8, y=GROUND+18, f=clamp(p.st/ST.max,0,1), low=tired(p), m=clamp(p.meter/100,0,1), full=m>=1;
+  const w=84, x=p.x-w/2+8, y=GROUND+18, f=clamp(p.st/stMax(p),0,1), low=tired(p), m=clamp(p.meter/100,0,1), full=m>=1;
   ctx.save();
   ctx.fillStyle='rgba(255,255,255,.86)'; rr(x-22,y-4,w+28,25,8); ctx.fill();
   ctx.font=`bold 11px ${UIF}`; ctx.textAlign='center'; ctx.textBaseline='middle';
@@ -2493,10 +2504,14 @@ function chRender(){
   document.querySelectorAll('#chGrid .chc').forEach(b=>{ b.onclick=()=>chChoose(b.dataset.ch); b.onfocus=()=>chInfo(b.dataset.ch); b.onmouseenter=()=>chInfo(b.dataset.ch); b.onmouseleave=()=>chInfo(chPick[chUI.tab]); });
   $('chGo').innerHTML=chUI.mode==='online'?'Done':chUI.mode==='career'?'Fight! &#9829;':'Start match &#9829;';
 }
+// v15.4: what the stats really mean in play (same formulas the game uses)
+function statFx(ch){ const p={ch,st:999,boostT:0,lungeT:0,recT:0}, f=x=>x.toFixed(1);
+  return {smash:f(60*pPow(p)), run:f(PSPEED*pSpd(p)/PX_M), jump:Math.round(JUMP_V*JUMP_V*pJmp(p)**2/(2*PG)/PX_M*100), win:Math.round(100*pCtl(p)), reach:Math.round(reachOf(p)/PX_M*100), sta:stMax(p)}; }
+function statFxHTML(ch){ const e=statFx(ch); return `<div class="sfx"><span>\uD83D\uDCA5 Smash <b>${e.smash}</b> m/s</span><span>\uD83D\uDC5F Run <b>${e.run}</b> m/s</span><span>\u2B06 Jump <b>${e.jump}</b> cm</span><span>\uD83C\uDFAF Timing <b>\u00b1${e.win}</b> ms</span><span>\uD83C\uDFF8 Reach <b>${e.reach}</b> cm</span><span>\u26A1 Stamina <b>${e.sta}</b></span></div>`; }
 function chInfo(id){ const e=$('chInfo'); if(id==='random'){ e.innerHTML='<h3>Random</h3><p>A random opponent each match.</p>'; return; }
   const ch=CH[id]; if(!ch) return; const lock=chUI.mode!=='online'&&!chUnlocked(id)&&chUI.tab!=='opp';
-  e.innerHTML=`<div class="pt bigp" style="background-image:url(${portURL(ch)});border-color:${ch.col}"></div><h3 style="color:${ch.col}">${kbEsc(ch.name)}</h3><p>${kbEsc(ch.bio)}</p>${statBars(ch.st,true)}
-    <div class="rk"><img alt="" src="${racketURL(ch)}"><span>Signature racket</span></div><div class="sp"><b>\u2605 ${kbEsc(ch.spName)}</b><br>${SPECIALS[ch.sp]}</div>`+(lock?`<div class="lockmsg">\uD83D\uDD12 ${typeof unlockText==='function'?unlockText(id):'Locked'}</div>`:'')+(ch.src==='draw'?'<div class="fan">Fan-made chibi art; character belongs to its owner.</div>':'');
+  e.innerHTML=`<div class="pt bigp" style="background-image:url(${portURL(ch)});border-color:${ch.col}"></div><h3 style="color:${ch.col}">${kbEsc(ch.name)}</h3><p>${kbEsc(ch.bio)}</p>${statBars(ch.st,true)}${statFxHTML(ch)}
+    <div class="rk"><img alt="" src="${racketURL(ch,rkEq(id))}"><span><b>${rkName(rkEq(id))}</b><br>${rkMods(rkEq(id))}</span></div><div class="sp"><b>\u2605 ${kbEsc(ch.spName)}</b><br>${SPECIALS[ch.sp]}</div>`+(lock?`<div class="lockmsg">\uD83D\uDD12 ${typeof unlockText==='function'?unlockText(id):'Locked'}</div>`:'')+(ch.src==='draw'?'<div class="fan">Fan-made chibi art; character belongs to its owner.</div>':'');
 }
 function chChoose(id){
   if(id!=='random'&&chUI.mode!=='online'&&chUI.tab!=='opp'&&!chUnlocked(id)){ chInfo(id); tone(200,.1,'square',.06); return; }
@@ -2521,6 +2536,17 @@ addEventListener('keydown',e=>{
 
 /* ================= v15.2 Progress: coins, unlocks, cosmetics, career ================= */
 const PROG_KEY='nailoong.progress.v1', CH_PRICE=200;
+// v15.4 performance rackets (bought with coins, per character). d = stat-point equivalents [pow,spd,jmp,ctl,rea,sta]; cost = stamina cost per shot
+const RKT={
+  atk1:{t:'atk',lv:1,name:'Attack',d:[.75,-1,0,0,0,0],cost:.15,price:80},  atk2:{t:'atk',lv:2,name:'Attack',d:[1.1,-.85,0,0,0,0],cost:.1,price:180}, atk3:{t:'atk',lv:3,name:'Attack',d:[1.5,-.75,0,0,0,0],cost:.06,price:350},
+  spd1:{t:'spd',lv:1,name:'Speed',d:[-1,.75,0,0,0,0],cost:-.08,price:80},   spd2:{t:'spd',lv:2,name:'Speed',d:[-.85,1.1,0,0,0,0],cost:-.1,price:180},   spd3:{t:'spd',lv:3,name:'Speed',d:[-.75,1.5,0,0,0,0],cost:-.12,price:350},
+  bal1:{t:'bal',lv:1,name:'Balanced',d:[.3,.3,0,.2,0,0],cost:0,price:100},   bal2:{t:'bal',lv:2,name:'Balanced',d:[.5,.5,0,.4,0,0],cost:0,price:220},    bal3:{t:'bal',lv:3,name:'Balanced',d:[.7,.7,0,.6,0,0],cost:-.03,price:400}};
+const RK_LV=['','Beginner','Intermediate','Professional'], RK_TRIM=['','#cd7f32','#c9d1dc','#ffd23a'];
+const rkName=id=>RKT[id]?`${RKT[id].name} \u00b7 ${RK_LV[RKT[id].lv]}`:'Standard (free)';
+function rkMods(id){ const r=RKT[id]; if(!r) return 'No modifiers'; const N=['Power','Speed','Jump','Control','Reach','Stamina'], o=[];
+  r.d.forEach((v,i)=>{ if(v) o.push(`${v>0?'+':'\u2212'}${Math.abs(v)} ${N[i]}`); }); if(r.cost) o.push(`${r.cost>0?'+':'\u2212'}${Math.round(Math.abs(r.cost)*100)}% shot stamina`); return o.join(', '); }
+function rkEq(chId){ const e=PROG.rk&&PROG.rk[chId]; return e&&RKT[e.eq]&&e.own.includes(e.eq)?e.eq:''; }
+function applyRk(p,id){ p.rk=RKT[id]?Object.assign({id},RKT[id]):null; p.skin.rkT=p.rk?p.rk.t:null; p.skin.rkL=p.rk?p.rk.lv:0; }
 const START_UNLOCK=['nailoong','berry'];   // v15.3: everyone else unlocks in the Tournament
 const THEMES={
   classic:{name:'Sunny Park',price:0,sky:['#bfe6ff','#e8f4ff','#ffe3ee'],sun:1,hill:'#d5f0c8',wall:['#ffc2d6','#ffa9c4'],wallTop:'#ff8fb1',ban:['NAILOONG CUP','LOVE ALL'],banC:['#e8a000','#ff6f9f'],floor:['#a9dcb0','#7cc58a'],apron:'#8fcf9b',court:'#5fb57d'},
@@ -2553,10 +2579,11 @@ TOUR_T.forEach((u,i)=>{ DIFF['t'+(i+1)]=u<=1?diffLerp(DIFF.oldNormal,DIFF.hard,u
 const DIFF_NAME={easy:'Easy',normal:'Normal',hard:'Hard',champ:'Champion',rookie:'Rookie'};
 const diffName=d=>DIFF_NAME[d]||(/^t\d$/.test(d)?`Tournament Lv ${d[1]}`:d);
 const STYLE_LEVEL={easy:0,normal:1,hard:2,champ:3,t1:0,t2:1,t3:1,t4:1,t5:2,t6:2,t7:3,t8:3};
-function progDefault(){ return {v:1,coins:0,unlocked:[...START_UNLOCK],owned:{racket:['default'],band:['none'],theme:['classic']},equip:{racket:'default',band:'none',theme:'classic'},career:{stage:0,cleared:0},stats:{},chal:{}}; }
+function progDefault(){ return {v:1,coins:0,unlocked:[...START_UNLOCK],owned:{racket:['default'],band:['none'],theme:['classic']},equip:{racket:'default',band:'none',theme:'classic'},career:{stage:0,cleared:0},stats:{},chal:{},rk:{}}; }
 function progLoad(){ const d=progDefault();
   try{ const o=JSON.parse(localStorage.getItem(PROG_KEY)||'null'); if(!o||typeof o!=='object'||o.v!==1) return d;
     d.coins=Number.isFinite(o.coins)?clamp(Math.floor(o.coins),0,1e7):0;
+    if(o.rk&&typeof o.rk==='object') for(const k in o.rk){ const e=o.rk[k]; if(CH[k]&&e&&Array.isArray(e.own)) d.rk[k]={own:e.own.filter(x=>RKT[x]),eq:RKT[e.eq]?e.eq:''}; }
     if(Array.isArray(o.unlocked)) d.unlocked=[...new Set([...START_UNLOCK,...o.unlocked.filter(id=>typeof id==='string'&&CH[id])])];
     for(const k in COSM){ if(o.owned&&Array.isArray(o.owned[k])) d.owned[k]=[...new Set([...d.owned[k],...o.owned[k].filter(id=>COSM[k].some(c=>c.id===id))])];
       if(o.equip&&d.owned[k].includes(o.equip[k])) d.equip[k]=o.equip[k]; }
@@ -2605,7 +2632,7 @@ function careerOpen(){ hideAll(); $('careerScreen').classList.remove('hidden'); 
 function careerRender(){ const st=PROG.career.stage; let h='';
   LADDER.forEach((L,i)=>{ const ch=CH[L.ch], done=i<st, next=i===st, lock=i>st;
     h+=`<div class="crow${done?' done':''}${next?' next':''}${lock?' lock':''}"><div class="pt" style="background-image:url(${lock&&L.boss?'':portURL(ch)});border-color:${ch.col}">${lock&&L.boss?'?':''}</div>
-      <div class="cinfo"><b>${i+1}. ${lock&&L.boss?'???':kbEsc(ch.name)}</b> <span class="ctag">${L.title}</span> <span class="lvl">Lv ${i+1}</span><br><small>${L.desc} \u00b7 ${L.bo===1?'1 game':'best of 3'} to 11</small>
+      <div class="cinfo"><b>${i+1}. ${lock&&L.boss?'???':kbEsc(ch.name)}</b> <span class="ctag">${L.title}</span> <span class="lvl">Lv ${i+1}</span><br><small>${L.desc} \u00b7 ${L.bo===1?'1 game':'best of 3'} to 21 (win by 2, max 30)</small>
         <div class="unl">Unlocks: ${L.un.map(id=>id==='*'?'<span class="ua">\u2605 all characters</span>':(CH[id].boss&&!progUnlocked(id))?'<span class="uc">??? \uD83D\uDD12</span>':`<span class="uc${progUnlocked(id)?' got':''}" title="${kbEsc(CH[id].name)}"><i style="background-image:url(${portURL(CH[id])})"></i>${kbEsc(CH[id].name)}${progUnlocked(id)?' \u2714':' \uD83D\uDD12'}</span>`).join('')}</div></div>
       <div class="cst">${done?'\u2714 beaten':next?'\u25B6 next':'\uD83D\uDD12'}</div></div>`; });
   $('crList').innerHTML=h; $('crNext').disabled=false;
@@ -2614,25 +2641,34 @@ function careerRender(){ const st=PROG.career.stage; let h='';
 function careerFight(){ const i=Math.min(PROG.career.stage,LADDER.length-1), L=LADDER[i];
   if(!progUnlocked(chPick.p1)) chPick.p1='nailoong';
   ensureAudio(); hideAll(); if(document.activeElement) document.activeElement.blur();
-  newMatch('1p',L.diff,11,chPick.p1,L.ch); game.career={stage:i}; if(L.boss&&CH[L.ch].bossSt) players[1].ch={...CH[L.ch],st:CH[L.ch].bossSt,name:CH[L.ch].name+' (Boss)'}; game.career.st=players[1].ch.st; game.bo=L.bo; game.games=[0,0]; players[1].ai.style=L.style;
+  newMatch('1p',L.diff,21,chPick.p1,L.ch); game.career={stage:i}; if(L.boss&&CH[L.ch].bossSt) players[1].ch={...CH[L.ch],st:CH[L.ch].bossSt,name:CH[L.ch].name+' (Boss)'}; game.career.st=players[1].ch.st; applyRk(players[1],'atk3'); players[1].st=stMax(players[1]);   // boss: fixed Attack Pro loadout game.bo=L.bo; game.games=[0,0]; players[1].ai.style=L.style;
   for(const k in keys) keys[k]=false; buildTouch(); tone(660,.1,'triangle',.15); tone(990,.15,'triangle',.15,null,.1);
   showBanner(1,`Stage ${i+1}: ${CH[L.ch].name} \u2014 ${L.title}`); }
 /* ---- shop / locker ---- */
 const shopUI={tab:'char',confirm:false};
 function shopOpen(){ hideAll(); $('shopScreen').classList.remove('hidden'); shopUI.confirm=false; shopRender(); kbFocus('#shopBody button'); }
 function shopRender(){
-  const T=[['char','Characters (Tournament)'],['racket','Rackets'],['band','Headbands'],['theme','Courts']];
+  const T=[['char','Characters (Tournament)'],['pro','Pro rackets'],['racket','Racket colours'],['band','Headbands'],['theme','Courts']];
   $('shopTabs').innerHTML=T.map(([k,l])=>`<button data-st="${k}" class="${shopUI.tab===k?'sel':''}">${l}</button>`).join('');
   let h='';
   if(shopUI.tab==='char'){ for(const ch of CHARS){ const own=progUnlocked(ch.id);
     h+=`<div class="item"><div class="pt" style="background-image:url(${ch.boss&&!own?'':portURL(ch)});border-color:${ch.col}">${ch.boss&&!own?'?':''}</div><div class="iname">${ch.boss&&!own?'???':kbEsc(ch.name)}</div>`+
       (own?'<div class="own">\u2714 unlocked</div>':`<div class="own lk">\uD83D\uDD12 ${(i=>i>=0?'Tournament stage '+(i+1):'Win the Tournament')(LADDER.findIndex(l=>l.un.includes(ch.id)))}</div>`)+'</div>'; } }
+  else if(shopUI.tab==='pro'){ const own=CHARS.filter(c=>progUnlocked(c.id)); if(!own.some(c=>c.id===shopUI.rc)) shopUI.rc=own.some(c=>c.id===chPick.p1)?chPick.p1:own[0].id;
+    const ch=CH[shopUI.rc], E=PROG.rk[ch.id]||{own:[],eq:''};
+    h+=`<div class="rkpick">${own.map(c=>`<button data-rc="${c.id}" class="${c.id===ch.id?'sel':''}" title="${kbEsc(c.name)}"><i style="background-image:url(${portURL(c)})"></i></button>`).join('')}</div><div class="rkhead">Rackets for <b style="color:${ch.col}">${kbEsc(ch.name)}</b> (each character has their own)</div>`;
+    for(const id of ['',...Object.keys(RKT)]){ const it=RKT[id], has=!id||E.own.includes(id), eq=(E.eq||'')===id;
+      h+=`<div class="item rki"><img alt="" src="${racketURL(ch,id)}"><div class="iname">${rkName(id)}</div><div class="rkm">${rkMods(id)}</div>`+(eq?'<div class="own">\u2714 equipped</div>':has?`<button data-rkeq="${id}">Equip</button>`:`<button data-rkbuy="${id}"${PROG.coins<it.price?' disabled':''}>Buy ${it.price} \uD83E\uDE99</button>`)+'</div>'; } }
   else for(const it of COSM[shopUI.tab]){ const own=PROG.owned[shopUI.tab].includes(it.id), eq=PROG.equip[shopUI.tab]===it.id;
     const sw=shopUI.tab==='racket'?`<div class="sw" style="background:linear-gradient(90deg,${it.frame||'#ff6f9f'} 50%,${it.grip||'#ff9ec0'} 50%)"></div>`:shopUI.tab==='band'?`<div class="sw" style="background:${it.col||'#fff'}"></div>`:`<div class="sw" style="background:linear-gradient(${THEMES[it.id].sky[0]},${THEMES[it.id].court})"></div>`;
     h+=`<div class="item">${sw}<div class="iname">${kbEsc(it.name)}</div>`+(eq?'<div class="own">\u2714 equipped</div>':own?`<button data-eq="${shopUI.tab}:${it.id}">Equip</button>`:`<button data-buy="${shopUI.tab}:${it.id}"${PROG.coins<it.price?' disabled':''}>Buy ${it.price} \uD83E\uDE99</button>`)+'</div>'; }
   $('shopBody').innerHTML=h; refreshCoins();
   $('shopReset').textContent=shopUI.confirm?'Really reset ALL progress? Click again':'Reset progress\u2026'; $('shopReset').classList.toggle('danger',shopUI.confirm);
   document.querySelectorAll('#shopTabs button').forEach(b=>b.onclick=()=>{ shopUI.tab=b.dataset.st; shopRender(); kbFocus(`#shopTabs button[data-st="${shopUI.tab}"]`); });
+  document.querySelectorAll('#shopBody button[data-rc]').forEach(b=>b.onclick=()=>{ shopUI.rc=b.dataset.rc; shopRender(); kbFocus(`#shopBody button[data-rc="${shopUI.rc}"]`); });
+  document.querySelectorAll('#shopBody button[data-rkeq]').forEach(b=>b.onclick=()=>{ const E=PROG.rk[shopUI.rc]=PROG.rk[shopUI.rc]||{own:[],eq:''}; E.eq=b.dataset.rkeq; progSave(); shopMsg(`${CH[shopUI.rc].name} now uses: ${rkName(E.eq)}.`); shopRender(); kbFocus('#shopBody button[data-rkeq],#shopBody button[data-rkbuy]'); });
+  document.querySelectorAll('#shopBody button[data-rkbuy]').forEach(b=>b.onclick=()=>{ const id=b.dataset.rkbuy, it=RKT[id]; if(!it) return; if(PROG.coins<it.price) return shopMsg('Not enough coins yet.');
+    const E=PROG.rk[shopUI.rc]=PROG.rk[shopUI.rc]||{own:[],eq:''}; if(E.own.includes(id)) return; PROG.coins-=it.price; E.own.push(id); E.eq=id; progSave(); tone(990,.08,'triangle',.14,1480); shopMsg(`Bought ${rkName(id)} for ${CH[shopUI.rc].name}! \u2665`); shopRender(); kbFocus('#shopBody button[data-rkeq],#shopBody button[data-rkbuy]'); });
   document.querySelectorAll('#shopBody button[data-buy]').forEach(b=>b.onclick=()=>shopBuy(...b.dataset.buy.split(':')));
   document.querySelectorAll('#shopBody button[data-eq]').forEach(b=>b.onclick=()=>{ const [k,id]=b.dataset.eq.split(':'); PROG.equip[k]=id; progSave(); shopMsg(`Equipped ${COSM[k].find(c=>c.id===id).name}.`); shopRender(); kbFocus('#shopBody button'); });
 }
@@ -3019,8 +3055,8 @@ function onNetMsg(m){
     case 'hello': if(m.v!==NET_VER) onStatus('Heads-up: the other player has a different game version (reload both pages).','warn'); break;
     case 'full': onStatus('That room already has two players.','bad'); break;
     case 'lobby': if(NET.role==='guest') $('onGuestPts').textContent=`Match to ${m.pts}`; break;
-    case 'start': if(NET.role==='guest') startOnline(m.pts,m.e,m.c); break;
-    case 'ch': if(CH[m.c]){ NET.peerCh=m.c; netCharLine(); } break;
+    case 'start': if(NET.role==='guest') startOnline(m.pts,m.e,m.c,m.r); break;
+    case 'ch': if(CH[m.c]){ NET.peerCh=m.c; NET.peerRk=RKT[m.r]?m.r:''; netCharLine(); } break;
     case 'menu': if(NET.role==='guest'){ toLobby(); onStatus('The host went back to the lobby. Waiting for the next match...','ok'); } break;
     case 'win': if(NET.role==='guest'&&m.e===NET.epoch){ game.score=m.sc; game.winner=m.w; showWin(); } break;
     case 'rematch': NET.rmPeer=true; if(game.state==='win'){ $('winNote').textContent=NET.rmMe?'Starting...':'Your opponent wants a rematch! \u2665'; }
@@ -3040,12 +3076,12 @@ setInterval(()=>{ if(!$('onlineScreen').classList.contains('hidden')) $('onPing'
 function hostStart(pts){
   if(!(NET.conn&&NET.conn.open)) return;
   NET.pts=pts; NET.epoch++; NET.gq=[]; NET.gRecv=0; NET.gSeq=0; NET.gIn={left:false,right:false}; NET.shist=[]; NET.fxq=[]; NET.rmMe=NET.rmPeer=false;
-  const c=[chPick.online,NET.peerCh||'berry']; sendEv({t:'start',pts,e:NET.epoch,c}); beginOnlineMatch(pts,c);
+  const c=[chPick.online,NET.peerCh||'berry'], r=[rkEq(chPick.online),NET.peerRk||'']; sendEv({t:'start',pts,e:NET.epoch,c,r}); beginOnlineMatch(pts,c,r);
 }
-function startOnline(pts,e,c){ NET.epoch=e; NET.seq=0; NET.hist=[]; NET.frames=[]; NET.snaps=[]; NET.lastSnap=null; NET.hold=null; NET.vo={x:0,y:0}; NET.rmMe=NET.rmPeer=false; beginOnlineMatch(pts,c); }
-function beginOnlineMatch(pts,c){
+function startOnline(pts,e,c,r){ NET.epoch=e; NET.seq=0; NET.hist=[]; NET.frames=[]; NET.snaps=[]; NET.lastSnap=null; NET.hold=null; NET.vo={x:0,y:0}; NET.rmMe=NET.rmPeer=false; beginOnlineMatch(pts,c,r); }
+function beginOnlineMatch(pts,c,r){
   ensureAudio(); hideAll(); $('onlineScreen').classList.add('hidden'); if(document.activeElement) document.activeElement.blur();
-  c=Array.isArray(c)?c:['nailoong','berry']; newMatch('online','normal',pts,c[0],c[1]); game.netFrozen=false;
+  c=Array.isArray(c)?c:['nailoong','berry']; newMatch('online','normal',pts,c[0],c[1]); game.netFrozen=false; r=Array.isArray(r)?r:[]; players.forEach((p,i)=>{ applyRk(p,r[i]); p.st=stMax(p); });
   for(const p of players) p.name=p.ch.name+(NET.side===p.side?' (you)':'');
   for(const k in keys) keys[k]=false; for(const k in pressed) delete pressed[k];
   buildTouch(); hintT=6; tone(660,.1,'triangle',.15); tone(990,.15,'triangle',.15,null,.1);
@@ -3056,7 +3092,7 @@ function onlineAgain(){
   $('winNote').textContent=NET.rmPeer?'Starting...':'Waiting for your opponent to accept the rematch...';
 }
 
-function netSendChar(){ if(NET.conn&&NET.conn.open) sendEv({t:'ch',c:chPick.online}); netCharLine(); }
+function netSendChar(){ if(NET.conn&&NET.conn.open) sendEv({t:'ch',c:chPick.online,r:rkEq(chPick.online)}); netCharLine(); }
 function netCharLine(){ const e=$('onChars'); if(e) e.innerHTML=`You: <b>${kbEsc(CH[chPick.online].name)}</b>`+(NET.conn&&NET.conn.open?` \u00b7 Opponent: <b>${kbEsc(NET.peerCh?CH[NET.peerCh].name:'choosing\u2026')}</b>`:''); }
 /* ---- host side ---- */
 const SHOT_CODE={c:'clear',s:'smash',d:'drop'};
