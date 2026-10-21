@@ -169,7 +169,10 @@
   .seg button{white-space:nowrap;min-width:5em;box-shadow:none;background:transparent;border-radius:.8em;padding:.38em .9em}
   .seg button.sel{background:#ffd93b;box-shadow:0 .12em 0 #d9a400}
   .seg button:focus-visible{outline:.14em solid #ff7aa2}
-  .card.qm{width:37em}.qsub{margin:-.2em 0 .4em;font-size:.85em}.qm .seg button{padding:.38em .55em;min-width:0}
+  .card.qm{width:40em}
+  .chinfo .rk{display:flex;align-items:center;gap:.4em;font-size:.75em;color:#a08060;margin:.2em 0}.chinfo .rk img{height:4.2em}
+  .crcard{display:flex;flex-direction:column;max-height:94%;overflow:hidden!important}#crList{overflow:auto;flex:1;min-height:0;padding:0 .2em}.crcard .crow{padding:.2em .5em;margin:.2em 0}.crcard h1{margin:.1em 0 0}.crcard>*{flex-shrink:0}.crcard>#crList{flex-shrink:1}.crcard .sub{margin:.15em 0 .3em}
+  .unl{font-size:.78em;margin-top:.15em;display:flex;flex-wrap:wrap;gap:.3em;align-items:center;color:#a08060}.uc{display:inline-flex;align-items:center;gap:.2em;background:#fff;border-radius:1em;padding:.05em .45em .05em .1em;opacity:.7}.uc.got{opacity:1;color:#3f9a55}.uc i{width:1.4em;height:1.4em;border-radius:50%;background:#fff center/cover;display:inline-block}.ua{color:#d9668a;font-weight:bold}.lvl{font-size:.75em;background:#ffd93b;border-radius:.6em;padding:0 .4em;color:#6b3f00}.own.lk{color:#c08060}.qsub{margin:-.2em 0 .4em;font-size:.85em}.qm .seg button{padding:.38em .55em;min-width:0}
   #setMsg:empty{display:none}
   .kbcap{text-align:left;font-size:.85em;color:#a08060;margin:.5em 0 .1em}.kbcap b{color:#ff7aa2}
   .qm .opt .seg{flex:1}.qm .opt .seg button{flex:1}
@@ -218,7 +221,7 @@
       <div class="sub" id="giftLine"></div>
       <button class="big play" id="startBtn">&#9654;&nbsp; Play</button>
       <div class="tiles">
-        <button class="tile" id="careerBtn"><i>&#127942;</i><b>Career</b></button>
+        <button class="tile" id="careerBtn"><i>&#127942;</i><b>Tournament</b></button>
         <button class="tile" id="qm2Btn"><i>&#128101;</i><b>2 Players</b></button>
         <button class="tile" id="onlineBtn"><i>&#127760;</i><b>Online</b></button>
         <button class="tile" id="charsBtn"><i>&#11088;</i><b>Characters</b></button>
@@ -235,7 +238,7 @@
   <div class="overlay hidden" id="qmScreen">
     <div class="card scr qm"><h1 class="h2">Match <span>Setup</span></h1><div class="sub qsub">Pick players, difficulty and game mode, then choose your character.</div>
       <div class="opt"><label>Players</label><div class="seg" data-g="mode"><button data-mode="1p" class="sel">1 Player</button><button data-mode="2p">2 Players</button></div></div>
-      <div class="opt"><label>Difficulty</label><div class="seg"><button data-diff="easy">Easy</button><button data-diff="normal" class="sel">Normal</button><button data-diff="hard">Hard</button></div></div>
+      <div class="opt"><label>Difficulty</label><div class="seg"><button data-diff="easy">Easy</button><button data-diff="normal" class="sel">Normal</button><button data-diff="hard">Hard</button><button data-diff="champ">Champion</button></div></div>
       <div class="opt"><label>Points</label><div class="seg"><button data-pts="11" class="sel">11</button><button data-pts="15">15</button><button data-pts="21">21</button></div></div>
       <div class="opt"><label>Match</label><div class="seg"><button data-bo="1" class="sel">1 Game</button><button data-bo="3">Best of 3</button></div></div>
       <div class="opt"><label>Game mode</label><div class="seg"><button data-fun="none" class="sel">Normal</button><button data-fun="smash">Smash Only</button><button data-fun="giant">Giant Shuttle</button><button data-fun="lowg">Low Gravity</button></div></div>
@@ -359,14 +362,14 @@
   </div>
 
   <div class="overlay hidden" id="careerScreen">
-    <div class="card crcard"><h1 style="font-size:1.6em">Career <span>Ladder</span></h1><div class="sub" id="crSub"></div>
+    <div class="card crcard"><h1 style="font-size:1.6em">Tournament <span>Ladder</span></h1><div class="sub" id="crSub"></div>
       <div id="crList"></div>
       <div class="kbbtns"><button class="big alt" id="crBack">Back</button><button class="big" id="crNext">Fight &#9829;</button></div></div>
   </div>
 
   <div class="overlay hidden" id="shopScreen">
     <div class="card shcard"><h1 style="font-size:1.6em">Shop <span>&amp; Locker</span></h1>
-      <div class="sub">&#129689; <b class="coins">0</b> coins. Earn coins by winning matches, career stages and challenges.</div>
+      <div class="sub">&#129689; <b class="coins">0</b> coins for rackets, headbands and courts. Characters unlock in the Tournament.</div>
       <div class="chtabs" id="shopTabs"></div><div id="shopBody" class="shgrid"></div><div class="kbmsg" id="shopMsg"></div>
       <div class="kbbtns"><button class="big alt" id="shopBack">Back</button><button id="shopReset">Reset progress&hellip;</button></div></div>
   </div>
@@ -427,7 +430,7 @@ const ACC_RUN=1300, DEC_SKID=2200, ACC_AIR=650;   // px/s^2: short start-up, ski
 const NET_GAP=6, FRONT_G=40, FRONT_AIR=47;   // v10: body front edge (px from centre, walk / arms-up pose) + gap kept behind the net
 const LUNGE_V=600, LUNGE_T=.15, LUNGE_REC=.38, LUNGE_CD=.95, LUNGE_REACH=14;
 const $=id=>document.getElementById(id);
-const cv=$('game'), ctx=cv.getContext('2d');
+const cv=$('game'); let ctx=cv.getContext('2d');
 const rand=(a,b)=>a+Math.random()*(b-a), clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t;
 let scale=1,dpr=1;
 
@@ -862,15 +865,15 @@ const CHARS=[
     bio:'Quick, tidy hands at the net.'},
   {id:'bombloong',name:'Bombloong',src:'bomb',st:[8,5,5,5,7,6],sp:'thunder',spName:'Boom Smash',col:'#4fb8e8',frame:'#3a7bd5',grip:'#9fd3f0',
     bio:'Nailoong\'s blue eggshell rival (\u66b4\u66b4\u9f99). Big hitter, big reach, a bit slow.'},
-  {id:'spidey',name:'Spider-Man',src:'draw',st:[7,8,8,6,4,3],sp:'spin',spName:'Web Net Trap',col:'#e23b3b',frame:'#1d4fbf',grip:'#e23b3b',
+  {id:'spidey',name:'Spider-Man',src:'draw',st:[8,9,8,7,4,3],sp:'spin',spName:'Web Net Trap',col:'#e23b3b',frame:'#1d4fbf',grip:'#e23b3b',
     bio:'Fast, springy and strong, but runs out of breath.',art:{suit:'#d8262b',suit2:'#1f4fbf',head:'mask',mask:'#d8262b',eyes:'lens',web:true,emblem:'spider',boots:'#d8262b'}},
-  {id:'hulk',name:'Hulk',src:'draw',st:[9,4,5,3,9,6],sp:'thunder',spName:'Gamma Smash',col:'#5fa83a',frame:'#7b3fa0',grip:'#5fa83a',
+  {id:'hulk',name:'Hulk',src:'draw',st:[9,4,5,3,9,7],sp:'thunder',spName:'Gamma Smash',col:'#5fa83a',frame:'#7b3fa0',grip:'#5fa83a',
     bio:'Maximum power and reach. Slow feet, wild control.',art:{skin:'#6fbf44',suit:'#6fbf44',suit2:'#7b3fa0',head:'skin',eyes:'angry',hair:{col:'#23301c',style:'flat'},shorts:true,boots:'#6fbf44',big:1.12}},
-  {id:'ironman',name:'Iron Man',src:'draw',st:[8,6,8,6,4,4],sp:'drive',spName:'Repulsor Drive',col:'#c8202a',frame:'#f0c419',grip:'#c8202a',
+  {id:'ironman',name:'Iron Man',src:'draw',st:[8,6,8,6,5,4],sp:'drive',spName:'Repulsor Drive',col:'#c8202a',frame:'#f0c419',grip:'#c8202a',
     bio:'Powerful armour with boot-jet jumps; the suit drains energy.',art:{suit:'#c4202a',suit2:'#f0c419',head:'helm',mask:'#c4202a',plate:'#f0c419',eyes:'slit',emblem:'reactor',boots:'#c4202a'}},
   {id:'cap',name:'Captain America',src:'draw',st:[5,6,5,7,7,6],sp:'wall',spName:'Shield Block',col:'#2050b8',frame:'#d8262b',grip:'#ffffff',
     bio:'Solid defender: good reach and control, shield saves a smash.',art:{suit:'#2a55b8',suit2:'#d8262b',head:'cowl',mask:'#2a55b8',skin:'#f6d2b0',eyes:'cute',emblem:'star',stripes:true,boots:'#d8262b',shield:true}},
-  {id:'thor',name:'Thor',src:'draw',st:[9,4,6,5,6,6],sp:'thunder',spName:'Lightning Smash',col:'#7a8fa8',frame:'#c0c8d8',grip:'#8a5a2b',
+  {id:'thor',name:'Thor',src:'draw',st:[9,5,6,5,6,6],sp:'thunder',spName:'Lightning Smash',col:'#7a8fa8',frame:'#c0c8d8',grip:'#8a5a2b',
     bio:'Thunderous smashes, heavy on his feet.',art:{suit:'#46506a',suit2:'#2b3348',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#f2c94c',style:'long'},cape:'#c8202a',emblem:'discs',boots:'#2b3348'}},
   {id:'panther',name:'Black Panther',src:'draw',st:[4,8,6,8,5,5],sp:'dash',spName:'Panther Pounce',col:'#5b3fa8',frame:'#9b7be0',grip:'#2a2433',
     bio:'Quick and precise; light on power.',art:{suit:'#26222e',suit2:'#3a3446',head:'mask',mask:'#26222e',eyes:'lensW',ears:'cat',necklace:'#c0c0d8',trim:'#9b7be0',boots:'#26222e'}},
@@ -878,20 +881,20 @@ const CHARS=[
     bio:'The fastest feet in the game, the softest hits.',art:{suit:'#d8262b',suit2:'#d8262b',head:'cowl',mask:'#d8262b',skin:'#f6d2b0',eyes:'cute',emblem:'bolt',wings:'#f5d020',boots:'#f5d020'}},
   {id:'batman',name:'Batman',src:'draw',st:[5,5,4,9,7,6],sp:'wall',spName:'Bat Guard',col:'#3a3f4a',frame:'#f0c419',grip:'#2a2d33',
     bio:'Master tactician: best control and great reach, low jump.',art:{suit:'#5a6070',suit2:'#2a2d36',head:'cowl',mask:'#2a2d36',skin:'#f6d2b0',eyes:'lensW',ears:'bat',cape:'#22252c',emblem:'bat',belt:'#f0c419',boots:'#2a2d36'}},
-  {id:'superman',name:'Superman',src:'draw',st:[8,7,7,5,5,4],sp:'thunder',spName:'Heat Smash',col:'#1f5fd0',frame:'#d8262b',grip:'#1f5fd0',
+  {id:'superman',name:'Superman',src:'draw',st:[8,7,7,5,5,5],sp:'thunder',spName:'Heat Smash',col:'#1f5fd0',frame:'#d8262b',grip:'#1f5fd0',
     bio:'Strong and fast, but slow to get his breath back.',art:{suit:'#1f5fd0',suit2:'#d8262b',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#1a1a22',style:'curl'},cape:'#d8262b',emblem:'diamond',belt:'#f5d020',boots:'#d8262b'}},
-  {id:'wonder',name:'Wonder Woman',src:'draw',st:[7,6,6,6,6,5],sp:'wall',spName:'Bracelet Block',col:'#c8202a',frame:'#f0c419',grip:'#1f4fbf',
+  {id:'wonder',name:'Wonder Woman',src:'draw',st:[7,6,6,7,6,5],sp:'wall',spName:'Bracelet Block',col:'#c8202a',frame:'#f0c419',grip:'#1f4fbf',
     bio:'A strong all-rounder who deflects smashes.',art:{suit:'#c8202a',suit2:'#1f4fbf',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#1a1a22',style:'long'},tiara:'#f0c419',emblem:'W',belt:'#f0c419',cuffs:'#d0d4dc',boots:'#c8202a'}},
   {id:'naruto',name:'Naruto',src:'draw',st:[5,7,6,4,5,9],sp:'wind',spName:'Ramen Second Wind',col:'#f28c28',frame:'#1f3f8f',grip:'#f28c28',
     bio:'Never runs out of energy; a bit wild with the racket.',art:{suit:'#f28c28',suit2:'#1f3f8f',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#f5d020',style:'spiky'},headband:'#1f3f8f',whiskers:true,boots:'#1f3f8f',collar:'#1f3f8f'}},
-  {id:'goku',name:'Goku',src:'draw',st:[7,7,7,5,5,5],sp:'thunder',spName:'Kame Smash',col:'#f28c28',frame:'#2a50b0',grip:'#f28c28',
+  {id:'goku',name:'Goku',src:'draw',st:[7,7,7,6,5,5],sp:'thunder',spName:'Kame Smash',col:'#f28c28',frame:'#2a50b0',grip:'#f28c28',
     bio:'Explosive power and jumps, short arms.',art:{suit:'#f28c28',suit2:'#2a50b0',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#1a1a22',style:'goku'},belt:'#2a50b0',undershirt:'#2a50b0',boots:'#2a50b0'}},
   {id:'pikachu',name:'Pikachu',src:'draw',st:[4,9,7,6,3,7],sp:'dash',spName:'Quick Attack',col:'#f5d020',frame:'#d8262b',grip:'#f5d020',
     bio:'Tiny and electric-quick; very short reach.',art:{suit:'#f7d531',suit2:'#f7d531',skin:'#f7d531',head:'skin',eyes:'dot',ears:'pika',cheeks:'#e8433a',stripes2:'#8a5a12',tail:'bolt',boots:'#f7d531',small:.9}},
   {id:'doraemon',name:'Doraemon',src:'draw',st:[4,5,4,8,7,8],sp:'wind',spName:'Dorayaki Break',col:'#1fa0e0',frame:'#d8262b',grip:'#1fa0e0',
     bio:'Steady, tireless and tidy; no big jumps or smashes.',art:{suit:'#1fa0e0',suit2:'#ffffff',skin:'#1fa0e0',head:'dora',eyes:'dora',whiskers:true,nose:'#d8262b',collar:'#d8262b',bell:'#f5d020',belly:'#ffffff',pocket:true,boots:'#ffffff'}},
-  {id:'golden',name:'Champion Nailoong',src:'tint',base:'nai',tint:'#ffcf3a',glow:'#fff2a0',st:[8,8,7,8,7,7],sp:'thunder',spName:'Golden Thunder',col:'#e0a800',frame:'#e0a800',grip:'#fff2a0',boss:true,
-    bio:'The final boss of the career ladder, in gold.'}
+  {id:'golden',name:'Champion Nailoong',src:'tint',base:'nai',tint:'#ffcf3a',glow:'#fff2a0',st:[7,7,7,7,7,6],bossSt:[9,9,8,9,8,8],sp:'thunder',spName:'Golden Thunder',col:'#e0a800',frame:'#e0a800',grip:'#fff2a0',boss:true,
+    bio:'The crowned golden champion. Beat the Tournament to play him (the boss version is even stronger).'}
 ];
 const CH=Object.fromEntries(CHARS.map(c=>[c.id,c]));
 const STAT_N=['Power','Speed','Jump','Control','Reach','Stamina'];
@@ -924,12 +927,19 @@ const DIFF={
 Object.assign(DIFF.easy,  {nkF:.8, nfF:1.5,pMiss:.35,nkR:.3, nkThr:14,pRead:.42});
 Object.assign(DIFF.normal,{nkF:.95,nfF:1,  pMiss:.15,nkR:.6, nkThr:20,pRead:.32});
 Object.assign(DIFF.hard,  {nkF:1,  nfF:.3, pMiss:.06,nkR:.95,nkThr:22,pRead:.24});
+// v15.3 fMiss: chance a fast clean flat attack beats this level for pace (was one shared factor that let K-spam dominate)
+DIFF.easy.fMiss=.4; DIFF.normal.fMiss=.2; DIFF.hard.fMiss=.15; DIFF.hard13.fMiss=.3;
 Object.assign(DIFF.hard13,{nkF:1,  nfF:.55,pMiss:.06,nkR:.85,nkThr:26,pRead:.13});
+// v15.3 difficulty ladder: old Easy kept as 'rookie' (tests only); new Easy = old Normal; new Normal halfway to Hard; Hard unchanged; Champion above Hard.
+// Same honest physics for every level: levels only change reaction time, footwork speed, aim error and shot choice.
+function diffLerp(a,b,t){ const o={}; for(const k in b){ const x=a[k], y=b[k]; o[k]=Array.isArray(y)?y.map((v,i)=>x[i]+(v-x[i])*t):typeof y==='number'?x+(y-x)*t:t>=.6?y:x; } if(t>=.6&&b.smart) o.smart=true; return o; }
+DIFF.rookie=DIFF.easy; DIFF.oldNormal=DIFF.normal;
+DIFF.easy=Object.assign({},DIFF.oldNormal); DIFF.normal=diffLerp(DIFF.oldNormal,DIFF.hard,.5);
 
 function makePlayer(side,chId,name,ai){
   const ch=CH[chId]||CH.nailoong, skinKey=ch.src==='berry'?'berry':'nai';
   return {ch,st:ST.max,meter:0,armed:null,perfN:0,boostT:0,side,f:side===0?1:-1,x:0,y:GROUND,vx:0,vy:0,onGround:true,swingT:-1,hitDone:false,justSwung:false,
-    skin:Object.assign({},SKINS[skinKey],{frame:ch.frame,grip:ch.grip,name:ch.name}),name,squash:0,blink:rand(1,3),blinkT:0,mood:null,moodT:0,run:0,input:{},wantJump:false,wantShot:null,req:'clear',
+    skin:Object.assign({},SKINS[skinKey],{frame:ch.frame,grip:ch.grip,name:ch.name,logo:ch.id}),name,squash:0,blink:rand(1,3),blinkT:0,mood:null,moodT:0,run:0,input:{},wantJump:false,wantShot:null,req:'clear',
     ai:ai?{seen:-1,react:0,err:0,miss:false,jump:false,leave:false,diff:ai}:null,
     minX:side===0?COURT_L-30:NET_X+NET_GAP+FRONT_G,maxX:side===0?NET_X-NET_GAP-FRONT_G:COURT_R+30};
 }
@@ -1045,7 +1055,7 @@ function clearType(p,s){
 function shotFor(p){ let t=shotFor0(p); if(p.ai&&p.ai.style) t=styleShot(p,t); if(game.fun==='smash') t=smashOnly(p,t); return t; }
 function smashOnly(p,t){ const s=shuttle; if(ATTACK_T.has(t)||ATTACK_T.has(s.type)) return t; if(canSmash(p,s)) return 'smash'; if(s.y<FLAT_MIN_Y) return 'flat'; return t; }
 function shotFor0(p){
-  const s=shuttle, low=s.y>NET_TOP+55, vsSmash=shuttle.type==='smash'||shuttle.type==='kill'||shuttle.type==='netkill';
+  const s=shuttle, low=s.y>NET_TOP+55, vsSmash=shuttle.type==='smash'||shuttle.type==='kill'||shuttle.type==='netkill'||shuttle.type==='flat';
   if(p.ai){
     const d=DIFF[p.ai.diff], r=Math.random();
     if(vsSmash){ if(d.smart){ const od=Math.abs(players[1-p.side].x-NET_X)/(NET_X-COURT_L); return od>.45?(r<.85?'block':'lift'):(r<.7?'lift':'block'); } return r<.55?'lift':'block'; }
@@ -1217,6 +1227,7 @@ function hitShuttle(p,d=0,reach=REACH){
       else if(fxTier===1){ sfx.smash(0); game.shake=.1; for(let i=0;i<6;i++) spark(s.x,s.y,'#ffe066'); }
       else { sfx.thwack(); fxBurst('puff',s.x,s.y); }
       if(!p.ai) popup(s.x,s.y-30,fxTier===2?'Flat smash!':'Flat attack','#ff7f9f',fxTier===2?30:24); }
+    p.flatN=(p.flatN||0)+1;
     (game.flatLog=game.flatLog||[]).push({ai:!!p.ai,q:+q.toFixed(2),tier,below:+below.toFixed(2),out:fo||'in',sp:v?+(Math.hypot(v.vx,v.vy)/PX_M).toFixed(1):0});
   }
   let nkOut=null;
@@ -1395,6 +1406,7 @@ function aiThink(p,dt){
   let base=p.side===0?340:940;
   if(d.smart){ const ls=p.lastShot, off=(ls==='drop'||ls==='net'||ls==='block')?-70:(ls==='clear'||ls==='lift'||ls==='punch')?25:ls==='smash'?-35:0;
     base=p.side===0?340-off:940+off; }
+  { const ls=p.lastShot, opp=players[1-p.side]; if(game.lastHitter===p.side&&(ls==='lift'||ls==='clear'||ls==='punch'||ls==='drive'||ls==='block')&&(d.fMiss??.4)<.5){ const k=(.5-(d.fMiss??.4))*(1+Math.min(3,opp.flatN||0)*.25); base+=(p.side===0?-1:1)*90*k; } }   // v15.3: recover deeper-mid when the opponent can attack (more after repeated flat attacks)
   if(a.style==='net') base+=p.side===0?60:-60; else if(a.style==='lift') base+=p.side===0?-25:25;   // v15.2 career personalities   // v14 Hard: recover to the right base for the shot just played
   let tx=base;
   if(game.state==='serve'){
@@ -1408,7 +1420,7 @@ function aiThink(p,dt){
         if(s.type==='netkill'){ a.react=d.sReact*rand(.9,1.3); a.miss=Math.random()<Math.min(.95,d.sMiss+.6); a.jump=false; }
         if(s.type==='smash'){ const sq=s.q===undefined?1:s.q; a.react=d.sReact*rand(.8,1.25)*(.5+.5*sq); a.miss=Math.random()<(s.bigSmash?d.bigMiss:d.sMiss)*(.25+.75*sq); a.jump=false; }
         if(s.type==='flat'){ const sq=s.q===undefined?1:s.q, pace=clamp((Math.hypot(s.vx,s.vy)/PX_M-16)/26,0,1);   // v14.2: fast flat attack: the faster and cleaner, the more often even Hard is beaten for pace
-          a.react=d.sReact*rand(.9,1.3)*(.6+.5*sq); a.miss=Math.random()<Math.min(.92,(.3+1.4*d.sMiss)*FLAT_MISS)*pace*sq; a.jump=false; }
+          a.react=d.sReact*rand(.8,1.15)*(.6+.4*sq); a.miss=Math.random()<Math.min(.92,(d.fMiss??.4)*FLAT_MISS/2.4)*pace*sq; a.jump=false; }
         if(s.type==='drop'||s.type==='block'||s.type==='net') a.jump=false;
         if(ATTACK_T.has(s.type)){ const k=(1+.07*chD(players[1-p.side],0))*(1-.06*chD(p,4));   // v15: power of the hitter vs reach of the defender
           if(k>1&&!a.miss&&Math.random()<(k-1)*.35) a.miss=true; else if(k<1&&a.miss&&Math.random()<(1-k)*1.5) a.miss=false;
@@ -1805,12 +1817,19 @@ function tintCv(im,col,face){ const w=im.naturalWidth, h=im.naturalHeight, c=mkC
   const cx=(face[0]+face[1])/2*w, cy=(face[2]+face[3])/2*h, r=Math.max((face[1]-face[0])*w,(face[3]-face[2])*h)*.62;
   const g=fx.createRadialGradient(cx,cy,r*.55,cx,cy,r); g.addColorStop(0,'#000'); g.addColorStop(1,'rgba(0,0,0,0)'); fx.fillStyle=g; fx.fillRect(0,0,w,h);
   x.drawImage(f,0,0); return c; }
+// v15.3 Champion Nailoong: a small gold crown baked onto the tinted official sprite
+function crownCv(c,face){ const w=c.width,h=c.height,x=c.getContext('2d'); const cx=(face[0]+face[1])/2*w, fw=(face[1]-face[0])*w*.55, by=Math.max(h*.13,face[2]*h+h*.06), ch=fw*.62;
+  x.save(); x.lineJoin='round'; x.lineWidth=Math.max(2,w*.012); const g=x.createLinearGradient(0,by-ch,0,by); g.addColorStop(0,'#fff6b0'); g.addColorStop(.5,'#ffd23a'); g.addColorStop(1,'#d79a00');
+  x.beginPath(); x.moveTo(cx-fw/2,by); x.lineTo(cx-fw/2,by-ch*.55); x.lineTo(cx-fw/4,by-ch*.2); x.lineTo(cx,by-ch); x.lineTo(cx+fw/4,by-ch*.2); x.lineTo(cx+fw/2,by-ch*.55); x.lineTo(cx+fw/2,by); x.closePath();
+  x.fillStyle=g; x.fill(); x.strokeStyle='#8a5a00'; x.stroke();
+  for(const [dx,dy,col] of [[0,-ch,'#ff4f8b'],[-fw/2,-ch*.55,'#4fb8ff'],[fw/2,-ch*.55,'#4fb8ff']]){ x.beginPath(); x.arc(cx+dx,by+dy,fw*.07,0,7); x.fillStyle=col; x.fill(); x.stroke(); }
+  x.restore(); return c; }
 function charSprites(ch){
   if(CSPR[ch.id]) return CSPR[ch.id];
   if(ch.src==='nai'||ch.src==='berry'){ if(!spritesReady(ch.src)) return null; return CSPR[ch.id]={walk:SPR[ch.src].walk,cheer:SPR[ch.src].cheer,pose:POSE}; }
   if(ch.src==='bomb'){ if(!spritesReady('bomb')) return null; const c=flipCv(SPR.bomb.walk); return CSPR[ch.id]={walk:c,cheer:c,pose:POSE_BOMB}; }
   if(ch.src==='tint'){ if(!spritesReady(ch.base)) return null; const S=SPR[ch.base];
-    return CSPR[ch.id]={walk:tintCv(S.walk,ch.tint,POSE.walk.face),cheer:tintCv(S.cheer,ch.tint,POSE.cheer.face),pose:POSE}; }
+    return CSPR[ch.id]={walk:crownCv(tintCv(S.walk,ch.tint,POSE.walk.face),POSE.walk.face),cheer:crownCv(tintCv(S.cheer,ch.tint,POSE.cheer.face),POSE.cheer.face),pose:POSE}; }
   if(HERO_ART[ch.id]){ const im=HIMG[ch.id]; if(!(im.complete&&im.naturalWidth)) return null; const P=HERO_ART[ch.id].pose; return CSPR[ch.id]={walk:im,cheer:im,pose:{walk:P,cheer:P}}; }
   return CSPR[ch.id]={walk:drawHero(ch.art,'walk'),cheer:drawHero(ch.art,'cheer'),pose:POSE_HERO};
 }
@@ -1994,7 +2013,7 @@ function drawRacket(sk,fs=1){
   const S=SPR_H/118*RK;
   ctx.save(); ctx.scale(S,S); ctx.lineCap='round'; ctx.lineJoin='round';
   // grip with wrap + butt cap
-  ctx.fillStyle=sk.grip; rr(-1,-1.9,14,3.8,1.6); ctx.fill();
+  ctx.fillStyle=sk.grip; rr(-1,-1.9,14,3.8,1.6); ctx.fill(); ctx.strokeStyle='rgba(30,30,40,.5)'; ctx.lineWidth=.35; ctx.stroke();
   ctx.strokeStyle='rgba(255,255,255,.55)'; ctx.lineWidth=.4; ctx.beginPath(); for(let x=1;x<13;x+=2.2){ ctx.moveTo(x,-1.9); ctx.lineTo(x+1.6,1.9); } ctx.stroke();
   ctx.fillStyle='#2c2c3a'; rr(-2.4,-2.2,2.2,4.4,.9); ctx.fill();
   // thin shaft
@@ -2010,10 +2029,41 @@ function drawRacket(sk,fs=1){
   for(let y=-ry;y<=ry;y+=1.25*Math.max(.35,fs)){ ctx.moveTo(hx-rx,y); ctx.lineTo(hx+rx,y); } ctx.stroke(); ctx.restore();
   // frame: thicker dark stroke + colour accent
   ell(hx,0,rx,Math.max(.5,ry)); ctx.strokeStyle='#22222b'; ctx.lineWidth=1.45; ctx.stroke();
-  ctx.strokeStyle=sk.frame; ctx.lineWidth=.8; ctx.beginPath(); ctx.ellipse(hx,0,rx,Math.max(.5,ry),0,-2.3,-.4); ctx.stroke();
-  ctx.beginPath(); ctx.ellipse(hx,0,rx,Math.max(.5,ry),0,.4,2.3); ctx.stroke();
+  ctx.strokeStyle=sk.frame; ctx.lineWidth=.95; ell(hx,0,rx,Math.max(.5,ry)); ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,.45)'; ctx.lineWidth=.3; ctx.beginPath(); ctx.ellipse(hx,0,rx,Math.max(.5,ry),0,-2.5,-1.2); ctx.stroke();
+  if(sk.logo&&fs>.3){ ctx.save(); ctx.translate(hx,0); ctx.scale(1,fs); rkLogo(sk.logo); ctx.restore(); }   // v15.3 per-character string-bed symbol
   ctx.restore();
 }
+// v15.3 simple original symbols painted on each character's string bed (unit ~ +-5 around the head centre)
+function rkLogo(id){ const c=ctx; c.lineJoin='round'; c.lineCap='round';
+  const star=(r,col,n=5)=>{ c.beginPath(); for(let i=0;i<n*2;i++){ const a=-Math.PI/2+i*Math.PI/n, q=i%2?r*.45:r; c.lineTo(Math.cos(a)*q,Math.sin(a)*q); } c.closePath(); c.fillStyle=col; c.fill(); };
+  const bolt=(col,sc=1)=>{ c.beginPath(); [[1.2,-5],[-2.2,.6],[-.1,.6],[-1.4,5],[2.4,-1.2],[.3,-1.2],[1.6,-5]].forEach(([x,y])=>c.lineTo(x*sc,y*sc)); c.closePath(); c.fillStyle=col; c.fill(); c.strokeStyle='rgba(0,0,0,.45)'; c.lineWidth=.25; c.stroke(); };
+  const disc=(r,col)=>{ c.beginPath(); c.arc(0,0,r,0,7); c.fillStyle=col; c.fill(); };
+  const heart=(col)=>{ c.beginPath(); c.moveTo(0,3.4); c.bezierCurveTo(-5,-.4,-2.4,-4.4,0,-1.6); c.bezierCurveTo(2.4,-4.4,5,-.4,0,3.4); c.fillStyle=col; c.fill(); };
+  switch(id){
+    case 'nailoong': heart('#ff6f9f'); break;
+    case 'berry': disc(2.8,'#ff4f7a'); c.fillStyle='#4fbf6a'; c.beginPath(); c.ellipse(0,-3,1.6,.8,0,0,7); c.fill(); break;
+    case 'bombloong': disc(2.9,'#2c3e66'); c.strokeStyle='#ffb02e'; c.lineWidth=.6; c.beginPath(); c.moveTo(1.8,-2.2); c.quadraticCurveTo(3.4,-4,4.4,-3.2); c.stroke(); break;
+    case 'spidey': c.strokeStyle='rgba(20,20,30,.85)'; c.lineWidth=.32; c.beginPath(); for(let i=0;i<8;i++){ const a=i*Math.PI/4; c.moveTo(0,0); c.lineTo(Math.cos(a)*6,Math.sin(a)*6); } c.stroke();
+      for(const r of [2,4,6]){ c.beginPath(); for(let i=0;i<=8;i++){ const a=i*Math.PI/4; c.lineTo(Math.cos(a)*r,Math.sin(a)*r); } c.stroke(); } break;
+    case 'hulk': c.fillStyle='#5fa83a'; c.beginPath(); c.moveTo(-3.2,-2.6); c.lineTo(3.2,-2.6); c.lineTo(2.4,3); c.lineTo(-2.4,3); c.closePath(); c.fill(); c.strokeStyle='#2a5a1a'; c.lineWidth=.3; c.beginPath(); for(const x of [-1.6,0,1.6]){ c.moveTo(x,-2.6); c.lineTo(x,-.8); } c.stroke(); break;
+    case 'ironman': disc(3.2,'#7fe8ff'); disc(1.6,'#ffffff'); c.strokeStyle='#c8202a'; c.lineWidth=.5; c.beginPath(); c.arc(0,0,3.6,0,7); c.stroke(); break;
+    case 'cap': disc(4.2,'#d8262b'); disc(3.2,'#ffffff'); disc(2.4,'#2050b8'); star(2.2,'#ffffff'); break;
+    case 'thor': bolt('#9fe4ff'); break;
+    case 'panther': c.strokeStyle='#b89cff'; c.lineWidth=.6; c.beginPath(); for(const x of [-2,0,2]){ c.moveTo(x-1,-3.5); c.lineTo(x+1,3.5); } c.stroke(); break;
+    case 'flash': disc(3.6,'#ffffff'); bolt('#f5d020',.75); break;
+    case 'batman': c.fillStyle='#f0c419'; c.beginPath(); c.arc(0,0,3.6,0,7); c.fill(); c.fillStyle='#2a2d33'; c.beginPath(); c.arc(1.4,-.6,3.1,0,7); c.fill(); break;   // crescent moon
+    case 'superman': c.beginPath(); c.moveTo(0,-3.6); c.lineTo(4,0); c.lineTo(0,3.6); c.lineTo(-4,0); c.closePath(); c.fillStyle='#f5d020'; c.fill(); c.strokeStyle='#d8262b'; c.lineWidth=.6; c.stroke(); break;
+    case 'wonder': star(4,'#f0c419'); break;
+    case 'naruto': c.strokeStyle='#f28c28'; c.lineWidth=.6; c.beginPath(); for(let a=0;a<14;a+=.3){ const r=a*.3; c.lineTo(Math.cos(a)*r,Math.sin(a)*r); } c.stroke(); break;
+    case 'goku': disc(3.4,'#ffa21f'); star(1.5,'#d8262b'); break;
+    case 'pikachu': bolt('#f5d020'); break;
+    case 'doraemon': disc(2.8,'#f5c020'); c.strokeStyle='#8a5a00'; c.lineWidth=.3; c.beginPath(); c.moveTo(-2.6,-.4); c.lineTo(2.6,-.4); c.moveTo(0,.6); c.lineTo(0,2.6); c.stroke(); disc(.5,'#8a5a00'); break;
+    case 'golden': c.beginPath(); [[-3.6,2.4],[-3.6,-1.6],[-1.8,.2],[0,-3],[1.8,.2],[3.6,-1.6],[3.6,2.4]].forEach(([x,y])=>c.lineTo(x,y)); c.closePath(); c.fillStyle='#ffd23a'; c.fill(); c.strokeStyle='#8a5a00'; c.lineWidth=.3; c.stroke(); break;
+  } }
+const RKURL={};
+function racketURL(ch){ if(RKURL[ch.id]) return RKURL[ch.id]; const cv=mkCv(220,84), sv=ctx; ctx=cv.getContext('2d'); ctx.translate(14,42); const k_=3.5/(SPR_H/118*RK); ctx.scale(k_,k_);
+  drawRacket({frame:ch.frame,grip:ch.grip,logo:ch.id},1); ctx=sv; return RKURL[ch.id]=cv.toDataURL(); }
 function drawDino(p){
   const sk=p.skin;
   let sx=1, sy=1;
@@ -2200,7 +2250,7 @@ function drawHUD(){
   const nw=ctx.measureText(game.server===0?n0:n1).width, sx=game.server===0?cx-46-nw-12:cx+46+nw+12;
   ctx.fillStyle=game.server===0?'#ffd93b':'#ff9ec0'; ell(sx,y+1,5,5); ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
   ctx.font=`bold 11px ${UIF}`; ctx.fillStyle='rgba(150,115,80,.8)';
-  let sub=`to ${game.target}`+(game.mode==='online'?' \u00b7 online':'')+(game.mode==='1p'?` \u00b7 ${game.diff==='champ'?'Champion':game.diff[0].toUpperCase()+game.diff.slice(1)}`:'');
+  let sub=`to ${game.target}`+(game.mode==='online'?' \u00b7 online':'')+(game.mode==='1p'?` \u00b7 ${diffName(game.diff)}`:'');
   if(game.bo>1) sub+=` \u00b7 games ${game.games[0]}-${game.games[1]}`; if(game.career) sub+=` \u00b7 career ${game.career.stage+1}/${LADDER.length}`;
   if(game.rally>2 && game.state==='rally') sub+=` \u00b7 rally ${game.rally}`;
   ctx.fillText(sub,cx,y+30);
@@ -2238,7 +2288,8 @@ function render(){
   drawShuttleGround();
   drawNet('far');
   if(game.mode!=='demo') spfxBehind();
-  for(const p of players){ if(charSprites(p.ch)) drawSpriteDino(p); else drawDino(p); }
+  for(const p of players){ if(p.ch.id==='golden'){ const r=95+Math.sin(game.time*4)*8, g=ctx.createRadialGradient(p.x,p.y-70,10,p.x,p.y-70,r); g.addColorStop(0,'rgba(255,220,80,.38)'); g.addColorStop(1,'rgba(255,220,80,0)'); ctx.fillStyle=g; ctx.fillRect(p.x-r,p.y-70-r,r*2,r*2); }   // champion gold aura
+    if(charSprites(p.ch)) drawSpriteDino(p); else drawDino(p); }
   for(const p of players) drawPlayerBars(p);
   drawShuttle();
   drawNet('near');
@@ -2256,7 +2307,7 @@ const SET_KEY='nailoong.settings.v1'; const SET={slowmo:true}; try{ Object.assig
 function saveSet(){ try{ localStorage.setItem(SET_KEY,JSON.stringify(SET)); }catch(e){} }
 function hitFreeze(t){ if(game.mode==='online'||!SET.slowmo) return; game.hitStop=Math.max(game.hitStop||0,t); }
 const ST={max:100,run:0,lunge:5,jump:4,regenStand:8,regenMove:8,regenFast:3,regenBreak:30,low:30,vlow:12,
-  shot:{jsmash:12,smash:9,flat:9,netkill:7,kill:7,special:10,punch:5,drive:5,drop:4,block:4,net:4,push:4,clear:2.5,lift:2.5,serve:1}};
+  shot:{jsmash:12,smash:9,flat:10,netkill:7,kill:7,special:10,punch:5,drive:5,drop:4,block:4,net:4,push:4,clear:2.5,lift:2.5,serve:1}};
 const tired=p=>p.st<ST.low;
 const pSpd=p=>(1+.04*chD(p,1))*(tired(p)?.88:1)*(p.boostT>0?(p.boostK||1.35):1);
 const pJmp=p=>(1+.022*chD(p,2))*(tired(p)?.88:1);
@@ -2434,7 +2485,7 @@ function chRender(){
   $('chTabs').innerHTML=tabs.map(([k,l])=>{ const id=chPick[k], n=id==='random'?'Random':CH[id].name; return `<button class="${k===chUI.tab?'sel':''}" data-tab="${k}">${l}: <b>${kbEsc(n)}</b></button>`; }).join('');
   const cur=chPick[chUI.tab]; let h='';
   if(chUI.tab==='opp') h+=`<button class="chc${cur==='random'?' sel':''}" data-ch="random"><div class="pt rnd">?</div><div class="nm">Random</div></button>`;
-  for(const ch of CHARS){ const lock=chUI.mode!=='online'&&!chUnlocked(ch.id); if(ch.boss&&lock&&chUI.tab!=='opp') { h+=`<button class="chc lock" data-ch="${ch.id}" disabled title="Beat the career ladder to unlock"><div class="pt rnd">\uD83D\uDD12</div><div class="nm">???</div></button>`; continue; }
+  for(const ch of CHARS){ const lock=chUI.mode!=='online'&&!chUnlocked(ch.id); if(ch.boss&&lock&&chUI.tab!=='opp') { h+=`<button class="chc lock" data-ch="${ch.id}" disabled title="Win the Tournament to unlock"><div class="pt rnd">\uD83D\uDD12</div><div class="nm">???</div></button>`; continue; }
     h+=`<button class="chc${cur===ch.id?' sel':''}${lock&&chUI.tab!=='opp'?' lock':''}" data-ch="${ch.id}"${lock&&chUI.tab!=='opp'?' title="Locked: unlock it in the Shop or the career"':''}><div class="pt" style="background-image:url(${portURL(ch)});border-color:${ch.col}">${lock&&chUI.tab!=='opp'?'<span class="lk">\uD83D\uDD12</span>':''}</div><div class="nm">${kbEsc(ch.name)}</div>${statBars(ch.st)}</button>`; }
   $('chGrid').innerHTML=h;
   chInfo(cur);
@@ -2445,7 +2496,7 @@ function chRender(){
 function chInfo(id){ const e=$('chInfo'); if(id==='random'){ e.innerHTML='<h3>Random</h3><p>A random opponent each match.</p>'; return; }
   const ch=CH[id]; if(!ch) return; const lock=chUI.mode!=='online'&&!chUnlocked(id)&&chUI.tab!=='opp';
   e.innerHTML=`<div class="pt bigp" style="background-image:url(${portURL(ch)});border-color:${ch.col}"></div><h3 style="color:${ch.col}">${kbEsc(ch.name)}</h3><p>${kbEsc(ch.bio)}</p>${statBars(ch.st,true)}
-    <div class="sp"><b>\u2605 ${kbEsc(ch.spName)}</b><br>${SPECIALS[ch.sp]}</div>`+(lock?`<div class="lockmsg">\uD83D\uDD12 ${typeof unlockText==='function'?unlockText(id):'Locked'}</div>`:'')+(ch.src==='draw'?'<div class="fan">Fan-made chibi art; character belongs to its owner.</div>':'');
+    <div class="rk"><img alt="" src="${racketURL(ch)}"><span>Signature racket</span></div><div class="sp"><b>\u2605 ${kbEsc(ch.spName)}</b><br>${SPECIALS[ch.sp]}</div>`+(lock?`<div class="lockmsg">\uD83D\uDD12 ${typeof unlockText==='function'?unlockText(id):'Locked'}</div>`:'')+(ch.src==='draw'?'<div class="fan">Fan-made chibi art; character belongs to its owner.</div>':'');
 }
 function chChoose(id){
   if(id!=='random'&&chUI.mode!=='online'&&chUI.tab!=='opp'&&!chUnlocked(id)){ chInfo(id); tone(200,.1,'square',.06); return; }
@@ -2470,7 +2521,7 @@ addEventListener('keydown',e=>{
 
 /* ================= v15.2 Progress: coins, unlocks, cosmetics, career ================= */
 const PROG_KEY='nailoong.progress.v1', CH_PRICE=200;
-const START_UNLOCK=['nailoong','berry','bombloong','spidey'];
+const START_UNLOCK=['nailoong','berry'];   // v15.3: everyone else unlocks in the Tournament
 const THEMES={
   classic:{name:'Sunny Park',price:0,sky:['#bfe6ff','#e8f4ff','#ffe3ee'],sun:1,hill:'#d5f0c8',wall:['#ffc2d6','#ffa9c4'],wallTop:'#ff8fb1',ban:['NAILOONG CUP','LOVE ALL'],banC:['#e8a000','#ff6f9f'],floor:['#a9dcb0','#7cc58a'],apron:'#8fcf9b',court:'#5fb57d'},
   pink:{name:'Nailoong Pink Court',price:100,sky:['#ffd6e8','#ffe9f2','#fff3d6'],sun:1,hill:'#ffd0e4',wall:['#ffe08a','#ffd04a'],wallTop:'#ffb000',ban:['NAILOONG CUP','LOVE ALL'],banC:['#ff6f9f','#e8a000'],floor:['#ffc2da','#ffadc9'],apron:'#ffb3cf',court:'#ff8fb8'},
@@ -2486,17 +2537,22 @@ const COSM={
 };
 // career ladder: 8 opponents with a playstyle and rising difficulty, ending in the Champion boss
 const LADDER=[
-  {ch:'doraemon',title:'The Tidy Lifter',style:'lift',diff:'easy',bo:1,desc:'Lifts everything high and deep. Learn to smash.'},
-  {ch:'pikachu',title:'Net Rusher',style:'net',diff:'normal',bo:1,desc:'Rushes the net with tight net shots. Lift it over!'},
-  {ch:'naruto',title:'Never Gives Up',style:'all',diff:'normal',bo:1,desc:'A tireless all-rounder.'},
-  {ch:'batman',title:'Trick-Drop Master',style:'drop',diff:'normal',bo:1,desc:'Deceptive drops and blocks.'},
-  {ch:'hulk',title:'Smash Spammer',style:'smash',diff:'hard',bo:3,desc:'Smashes everything. Defend and wait for the tired moment.'},
-  {ch:'wonder',title:'Iron Defence',style:'lift',diff:'hard',bo:3,desc:'Returns everything; patience wins.'},
-  {ch:'thor',title:'Thunder Attacker',style:'smash',diff:'hard',bo:3,desc:'Huge smashes and lightning specials.'},
-  {ch:'golden',title:'Champion Nailoong',style:'all',diff:'champ',bo:3,boss:true,desc:'The golden champion: stronger than Hard.'}
+  {ch:'doraemon',title:'The Tidy Lifter',style:'lift',diff:'t1',bo:1,un:['doraemon','bombloong'],desc:'Lifts everything high and deep. Learn to smash.'},
+  {ch:'pikachu',title:'Net Rusher',style:'net',diff:'t2',bo:1,un:['pikachu','spidey'],desc:'Rushes the net with tight net shots. Lift it over!'},
+  {ch:'naruto',title:'Never Gives Up',style:'all',diff:'t3',bo:1,un:['naruto','panther','flash'],desc:'A tireless all-rounder.'},
+  {ch:'batman',title:'Trick-Drop Master',style:'drop',diff:'t4',bo:1,un:['batman','cap'],desc:'Deceptive drops and blocks.'},
+  {ch:'hulk',title:'Smash Spammer',style:'smash',diff:'t5',bo:3,un:['hulk','goku'],desc:'Smashes everything. Defend and wait for the tired moment.'},
+  {ch:'wonder',title:'Iron Defence',style:'lift',diff:'t6',bo:3,un:['wonder','ironman'],desc:'Returns everything; patience wins. (= Hard)'},
+  {ch:'thor',title:'Thunder Attacker',style:'smash',diff:'t7',bo:3,un:['thor','superman'],desc:'Huge smashes and lightning specials. (above Hard)'},
+  {ch:'golden',title:'Champion Nailoong',style:'all',diff:'champ',bo:3,boss:true,un:['golden','*'],desc:'The golden champion: Champion level, the hardest AI.'}
 ];
-DIFF.champ=Object.assign({},DIFF.hard,{speed:1.07,react:.055,err:5,mistake:.003,q:[.9,1],sReact:.065,sMiss:.03,bigMiss:.08,pMiss:.04,nfF:.25,pRead:.2});
-const STYLE_LEVEL={easy:0,normal:1,hard:2,champ:3};
+DIFF.champ=Object.assign({},DIFF.hard,{speed:1.07,react:.055,err:5,mistake:.003,q:[.9,1],sReact:.065,sMiss:.03,bigMiss:.08,pMiss:.04,nfF:.25,pRead:.2,fMiss:.1});
+// Tournament levels t1..t8: t1 = old Normal, steady steps to Hard at t6, then up to Champion at t8
+const TOUR_T=[0,.2,.4,.6,.8,1,1.5,2];
+TOUR_T.forEach((u,i)=>{ DIFF['t'+(i+1)]=u<=1?diffLerp(DIFF.oldNormal,DIFF.hard,u):diffLerp(DIFF.hard,DIFF.champ,u-1); });
+const DIFF_NAME={easy:'Easy',normal:'Normal',hard:'Hard',champ:'Champion',rookie:'Rookie'};
+const diffName=d=>DIFF_NAME[d]||(/^t\d$/.test(d)?`Tournament Lv ${d[1]}`:d);
+const STYLE_LEVEL={easy:0,normal:1,hard:2,champ:3,t1:0,t2:1,t3:1,t4:1,t5:2,t6:2,t7:3,t8:3};
 function progDefault(){ return {v:1,coins:0,unlocked:[...START_UNLOCK],owned:{racket:['default'],band:['none'],theme:['classic']},equip:{racket:'default',band:'none',theme:'classic'},career:{stage:0,cleared:0},stats:{},chal:{}}; }
 function progLoad(){ const d=progDefault();
   try{ const o=JSON.parse(localStorage.getItem(PROG_KEY)||'null'); if(!o||typeof o!=='object'||o.v!==1) return d;
@@ -2510,8 +2566,7 @@ function progLoad(){ const d=progDefault();
 let PROG=progLoad();
 function progSave(){ try{ localStorage.setItem(PROG_KEY,JSON.stringify(PROG)); }catch(e){} refreshCoins(); }
 const progUnlocked=id=>PROG.unlocked.includes(id);
-function unlockText(id){ const ch=CH[id]; if(ch.boss) return 'Win the career final to unlock.'; const st=LADDER.findIndex(l=>l.ch===id);
-  return `Buy it in the Shop for ${CH_PRICE} coins`+(st>=0?`, or beat stage ${st+1} of the Career`:'')+'.'; }
+function unlockText(id){ const st=LADDER.findIndex(l=>l.un.includes(id)); return st>=0?`Beat stage ${st+1} of the Tournament to unlock.`:'Win the Tournament to unlock.'; }
 function unlockChar(id){ if(!CH[id]||progUnlocked(id)) return false; PROG.unlocked.push(id); progSave(); return true; }
 function addCoins(n){ n=Math.max(0,Math.round(n)); PROG.coins+=n; progSave(); return n; }
 function refreshCoins(){ document.querySelectorAll('.coins').forEach(e=>e.textContent=PROG.coins); }
@@ -2539,38 +2594,39 @@ function matchReward(w){
   let me=m==='online'?NET.side:0, won=w===me, lines=[], c=0;
   if(m==='online'){ c=won?15:6; lines.push(won?'Online win':'Online match'); }
   else { const lv=STYLE_LEVEL[game.diff]||0, mg=Math.abs(game.score[0]-game.score[1]);
-    c=won?20+10*lv+Math.min(10,mg*2):5+2*lv; lines.push(won?`Win vs ${game.diff==='champ'?'Champion':game.diff}`:'Good try');
+    c=won?20+10*lv+Math.min(10,mg*2):5+2*lv; lines.push(won?`Win vs ${diffName(game.diff)}`:'Good try');
     if(game.career){ const i=game.career.stage, L=LADDER[i];
       if(won){ c+=10*i; const first=PROG.career.stage<=i; if(first){ c+=50; lines.push('Stage clear bonus'); PROG.career.stage=i+1; }
-        if(unlockChar(L.ch)) lines.push(`Unlocked ${CH[L.ch].name}!`);
-        if(L.boss){ PROG.career.cleared++; if(unlockChar('golden')) lines.push('Unlocked Champion Nailoong!'); c+=100; lines.push('CHAMPION!'); } } } }
+        for(const id of L.un){ if(id==='*'){ let n=0; for(const ch of CHARS) if(unlockChar(ch.id)) n++; if(n) lines.push('Unlocked ALL characters!'); } else if(unlockChar(id)) lines.push(`Unlocked ${CH[id].name}!`); }
+        if(L.boss){ PROG.career.cleared++; c+=100; lines.push('TOURNAMENT CHAMPION!'); } } } }
   addCoins(c); return {c,lines}; }
 /* ---- career screen ---- */
 function careerOpen(){ hideAll(); $('careerScreen').classList.remove('hidden'); careerRender(); kbFocus('#crNext'); }
 function careerRender(){ const st=PROG.career.stage; let h='';
   LADDER.forEach((L,i)=>{ const ch=CH[L.ch], done=i<st, next=i===st, lock=i>st;
     h+=`<div class="crow${done?' done':''}${next?' next':''}${lock?' lock':''}"><div class="pt" style="background-image:url(${lock&&L.boss?'':portURL(ch)});border-color:${ch.col}">${lock&&L.boss?'?':''}</div>
-      <div class="cinfo"><b>${i+1}. ${lock&&L.boss?'???':kbEsc(ch.name)}</b> <span class="ctag">${L.title}</span><br><small>${L.desc} \u00b7 ${L.diff==='champ'?'Champion (above Hard)':L.diff[0].toUpperCase()+L.diff.slice(1)} \u00b7 ${L.bo===1?'1 game':'best of 3'} to 11</small></div>
+      <div class="cinfo"><b>${i+1}. ${lock&&L.boss?'???':kbEsc(ch.name)}</b> <span class="ctag">${L.title}</span> <span class="lvl">Lv ${i+1}</span><br><small>${L.desc} \u00b7 ${L.bo===1?'1 game':'best of 3'} to 11</small>
+        <div class="unl">Unlocks: ${L.un.map(id=>id==='*'?'<span class="ua">\u2605 all characters</span>':(CH[id].boss&&!progUnlocked(id))?'<span class="uc">??? \uD83D\uDD12</span>':`<span class="uc${progUnlocked(id)?' got':''}" title="${kbEsc(CH[id].name)}"><i style="background-image:url(${portURL(CH[id])})"></i>${kbEsc(CH[id].name)}${progUnlocked(id)?' \u2714':' \uD83D\uDD12'}</span>`).join('')}</div></div>
       <div class="cst">${done?'\u2714 beaten':next?'\u25B6 next':'\uD83D\uDD12'}</div></div>`; });
   $('crList').innerHTML=h; $('crNext').disabled=false;
   $('crNext').innerHTML=st>=LADDER.length?'Rematch the Champion &#9829;':`Fight stage ${st+1} &#9829;`;
-  $('crSub').textContent=st>=LADDER.length?`Champion ${PROG.career.cleared}\u00d7! Replay the final any time.`:`Stage ${st+1} of ${LADDER.length}. Beat an opponent to unlock them.`; }
+  $('crSub').textContent=st>=LADDER.length?`Champion ${PROG.career.cleared}\u00d7! Replay the final any time.`:`Stage ${st+1} of ${LADDER.length} \u00b7 next: ${CH[LADDER[st].ch].name} (Lv ${st+1}). Win a stage to unlock its characters; win it all to unlock everyone.`; }
 function careerFight(){ const i=Math.min(PROG.career.stage,LADDER.length-1), L=LADDER[i];
   if(!progUnlocked(chPick.p1)) chPick.p1='nailoong';
   ensureAudio(); hideAll(); if(document.activeElement) document.activeElement.blur();
-  newMatch('1p',L.diff,11,chPick.p1,L.ch); game.career={stage:i}; game.bo=L.bo; game.games=[0,0]; players[1].ai.style=L.style;
+  newMatch('1p',L.diff,11,chPick.p1,L.ch); game.career={stage:i}; if(L.boss&&CH[L.ch].bossSt) players[1].ch={...CH[L.ch],st:CH[L.ch].bossSt,name:CH[L.ch].name+' (Boss)'}; game.career.st=players[1].ch.st; game.bo=L.bo; game.games=[0,0]; players[1].ai.style=L.style;
   for(const k in keys) keys[k]=false; buildTouch(); tone(660,.1,'triangle',.15); tone(990,.15,'triangle',.15,null,.1);
   showBanner(1,`Stage ${i+1}: ${CH[L.ch].name} \u2014 ${L.title}`); }
 /* ---- shop / locker ---- */
 const shopUI={tab:'char',confirm:false};
 function shopOpen(){ hideAll(); $('shopScreen').classList.remove('hidden'); shopUI.confirm=false; shopRender(); kbFocus('#shopBody button'); }
 function shopRender(){
-  const T=[['char','Characters'],['racket','Rackets'],['band','Headbands'],['theme','Courts']];
+  const T=[['char','Characters (Tournament)'],['racket','Rackets'],['band','Headbands'],['theme','Courts']];
   $('shopTabs').innerHTML=T.map(([k,l])=>`<button data-st="${k}" class="${shopUI.tab===k?'sel':''}">${l}</button>`).join('');
   let h='';
   if(shopUI.tab==='char'){ for(const ch of CHARS){ const own=progUnlocked(ch.id);
     h+=`<div class="item"><div class="pt" style="background-image:url(${ch.boss&&!own?'':portURL(ch)});border-color:${ch.col}">${ch.boss&&!own?'?':''}</div><div class="iname">${ch.boss&&!own?'???':kbEsc(ch.name)}</div>`+
-      (own?'<div class="own">\u2714 unlocked</div>':ch.boss?'<div class="own">career final</div>':`<button data-buy="char:${ch.id}"${PROG.coins<CH_PRICE?' disabled':''}>Buy ${CH_PRICE} \uD83E\uDE99</button>`)+'</div>'; } }
+      (own?'<div class="own">\u2714 unlocked</div>':`<div class="own lk">\uD83D\uDD12 ${(i=>i>=0?'Tournament stage '+(i+1):'Win the Tournament')(LADDER.findIndex(l=>l.un.includes(ch.id)))}</div>`)+'</div>'; } }
   else for(const it of COSM[shopUI.tab]){ const own=PROG.owned[shopUI.tab].includes(it.id), eq=PROG.equip[shopUI.tab]===it.id;
     const sw=shopUI.tab==='racket'?`<div class="sw" style="background:linear-gradient(90deg,${it.frame||'#ff6f9f'} 50%,${it.grip||'#ff9ec0'} 50%)"></div>`:shopUI.tab==='band'?`<div class="sw" style="background:${it.col||'#fff'}"></div>`:`<div class="sw" style="background:linear-gradient(${THEMES[it.id].sky[0]},${THEMES[it.id].court})"></div>`;
     h+=`<div class="item">${sw}<div class="iname">${kbEsc(it.name)}</div>`+(eq?'<div class="own">\u2714 equipped</div>':own?`<button data-eq="${shopUI.tab}:${it.id}">Equip</button>`:`<button data-buy="${shopUI.tab}:${it.id}"${PROG.coins<it.price?' disabled':''}>Buy ${it.price} \uD83E\uDE99</button>`)+'</div>'; }
@@ -2582,8 +2638,8 @@ function shopRender(){
 }
 function shopMsg(t){ $('shopMsg').textContent=t; }
 function shopBuy(k,id){
-  if(k==='char'){ if(progUnlocked(id)||CH[id].boss) return; if(PROG.coins<CH_PRICE) return shopMsg('Not enough coins yet.'); PROG.coins-=CH_PRICE; unlockChar(id); shopMsg(`Unlocked ${CH[id].name}! \u2665`); }
-  else { const it=COSM[k].find(c=>c.id===id); if(!it||PROG.owned[k].includes(id)) return; if(PROG.coins<it.price) return shopMsg('Not enough coins yet.');
+  if(k==='char') return;   // v15.3: characters unlock only through the Tournament
+  { const it=COSM[k].find(c=>c.id===id); if(!it||PROG.owned[k].includes(id)) return; if(PROG.coins<it.price) return shopMsg('Not enough coins yet.');
     PROG.coins-=it.price; PROG.owned[k].push(id); PROG.equip[k]=id; progSave(); shopMsg(`Bought and equipped ${it.name}! \u2665`); }
   tone(990,.08,'triangle',.14,1480); shopRender(); kbFocus('#shopBody button'); }
 function shopReset(){ if(!shopUI.confirm){ shopUI.confirm=true; shopRender(); kbFocus('#shopReset'); return; }
@@ -2605,8 +2661,8 @@ const CHAL=[
   {id:'comeback',name:'Comeback kid',desc:'Win a game after trailing by 5 or more.',c:60,t:M=>M.won&&M.comeback},
   {id:'dominant',name:'Dominant',desc:'Win a game while conceding 3 points or fewer.',c:50,t:M=>M.won&&M.minConceded<=3},
   {id:'bo3',name:'Best of three',desc:'Win a best-of-3 match.',c:50,t:M=>M.won&&M.bo>1},
-  {id:'career3',name:'Climbing',desc:'Beat career stage 3.',c:50,t:()=>PROG.career.stage>=3},
-  {id:'champion',name:'Champion!',desc:'Beat Champion Nailoong in the career final.',c:150,t:()=>PROG.career.cleared>0},
+  {id:'career3',name:'Climbing',desc:'Beat Tournament stage 3.',c:50,t:()=>PROG.career.stage>=3},
+  {id:'champion',name:'Champion!',desc:'Beat Champion Nailoong in the Tournament final.',c:150,t:()=>PROG.career.cleared>0},
   {id:'streak3',name:'On fire',desc:'Win 3 matches in a row.',c:60,t:()=>(PROG.stats.streak||0)>=3},
   {id:'five',name:'Versatile',desc:'Win with 5 different characters.',c:80,t:()=>Object.keys(PROG.stats.perChar||{}).length>=5,prog:()=>`${Object.keys(PROG.stats.perChar||{}).length}/5`},
   {id:'allchars',name:'Whole roster',desc:'Win with every character.',c:300,t:()=>CHARS.every(c=>(PROG.stats.perChar||{})[c.id]),prog:()=>`${CHARS.filter(c=>(PROG.stats.perChar||{})[c.id]).length}/${CHARS.length}`},
@@ -2743,7 +2799,7 @@ function showWin(){
   sfx.win(); sfx.voice(w,'squeal'); crowdCheer(4); for(let i=0;i<40;i++) confetti(); hearts(players[w].x,players[w].y-160,24);
   game.cheer=3; NET.fxSkip=false;
   const rw=matchReward(w); $('winCoins').innerHTML=rw?`+${rw.c} \uD83E\uDE99 coins`+(rw.lines.length?' \u00b7 '+rw.lines.map(kbEsc).join(' \u00b7 '):'')+` <small>(total ${PROG.coins})</small>`:'';
-  if(game.career) $('againBtn').innerHTML=w===0?(game.career.stage>=LADDER.length-1?'Career &#9829;':'Next opponent &#9829;'):'Try again &#9829;';
+  if(game.career) $('againBtn').innerHTML=w===0?(game.career.stage>=LADDER.length-1?'Tournament &#9829;':'Next opponent &#9829;'):'Try again &#9829;';
   if(typeof afterMatch==='function') afterMatch(w);
 }
 $('startBtn').onclick=startFromMenu;
