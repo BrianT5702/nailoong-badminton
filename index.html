@@ -1023,7 +1023,7 @@ function serveClockTick(p,dt){ if(game.mode==='demo'||game.paused||game.replay||
   if(!game.delayW[p.side]){ game.delayW[p.side]=1; popup(p.x,p.y-170,'Serve clock! Warning \u2013 auto serve','#ff4d4d',22); p.req='drop'; doServe(p); }
   else pointTo(1-p.side,'Delay of play'); }
 function setupServe(side){
-  game.state='serve'; game.server=side; game.lastHitter=-1; game.rally=0; game.serveTimer=0; game.sClock=SERVE_CLOCK; if(typeof shuttle!=="undefined"&&shuttle) shuttle.special=null; if(typeof shuttle!=="undefined"&&shuttle) shuttle.spRet=null; for(const q of (typeof players!=='undefined'&&players)||[]){ q.rider=null; q.stunT=0; q.kbT=0; }
+  game.state='serve'; game.server=side; game.lastHitter=-1; game.rally=0; game.serveTimer=0; game.sClock=SERVE_CLOCK; if(typeof shuttle!=="undefined"&&shuttle) shuttle.special=null; if(typeof shuttle!=="undefined"&&shuttle) shuttle.spRet=null; for(const q of (typeof players!=='undefined'&&players)||[]){ q.rider=null; q.stunT=0; q.kbT=0; q.slowT=0; }
   const P0=players[0],P1=players[1];
   P0.x = side===0?300:340; P1.x = side===1?980:940;
   for(const p of players){ p.y=GROUND; p.vx=p.vy=0; p.onGround=true; p.swingT=-1; p.lungeT=p.recT=0; }
@@ -1249,7 +1249,7 @@ function hitShuttle(p,d=0,reach=REACH){
   const Q=contactQuality(p,d,reach); let q=Q.q;
   if(p.perfN>0){ p.perfN--; q=Math.max(q,.97); Q.label='Perfect!'; }
   const wallUsed=!!p.wallHit; if(p.wallHit){ p.wallHit=false; q=1; Q.label='Perfect!'; }
-  let weakRet=false; if(s.spRet&&game.lastHitter!==p.side){ const id=s.spRet; spRider(p,id); weakRet=!!SPX[id].weak; if(id==='bombloong'){ sfx.boom&&sfx.boom(.7); bombBlast(s.x,s.y,.6); } }   // v15.6: returning a power special costs you (stun, knock-back, weak pop-up)
+  let weakRet=false; if(s.spRet&&game.lastHitter!==p.side){ const id=s.spRet; if(SPX[id].w==='ret'){ spRider(p,id); weakRet=SPX[id].weak||0; } else { weakRet=SPX[id].rw||0; } if(id==='bombloong'){ sfx.boom&&sfx.boom(.7); bombBlast(s.x,s.y,.6); } }   // v15.6: returning a power special costs you (stun, knock-back, weak pop-up)
   s.spRet=null;   // v15.5 Boom Smash: returning it costs you
   s.special=null; let spec=wallUsed?'wall':null;
   p.hitT=game.time; p.hitPt={x:s.x,y:s.y};
@@ -1385,9 +1385,10 @@ function hitShuttle(p,d=0,reach=REACH){
     sfx.hit(type==='clear'||type==='lift'||type==='punch'?1:.7);
     for(let i=0;i<7;i++) spark(s.x,s.y,'#fff6a8');
   }
-  if(weakRet){ type='lift'; big=false; const w=solveShot(s.x,s.y,oppX(p.side,rand(.3,.45)),[62,66,70,58,74]); if(w) v=w; popup(p.x,p.y-185,'weak pop-up!','#ff9a3c',16); }   // v15.6: a blasted return is a short, attackable lift
-  const rid=spec&&spec!=='wall'?p.ch.id:p.rider?p.rider:spec==='wall'?p.ch.id:null; p.rider=null;
-  if(rid&&SPX[rid]){ if(SPX[rid].w==='ret') s.spRet0=rid; else if(SPX[rid].w==='hit') spRider(opp,rid); }
+  if(weakRet){ type='lift'; big=false; const w=solveShot(s.x,s.y,oppX(p.side,weakRet>1?rand(.22,.34):rand(.3,.45)),[62,66,70,58,74]); if(w) v=w; popup(p.x,p.y-185,'weak pop-up!','#ff9a3c',16); }   // v15.6: a blasted return is a short, attackable lift
+  const rid=spec&&spec!=='wall'&&spec!=='rider'?p.ch.id:p.rider?p.rider:spec==='wall'?p.ch.id:null; const fromRider=!spec&&!!p.rider; p.rider=null; if(fromRider&&!rid.endsWith(':chain')) spec='rider';
+  if(rid&&rid.endsWith(':chain')){ const id=rid.split(':')[0]; spRider(opp,id,{...SPX[id].chain}); if(SPX[id].rw) s.spRet0=id; if(!spec) spec='rider'; }
+  else if(rid&&SPX[rid]){ if(SPX[rid].w==='ret') s.spRet0=rid; else if(SPX[rid].w==='hit'){ spRider(opp,rid); if(SPX[rid].rw) s.spRet0=rid; } }
   s.vx=v.vx; s.vy=v.vy; s.netHit=false; s.netCord=false; s.boostT=0; s.gMul=1; s.bK=BOOST_K; s.tumbleT=type==='net'?.7:0; s.fx=(type==='smash'||type==='netkill'||type==='kill'||type==='flat')?(type==='kill'?1:fxTier):-1; s.fxc=p.side===0?'#ffc61a':'#ff5f9e'; s.hitter=p.side;
   s.type=type; s.bigSmash=big; s.q=q; s.special=spec; s.spRet=s.spRet0||null; s.spRet0=null; if(spec==='bomb'){ const r=Math.hypot(s.vx,s.vy), a=Math.atan2(s.vy,s.vx), d=Math.sign(s.vx)||1, a2=a+d*.07, nv={vx:Math.cos(a2)*r,vy:Math.sin(a2)*r}, sim=simulate(s.x,s.y,nv.vx,nv.vy,3); if(sim.crossY!==null&&sim.crossY<NET_TOP-4&&(sim.landX-NET_X)*d>1.5*PX_M){ s.vx=nv.vx; s.vy=nv.vy; } s.fx=2; game.shake=.45; hitFreeze(.1); sfx.boom&&sfx.boom(.6); game.camP=1; }   // steeper by ~4 deg when it still clears the tape
   if(spec&&spec!=='thunder'&&spec!=='bomb'){ hitFreeze(.07); game.camP=Math.max(game.camP||0,.5); }
@@ -2403,55 +2404,56 @@ const ST={max:100,run:0,lunge:5,jump:4,regenStand:3,regenMove:3,regenFast:2,rege
   shot:{jsmash:20,smash:15,flat:17,netkill:12,kill:12,special:16,punch:8,drive:8,drop:7,block:7,net:7,push:7,clear:4,lift:4,serve:1.5}};   // v15.4: ~1.6-1.8x v15.3
 const tired=p=>p.st<ST.low;
 const stMax=p=>ST.max+7*chD(p,5);   // v15.4: stamina stat = bigger tank (79..121) + faster regen
-const pSpd=p=>(p.stunT>0?.3:1)*(1+.045*chD(p,1))*(tired(p)?.88:1)*(p.boostT>0?(p.boostK||1.35):1);
+const pSpd=p=>(p.stunT>0?.3:1)*(p.slowT>0?.6:1)*(1+.045*chD(p,1))*(tired(p)?.88:1)*(p.boostT>0?(p.boostK||1.35):1);
 const pJmp=p=>(1+.04*chD(p,2))*(tired(p)?.88:1);
 const pPow=p=>(1+.04*chD(p,0))*(p.st<ST.vlow&&game.mode!=='demo'?.76:tired(p)?.86:1);
 const pCtl=p=>(1+.08*chD(p,3))*(p.st<ST.vlow&&game.mode!=='demo'?.55:tired(p)?.72:1);
 function staCost(p,v){ if(game.mode==='demo'||game.noStamina) return; p.st=Math.max(0,p.st-v*(1-.05*chD(p,5))*(1+(p.rk?p.rk.cost:0))); }
 function staminaTick(p,dt){
-  p.boostT=Math.max(0,(p.boostT||0)-dt); p.stunT=Math.max(0,(p.stunT||0)-dt); if(p.kbT>0){ const k=Math.min(dt,p.kbT); p.kbT-=dt; p.x+=p.kbV*k; p.x=p.side===0?clamp(p.x,40,NET_X-30):clamp(p.x,NET_X+30,W-40); } p.spFx=Math.max(0,(p.spFx||0)-dt);
+  p.boostT=Math.max(0,(p.boostT||0)-dt); p.stunT=Math.max(0,(p.stunT||0)-dt); p.slowT=Math.max(0,(p.slowT||0)-dt); if(p.kbT>0){ const k=Math.min(dt,p.kbT); p.kbT-=dt; p.x+=p.kbV*k; p.x=p.side===0?clamp(p.x,40,NET_X-30):clamp(p.x,NET_X+30,W-40); } p.spFx=Math.max(0,(p.spFx||0)-dt);
   const rg=(1+.08*chD(p,5))*dt;
   if(game.state!=='rally'){ p.st=Math.min(stMax(p),p.st+ST.regenBreak*rg); return; }
   const mv=Math.abs(p.vx);
   if(p.onGround&&!(p.lungeT>0)) p.st=Math.min(stMax(p),p.st+(mv<40?ST.regenStand:mv<PSPEED*.55?ST.regenMove:ST.regenFast)*rg);
 }
-function gainMeter(p,v){ if(game.mode==='demo'||p.armed||p.perfN>0) return; const was=p.meter; p.meter=Math.min(100,p.meter+v);
+function gainMeter(p,v){ if(game.mode==='demo'||p.armed||p.perfN>0) return; const was=p.meter; p.meter=Math.min(100,p.meter+v*.85);   // v15.7: stronger specials fill 15% slower
   if(was<100&&p.meter>=100){ popup(p.x,p.y-175,'\u2605 Special ready!',p.ch.col,20); if(!NET.fxSkip) tone(880,.08,'triangle',.12,1320); } }
 /* v15.6 special riders: every special now carries a felt, counterable gameplay effect on the OPPONENT.
    when 'ret' = hits whoever returns the special shot; 'hit' = hits the opponent the moment the special shot is struck (they must still reach it).
    stun = s at 30% speed and no jump; kb = metres pushed back; weak = their return pops up as a short lift you can attack; sta = stamina drained. */
 const SPX={
-  nailoong:{w:'hit',stun:.6,txt:'MILK SPLASH!'},
-  berry:{w:'hit',stun:.45,txt:'STICKY SYRUP!'},
-  bombloong:{w:'ret',stun:.8,kb:1.0,weak:1,txt:'KNOCKED BACK!'},
-  spidey:{w:'hit',stun:.65,txt:'WEBBED!'},
-  hulk:{w:'ret',stun:.1,kb:1.3,txt:'SMASHED BACK!'},
-  ironman:{w:'hit',stun:.5,txt:'REPULSOR FLASH!'},
-  cap:{w:'hit',stun:.3,txt:'SHIELD RICOCHET!'},
-  thor:{w:'ret',stun:.4,txt:'LIGHTNING STUN!'},
-  panther:{w:'hit',stun:.55,kb:1.2,txt:'KINETIC PULSE!'},
-  flash:{w:'hit',stun:.95,txt:'AFTERIMAGE FEINT!'},
-  batman:{w:'hit',stun:.3,txt:'SMOKE BOMB!'},
-  superman:{w:'ret',stun:.2,sta:20,txt:'HEAT DRAIN!'},
-  wonder:{w:'hit',stun:.2,kb:.3,txt:'LASSO TUG!'},
-  naruto:{w:'hit',stun:.4,txt:'CLONE FEINT!'},
-  goku:{w:'ret',stun:.1,kb:.8,txt:'KAME BLAST!'},
-  pikachu:{w:'act',stun:1.3,txt:'SHOCKED!'},
-  doraemon:{w:'hit',stun:.1,kb:1.0,txt:'AIR CANNON!'},
-  golden:{w:'ret',stun:.2,kb:.4,txt:'GOLDEN STUN!'}
+  nailoong:{w:'hit',rw:2,stun:1.3,slow:2,txt:'SLIPPERY MILK!'},
+  berry:{w:'hit',stun:1.0,slow:1,txt:'STICKY SYRUP!'},
+  bombloong:{w:'ret',stun:1.1,kb:1.2,weak:2,txt:'KNOCKED BACK!'},
+  spidey:{w:'hit',stun:.9,slow:1,txt:'WEBBED!'},
+  hulk:{w:'ret',stun:.3,kb:2.0,slow:1,weak:1,txt:'SMASHED BACK!'},
+  ironman:{w:'hit',rw:1,stun:1.3,slow:.8,txt:'REPULSOR FLASH!'},
+  cap:{w:'hit',stun:.5,slow:.8,txt:'SHIELD RICOCHET!'},
+  thor:{w:'ret',stun:1.0,slow:1,weak:1,txt:'LIGHTNING STUN!'},
+  panther:{w:'hit',rw:1,stun:1.3,kb:1.6,txt:'KINETIC PULSE!'},
+  flash:{w:'hit',rw:2,stun:2.0,slow:1.5,txt:'AFTERIMAGE FEINT!'},
+  batman:{w:'hit',stun:.45,slow:.8,txt:'SMOKE BOMB!'},
+  superman:{w:'ret',stun:.45,sta:35,slow:.8,weak:1,txt:'HEAT DRAIN!'},
+  wonder:{w:'hit',stun:.4,kb:.8,txt:'LASSO PULL!'},
+  naruto:{w:'hit',rw:1,stun:.8,slow:1,txt:'SHADOW CLONES!'},
+  goku:{w:'ret',stun:.65,kb:1.6,slow:1,weak:1,txt:'KAME BLAST!'},
+  pikachu:{w:'act',rw:1,stun:2.0,chain:{stun:1.6,slow:1,txt:'CHAIN SHOCK!'},txt:'SHOCKED!'},
+  doraemon:{w:'hit',stun:.3,kb:1.0,slow:2,txt:'AIR CANNON!'},
+  golden:{w:'ret',stun:.5,kb:.7,slow:1,weak:1,txt:'GOLDEN STUN!'}
 };
-function spxText(id){ const r=SPX[id]; if(!r) return ''; const bits=[]; if(r.stun) bits.push(`stunned ${r.stun} s`); if(r.kb) bits.push(`pushed back ${r.kb} m`); if(r.sta) bits.push(`loses ${r.sta} stamina`); if(r.weak) bits.push('their return pops up short');
+function spxText(id){ const r=SPX[id]; if(!r) return ''; const bits=[]; if(r.stun) bits.push(`stunned ${r.stun} s`); if(r.kb) bits.push(`pushed back ${r.kb} m`); if(r.sta) bits.push(`loses ${r.sta} stamina`); if(r.slow) bits.push(`slowed ${r.slow} s`); if(r.chain) bits.push(`then your next shot chain-shocks for ${r.chain.stun} s`); if(r.weak||r.rw) bits.push('their return pops up short');
   return `<br><i>${r.txt.replace('!','')}: ${r.w==='ret'?'whoever returns it is':r.w==='act'?'on activation your opponent is':'the moment you hit it, your opponent is'} ${bits.join(', ')}.</i>`; }
-function spRider(p,id){ const r=SPX[id]; if(!r) return; p.stunT=Math.max(p.stunT||0,r.stun||0);
+function spRider(p,id,rr){ const r=rr||SPX[id]; if(!r) return; p.stunT=Math.max(p.stunT||0,r.stun||0);
   if(r.kb){ p.kbT=.3; p.kbV=-p.f*r.kb*PX_M/.3; } if(r.sta) p.st=Math.max(0,p.st-r.sta);
-  p.squash=.5; game.shake=Math.max(game.shake,.3); popup(p.x,p.y-150,r.txt,SPFX_COL[id]||'#ff7a1a',22); for(let i=0;i<12;i++) spark(p.x,p.y-80,SPFX_COL[id]||'#fff'); }
+  if(r.slow) p.slowT=Math.max(p.slowT||0,r.slow);
+  p.squash=.5; game.shake=Math.max(game.shake,.4); spRing(p.x,p.y-80,SPFX_COL[id]||'#fff',130,.45,10); popup(p.x,p.y-150,r.txt,SPFX_COL[id]||'#ff7a1a',22); for(let i=0;i<12;i++) spark(p.x,p.y-80,SPFX_COL[id]||'#fff'); }
 function trySpecial(p){
   if(p.meter<100||game.mode==='demo'||game.state==='win'||game.state==='point'||p.armed||p.perfN>0) return false;
   const t=p.ch.sp; p.meter=0; p.spFx=.8; p.spN=(p.spN||0)+1; game.spUsed=(game.spUsed||0)+1;
   if(t==='perfect') p.perfN=3;
-  else if(t==='dash'){ p.lungeCD=0; p.recT=0; p.lungeT=0; p.boostT=1.6; p.boostK=1.4; dust(p.x,GROUND,10); }
+  else if(t==='dash'){ p.lungeCD=0; p.recT=0; p.lungeT=0; p.boostT=p.ch.id==='flash'?2:1.6; p.boostK=p.ch.id==='flash'?2:1.5; dust(p.x,GROUND,10); }
   else if(t==='wind'){ p.st=stMax(p); p.boostT=3; p.boostK=1.2; }
-  if(SPX[p.ch.id]){ if(SPX[p.ch.id].w==='act') spRider(players[1-p.side],p.ch.id); else if(t==='perfect'||t==='dash'||t==='wind') p.rider=p.ch.id; }   // v15.6: instant specials ride on your next shot
+  if(SPX[p.ch.id]){ if(SPX[p.ch.id].w==='act'){ spRider(players[1-p.side],p.ch.id); if(SPX[p.ch.id].chain) p.rider=p.ch.id+':chain'; } else if(t==='perfect'||t==='dash'||t==='wind') p.rider=p.ch.id; }   // v15.6: instant specials ride on your next shot
   if(t==='perfect'||t==='dash'||t==='wind'); else p.armed=t;   // thunder / spin / wall / drive wait for the right shot
   for(let i=0;i<10;i++) spark(p.x,p.y-90,p.ch.col);   // v15.1: the big name banner + aura come from the SPFX layer
   if(!NET.fxSkip){ tone(520,.18,'sawtooth',.08,1040); tone(780,.22,'triangle',.12,1560,.06); }
@@ -2499,6 +2501,9 @@ function spBolt(x0,y0,x1,y1,col,life=.28){ const pts=[[x0,y0]], n=9; for(let i=1
 function spRing(x,y,col,r1=120,life=.45,w=8){ SPFX.rings.push({x,y,col,t:life,T:life,r1,w}); }
 function spActivate(p){
   const col=spCol(p), t=p.ch.sp;
+  { const col0=spCol(p); spRing(p.x,p.y-90,col0,260,.6,16); spRing(p.x,p.y-90,'#fff',170,.4,8); SPFX.edge={col:col0,t:.4}; game.shake=Math.max(game.shake||0,.3);   // v15.7 big character-coloured activation burst
+    for(let i=0;i<30;i++){ const a=rand(0,6.283), v=rand(200,520); spPart({x:p.x,y:p.y-90,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:.6,T:.6,col:i%3?col0:'#fff',r:rand(3,6),k:'spark'}); }
+    if(!NET.fxSkip){ const h=[...p.ch.id].reduce((a,c)=>a+c.charCodeAt(0),0), f0=200+h%7*45; tone(f0,.14,'square',.09,f0*1.5); tone(f0*1.26,.18,'triangle',.11,f0*2,.08); tone(f0*1.5,.3,'sawtooth',.07,f0*3,.16); } }   // character 'voice' sting
   SPFX.ban={text:`${SPFX_ICON[t]||'\u2605'} ${p.ch.name.toUpperCase()}: ${p.ch.spName}!`,col,t:1.5,side:p.side};
   SPFX.edge={col,t:.6};
   for(let i=0;i<26;i++){ const a=rand(0,6.283), v=rand(80,260); spPart({x:p.x,y:p.y-80,vx:Math.cos(a)*v,vy:Math.sin(a)*v-60,t:rand(.5,.9),T:.9,col,r:rand(2,5),k:'spark'}); }
@@ -2537,13 +2542,19 @@ function spfxWatch(dt){
     else if(sp==='spin'){ const a=game.time*18; spPart({x:s.x+Math.cos(a)*14,y:s.y+Math.sin(a)*14,vx:0,vy:20,t:.6,T:.6,col:Math.random()<.5?'#fff':col,r:rand(2,3.5),k:p.ch.id==='spidey'?'web':'star',ox:s.x,oy:s.y}); }
     else if(sp==='bomb'){ spPart({x:s.x-s.vx*.012+rand(-4,4),y:s.y-s.vy*.012+rand(-4,4),vx:rand(-20,20),vy:rand(-50,-15),t:.7,T:.7,col:'rgba(90,90,90,.6)',r:rand(5,9),k:'smoke'}); if(Math.random()<.7) spPart({x:s.x,y:s.y-12,vx:rand(-90,90),vy:rand(-120,-20),t:.25,T:.25,col:Math.random()<.5?'#ffd23a':'#ff7a1a',r:rand(1.5,3),k:'spark'}); }
     else if(sp==='drive'){ spPart({x:s.x,y:s.y,vx:0,vy:0,t:.35,T:.35,col,r:9,k:'glow'}); }
-    else spPart({x:s.x,y:s.y,vx:0,vy:0,t:.3,T:.3,col,r:5,k:'glow'});
+    else spPart({x:s.x,y:s.y,vx:0,vy:0,t:.4,T:.4,col,r:9,k:'glow'});
+    { const id=p.ch.id;   // v15.7 signature trails per character
+      if(id==='batman') spPart({x:s.x+rand(-10,10),y:s.y+rand(-10,10),vx:rand(-30,30),vy:rand(-30,10),t:.8,T:.8,col:'rgba(40,40,60,.55)',r:rand(10,18),k:'smoke'});
+      else if(id==='pikachu'&&Math.random()<dt*14) spBolt(s.x,s.y,s.x-s.vx*.06+rand(-30,30),s.y-s.vy*.06+rand(-30,30),'#ffe14a',.12);
+      else if(id==='naruto'&&Math.random()<dt*20) spPart({x:s.x+rand(-40,40),y:s.y+rand(-40,40),vx:s.vx*.6,vy:s.vy*.6,t:.35,T:.35,col:'rgba(255,154,46,.6)',r:8,k:'glow'});
+      else if(id==='nailoong'||id==='berry') spPart({x:s.x,y:s.y,vx:rand(-40,40),vy:rand(40,120),t:.6,T:.6,col:id==='berry'?'#ff8fc8':'#fffbe8',r:rand(3,6),k:'glow'});
+      else if(Math.random()<.5) spPart({x:s.x,y:s.y,vx:rand(-80,80),vy:rand(-80,80),t:.3,T:.3,col:'#fff',r:rand(2,3),k:'star'}); }
   }
   const landed=s.landT||(s.landFx&&game.time-s.landFx<.25);
   if(landed&&!SPFX.prevLand&&SPFX.lastSpec){ const p=players[SPFX.lastSpecSide], col=spCol(p);
     if(SPFX.lastSpec==='bomb'){ bombBlast(s.x,GROUND-10,1); game.shake=Math.max(game.shake,.5); sfx.boom&&sfx.boom(1); }
     else if(SPFX.lastSpec==='thunder'){ spRing(s.x,GROUND,col,170,.55,12); spRing(s.x,GROUND,'#fff',110,.35,6); spBolt(s.x+rand(-20,20),-60,s.x,GROUND,'#fff',.25); SPFX.edge={col,t:.3}; }
-    else spRing(s.x,GROUND,col,110,.45,8);
+    else { spRing(s.x,GROUND,col,170,.55,12); spRing(s.x,GROUND,'#fff',100,.35,6); SPFX.edge={col,t:.25}; game.shake=Math.max(game.shake,.35); }   // v15.7 bigger impact
     for(let i=0;i<16;i++) spPart({x:s.x,y:GROUND-4,vx:rand(-220,220),vy:rand(-260,-60),t:.6,T:.6,col,r:rand(2,5),k:'spark'});
     SPFX.lastSpec=null; }
   SPFX.prevLand=landed?1:0;
