@@ -310,8 +310,8 @@
         <div class="hl alt"><span class="hk" data-kb="alt.left alt.right alt.jump" data-max="1"></span><span class="altH">Also (1P)</span></div>
       </div>
       <div class="hpage hidden" data-hp="shots">
-        <div class="hl"><span class="hk" data-kb="p1.clear" data-max="1"></span><svg class="ill" viewBox="0 0 90 36"><path d="M6 32 Q45 -18 84 30" class="tr"/><circle cx="84" cy="30" r="3"/></svg><span><b>Clear</b>: on time = fast <b>punch</b>; late = <b>high clear</b></span></div>
-        <div class="hl"><span class="hk" data-kb="p1.smash" data-max="1"></span><svg class="ill" viewBox="0 0 90 36"><path d="M8 4 L80 32" class="tr sm"/><circle cx="80" cy="32" r="3"/></svg><span><b>Smash</b>: jump + hit a high shuttle; standing = flat drive</span></div>
+        <div class="hl"><span class="hk" data-kb="p1.clear" data-max="1"></span><svg class="ill" viewBox="0 0 90 36"><path d="M6 32 Q45 -18 84 30" class="tr"/><circle cx="84" cy="30" r="3"/></svg><span><b>Lift / High clear</b>: always a HIGH shot. Low or waist = rocket <b>lift</b>; chest or overhead = high <b>clear</b> to the back. Perfect timing = highest and deepest</span></div>
+        <div class="hl"><span class="hk" data-kb="p1.smash" data-max="1"></span><svg class="ill" viewBox="0 0 90 36"><path d="M8 4 L80 32" class="tr sm"/><circle cx="80" cy="32" r="3"/></svg><span><b>Attack</b>: jump + overhead = <b>jump smash</b>; overhead in mid/front = <b>smash</b>; overhead but deep or late = <b>punch clear</b>; shoulder/head = <b>flat smash</b>; chest/waist = <b>push</b> (drive from the back)</span></div>
         <div class="hl"><span class="hk" data-kb="p1.drop" data-max="1"></span><svg class="ill" viewBox="0 0 90 36"><path d="M6 10 Q40 2 52 30" class="tr"/><rect x="44" y="18" width="2" height="16" class="net"/><circle cx="52" cy="30" r="3"/></svg><span><b>Drop</b> just over the net; at the net = <b>net shot</b></span></div>
         <div class="hl"><span class="hk" data-kb="p1.smash" data-max="1"></span><svg class="ill" viewBox="0 0 90 36"><rect x="44" y="14" width="2" height="20" class="net"/><path d="M38 12 L60 32" class="tr sm"/></svg><span><b>Net kill</b>: smash a loose net shot near the tape</span></div>
         <div class="hl"><span class="hk" data-kb="p1.clear p1.drop" data-max="1"></span><svg class="ill" viewBox="0 0 90 36"><path d="M10 30 Q30 4 84 28" class="tr"/></svg><span><b>Serve</b>: clear = long, drop = short</span></div>
@@ -320,7 +320,7 @@
         <div class="hl"><span class="hk" data-kb="p1.special" data-max="1"></span><span><b class="pk">&#9733; Special</b>: fill the pink bar with good shots, then press</span></div>
         <div class="hl"><span class="ico">&#9889;</span><span><b class="gd">Stamina</b> (gold bar): moving is free, <b>shots cost</b></span></div>
         <div class="hl"><span class="ico">&#128165;</span><span>Jump smash 12 &middot; smash 9 &middot; net kill 7 &middot; special 10</span></div>
-        <div class="hl"><span class="ico">&#127811;</span><span>Punch 5 &middot; drop / net 4 &middot; clear / lift 2.5 &middot; lunge 5 &middot; jump 4</span></div>
+        <div class="hl"><span class="ico">&#127811;</span><span>Punch / drive 8 &middot; drop / net / push 7 &middot; clear / lift 4 &middot; lunge 5 &middot; jump 4</span></div>
         <div class="hl"><span class="ico">&#128164;</span><span>Stand still to recover; under 30% you are slower and weaker; at 0 no jump smash</span></div>
       </div>
       <div class="hpage hidden" data-hp="tips">
@@ -337,8 +337,8 @@
     <tr><td class="n">Run</td><td class="k" data-kb="p1.left p1.right" data-max="1"></td><td class="k" data-kb="alt.left alt.right" data-max="1"></td></tr>
     <tr><td class="n">Jump</td><td class="k" data-kb="p1.jump" data-max="1"></td><td class="k" data-kb="alt.jump" data-max="1"></td></tr>
     <tr><td class="n">Lunge</td><td class="k" data-kb="p1.lunge" data-max="1"></td><td class="k" data-kb="alt.lunge" data-max="1"></td></tr>
-    <tr><td class="n">Clear</td><td class="k" data-kb="p1.clear" data-max="1"></td><td class="k" data-kb="alt.clear" data-max="1"></td></tr>
-    <tr><td class="n">Smash</td><td class="k" data-kb="p1.smash" data-max="1"></td><td class="k" data-kb="alt.smash" data-max="1"></td></tr>
+    <tr><td class="n">Lift / High clear</td><td class="k" data-kb="p1.clear" data-max="1"></td><td class="k" data-kb="alt.clear" data-max="1"></td></tr>
+    <tr><td class="n">Attack</td><td class="k" data-kb="p1.smash" data-max="1"></td><td class="k" data-kb="alt.smash" data-max="1"></td></tr>
     <tr><td class="n">Drop / Net</td><td class="k" data-kb="p1.drop" data-max="1"></td><td class="k" data-kb="alt.drop" data-max="1"></td></tr>
     <tr><td class="n">Special</td><td class="k" data-kb="p1.special" data-max="1"></td><td class="k" data-kb="alt.special" data-max="1"></td></tr></table></div></div>
 
@@ -798,7 +798,7 @@ const BLOCK=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','PageUp','Pa
    Bindings use KeyboardEvent.code (layout-safe). Up to KB_MAX keys per action. Stored in localStorage under KB_STORE.
    In 1-player and online play your player answers to BOTH the P1 and the P2 keys (as before: P1 keys + arrows/numpad). */
 const KB_STORE='nailoong.keybinds.v1', KB_MAX=4;
-const KB_ACT=[['left','Move left'],['right','Move right'],['jump','Jump'],['clear','Clear (punch / high)'],['smash','Smash / flat attack'],['drop','Drop / net shot'],['lunge','Lunge'],['special','Special move']];
+const KB_ACT=[['left','Move left'],['right','Move right'],['jump','Jump'],['clear','Lift / High clear'],['smash','Attack (smash/flat/push/punch clear)'],['drop','Drop / net shot'],['lunge','Lunge'],['special','Special move']];
 const KB_GLB=[['pause','Pause / menu'],['mute','Mute all'],['fullscreen','Fullscreen'],['guide','Landing ring'],['replay','Instant replay']];
 const KB_DEFAULT={
   p1:{left:['KeyA'],right:['KeyD'],jump:['Space'],clear:['KeyJ'],smash:['KeyK'],drop:['KeyL'],lunge:['ShiftLeft','KeyQ'],special:['KeyI']},
@@ -1025,7 +1025,7 @@ const SPECIALS={
   wall:'Auto-perfect defence: the next smash or kill aimed at you is returned automatically.',
   dash:'Instant recovery and a burst of speed for 1.6 s (cancels lunge recovery).',
   wind:'Second wind: stamina refills to full and you run faster for 3 s.',
-  drive:'Your next clear is a perfect, extra-fast punch clear.'
+  drive:'Your next Lift / High clear key shot becomes a perfect, extra-fast punch clear.'
 };
 const chD=(p,i)=>((p&&p.ch?p.ch.st[i]:6)-6)+(p&&p.rk?(p.rk.d[i]||0):0);   // stat delta vs the reference (0 = Nailoong) + v15.4 racket modifier   // stat delta vs the reference (0 = Nailoong)
 
@@ -1142,6 +1142,9 @@ const SHOTS={
   punch:{fr:[.86,.96],ang:[14,18,22,26,30,34,38,44]},
   block:{fr:[.1,.2],ang:[0]}
 };
+  SHOTS.push={fr:[.6,.8],ang:[2,5,8,11,14,18,22,27]};   // v16 push: fast flat push from chest/waist height to the mid/back court
+const HIGH_ANG={lift:[74,68,62,56,50,46,42,38,34,30],clear:[60,54,49,45,41,38,35,32,29]};
+function highAng(type,q){ const L=HIGH_ANG[type]; return L.slice(q>=.8?0:q>=.6?1:q>=.4?3:5); }   // perfect = rocket high; poor timing = flatter, more attackable
 const ATTACK_T=new Set(['smash','netkill','kill','flat']);
 let FLAT_MISS=2.4;   // tuning factor: how often the AI is beaten for pace by a flat attack
 const FLAT_MIN_Y=NET_TOP+45;   // v14.2: K below smash height but above ~1 m = flat attack (lower = lift)
@@ -1175,13 +1178,24 @@ function netKillOdds(p,s,q,h){
   return clamp(ok,0,.96);
 }
 // J = clear: on-time/early contact out in front = fast flat punch clear; late (behind you) or low = high clear / lift
-function clearType(p,s){
-  if(s.y>p.y-95) return 'lift';                 // v15.6: below ~1.1 m (waist / underarm) J is an underarm lift, same solver as the AI's lift
-  if(s.y>p.y-118) return 'clear';               // chest height: a high clear (no flat punch from down there)   // v15.6: below the waist J is an underarm lift, exactly like the AI's (was only below the knee)
-  const e=p.swingT-SW_PEAK, front=(s.x-hitCenter(p).x)*p.f>-12;   // at/ahead of the sweet spot, not behind the body
-  return (e>=-.03 && e<=.05 && front)?'punch':'clear';
+// v16 key mapping (shared by player and AI):  J = always a HIGH shot,  K = context attack,  L = drop / net
+function jType(p,s){ return s.y>p.y-118?'lift':'clear'; }   // below ~1.4 m: high lift; chest/overhead: high defensive clear
+function kType(p,s){
+  if(netKillZone(p,s)!==null) return 'netkill';
+  const deep=Math.abs(p.x-NET_X)>.62*(NET_X-COURT_L), behind=(s.x-hitCenter(p).x)*p.f<-12, h=p.y-s.y;
+  if(!p.onGround&&canSmash(p,s)) return 'smash';                 // airborne + overhead = jump smash
+  if(canSmash(p,s)) return (deep||behind)?'punch':'smash';      // overhead: smash from mid/front, punch clear from deep or when late
+  if(h>=118) return 'flat';                                        // shoulder/head height = flat smash
+  if(h>=62) return deep?'drive':'push';                            // chest/waist: push (front/mid) or flat drive (deep)
+  return 'lift';                                                   // too low to attack: forced lift
 }
-function shotFor(p){ let t=shotFor0(p); if(p.ai&&p.ai.style) t=styleShot(p,t); if(game.fun==='smash') t=smashOnly(p,t); return t; }
+function clearType(p,s){ return jType(p,s); }
+// the AI decides an intent, then presses the same key a player would: the shot itself comes from the shared mapping
+function aiKey(p,t){ const s=shuttle; if(t==='block'||t==='drop'||t==='net'||t==='kill') return t;
+  if(t==='lift'||t==='clear') return (shuttle.type==='smash'||shuttle.type==='kill'||shuttle.type==='netkill'||shuttle.type==='flat')?'lift':jType(p,s);
+  if(t==='smash'||t==='flat'||t==='punch'||t==='drive'||t==='push'||t==='netkill'){ const k=kType(p,s); if(t==='smash'&&k==='punch') return 'punch'; return k; }
+  return t; }
+function shotFor(p){ let t=shotFor0(p); if(p.ai) t=aiKey(p,t); if(p.ai&&p.ai.style) t=styleShot(p,t); if(game.fun==='smash') t=smashOnly(p,t); return t; }
 function smashOnly(p,t){ const s=shuttle; if(ATTACK_T.has(t)||ATTACK_T.has(s.type)) return t; if(canSmash(p,s)) return 'smash'; if(s.y<FLAT_MIN_Y) return 'flat'; return t; }
 function shotFor0(p){
   const s=shuttle, low=s.y>NET_TOP+55, vsSmash=shuttle.type==='smash'||shuttle.type==='kill'||shuttle.type==='netkill'||shuttle.type==='flat';
@@ -1213,14 +1227,14 @@ function shotFor0(p){
     return r<.3?'drive':r<.55?'clear':r<.75?'punch':'drop';
   }
   if(vsSmash) return p.req==='drop'?'block':'lift';      // smashes can only be defended
-  if(p.req==='smash'){ if(netKillZone(p,s)!==null) return 'netkill'; return canSmash(p,s)?'smash':(s.y<FLAT_MIN_Y?'flat':'lift'); }   // v14.2: below smash height K = fast flat attack
+  if(p.req==='smash') return kType(p,s);
   if(p.req==='drop') return netPlay(p,s)||'drop';
   return clearType(p,s);
 }
 function aimFrac(p,type){
   const sh=SHOTS[type]; let fr=rand(sh.fr[0],sh.fr[1]);
-  if(!p.ai&&(type==='lift'||type==='clear')) fr=rand(.87,.95);   // v15.6: human lifts/clears aim as deep as a smart AI; timing still scales depth below
-  if(p.ai){ const d=DIFF[p.ai.diff]; if(d.smart&&(type==='clear'||type==='lift'||type==='punch'||type==='long')) fr=rand(.88,.96); fr+=rand(-1,1)*d.err/900; if(Math.random()<d.outChance) fr=rand(1.03,1.12); }
+  if(type==='lift'||type==='clear'||type==='punch'||type==='long') fr=rand(.88,.96);   // v16: same deep target for player and AI
+  if(p.ai){ const d=DIFF[p.ai.diff]; fr+=rand(-1,1)*d.err/900; if(Math.random()<d.outChance) fr=rand(1.03,1.12); }
   return fr;
 }
 // v12 attacking punch clear: fastest trajectory that lands at tx and passes the opponent's mid/front court at least
@@ -1443,7 +1457,7 @@ function hitShuttle(p,d=0,reach=REACH){
     sfx.hit(.45); for(let i=0;i<5;i++) spark(s.x,s.y,'#fff6a8');
   } else {
     const fr=aimFrac(p,type)*(shuttle.type==='smash'?.82:1)*(type==='clear'||type==='lift'?.86+.14*q:.72+.28*q);   // high clears stay deep even when hit late   // returns of a smash are weaker; poor contact = shorter
-    v=solveShot(s.x,s.y,oppX(p.side,fr),SHOTS[type].ang);
+    v=solveShot(s.x,s.y,oppX(p.side,fr),(type==='lift'||type==='clear')?highAng(type,q):SHOTS[type].ang);   // v16: lifts/clears pick the HIGHEST trajectory that still lands deep (same for player and AI); timing caps the height
     sfx.hit(type==='clear'||type==='lift'||type==='punch'?1:.7);
     for(let i=0;i<7;i++) spark(s.x,s.y,'#fff6a8');
   }
@@ -1477,6 +1491,7 @@ function hitShuttle(p,d=0,reach=REACH){
   (game.shotLog=game.shotLog||[]).push({side:p.side,type,big,r:game.rally,q:+q.toFixed(2),x:Math.round(s.x),y:Math.round(s.y)}); if(game.shotLog.length>400) game.shotLog.shift();
   if((type==='drop'||type==='block') && !p.ai) popup(s.x,s.y-30,type==='block'?'Block':'Drop','#7aa0d8',26);
   if((type==='punch'||type==='clear'||type==='lift') && !p.ai && game.mode!=='demo') popup(s.x,s.y-30,type==='punch'?'Punch clear':type==='clear'?'High clear':'Lift','#58a0c8',22);
+  if((type==='push'||type==='drive') && !p.ai && game.mode!=='demo') popup(s.x,s.y-30,type==='push'?'Push':'Drive','#7a9ad8',22);
 }
 const SHORT_PX=Math.round(1.98*(COURT_R-COURT_L)/13.4);   // short service line distance from the net
 const gauss=()=>(Math.random()+Math.random()+Math.random()-1.5)*1.41;
@@ -3235,11 +3250,11 @@ function buildTouch(){
   el.append(L,R);
   if(game.mode==='1p'||game.mode==='online'){ mk(L,0,'left','&#9664;'); mk(L,0,'right','&#9654;');
     mk(L,0,'dash','Dash'); mk(L,0,'special','&#9733;');
-    R.classList.add('grid'); mk(R,0,'drop','Drop<br>/Net'); mk(R,0,'smash','Smash'); mk(R,0,'jump','Jump'); mk(R,0,'clear','Clear'); }
+    R.classList.add('grid'); mk(R,0,'drop','Drop<br>/Net'); mk(R,0,'smash','Attack'); mk(R,0,'jump','Jump'); mk(R,0,'clear','Lift'); }
   else { L.classList.add('grid','g3'); R.classList.add('grid','g3');
          L.classList.add('g4'); R.classList.add('g4');
-         mk(L,0,'left','&#9664;'); mk(L,0,'jump','&#9650;'); mk(L,0,'right','&#9654;'); mk(L,0,'clear','Clear'); mk(L,0,'smash','Smash'); mk(L,0,'drop','Net'); mk(L,0,'dash','Dash'); mk(L,0,'special','&#9733;');
-         mk(R,1,'left','&#9664;'); mk(R,1,'jump','&#9650;'); mk(R,1,'right','&#9654;'); mk(R,1,'clear','Clear'); mk(R,1,'smash','Smash'); mk(R,1,'drop','Net'); mk(R,1,'dash','Dash'); mk(R,1,'special','&#9733;'); }
+         mk(L,0,'left','&#9664;'); mk(L,0,'jump','&#9650;'); mk(L,0,'right','&#9654;'); mk(L,0,'clear','Lift'); mk(L,0,'smash','Attack'); mk(L,0,'drop','Net'); mk(L,0,'dash','Dash'); mk(L,0,'special','&#9733;');
+         mk(R,1,'left','&#9664;'); mk(R,1,'jump','&#9650;'); mk(R,1,'right','&#9654;'); mk(R,1,'clear','Lift'); mk(R,1,'smash','Attack'); mk(R,1,'drop','Net'); mk(R,1,'dash','Dash'); mk(R,1,'special','&#9733;'); }
 }
 document.addEventListener('visibilitychange',()=>{ if(document.hidden && game.mode!=='demo' && game.mode!=='online' && game.state!=='win' && !game.paused) togglePause(); });
 
