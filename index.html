@@ -125,9 +125,13 @@
   .sbars{width:100%;font-size:.6em}.sb{display:flex;align-items:center;gap:.2em}.sb span{width:2.2em;text-align:left;color:#a08060}
   .sb i{flex:1;height:.45em;background:#f0e2c0;border-radius:.3em;overflow:hidden}.sb b{display:block;height:100%}
   .sbars.big{font-size:.85em}.sbars.big span{width:4.2em}.sbars.big em{width:1.2em;font-style:normal;font-weight:bold}
-  .chinfo{width:15em;text-align:left;font-size:.92em;background:#fff8e6;border-radius:.8em;padding:.5em .7em;overflow:auto;max-height:22em}
-  .chinfo h3{margin:.2em 0;text-align:center}.chinfo p{margin:.2em 0 .4em;color:#8a6a4a}
-  .chinfo .sp{margin-top:.4em;background:#fff1f6;border-radius:.6em;padding:.35em .5em;color:#a35a78}
+  .chinfo{width:19em;text-align:left;font-size:.84em;background:#fff8e6;border-radius:.8em;padding:.5em .7em;overflow:auto;max-height:22em}
+  .chinfo h3{margin:.1em 0;text-align:left;font-size:1.15em}
+  .chinfo .ihead{display:flex;gap:.5em;align-items:center}.chinfo .ihead .bigp{flex:none;width:3.6em;height:3.6em;margin:0}.chinfo .sil,.chc .pt.sil{filter:brightness(0) opacity(.7)}
+  .chinfo .itabs{display:flex;gap:.25em;margin:.35em 0 .3em}.chinfo .itabs button{flex:1;font-size:.8em;padding:.2em .3em;border-radius:.6em;background:#fff;box-shadow:0 .1em 0 #e8c25a}.chinfo .itabs button.sel{background:#ffd93b}
+  .chinfo .fl{font-style:italic;color:#8a5a3a}.chinfo .ib{margin:.25em 0;color:#6a4a2a;line-height:1.3}.chinfo .ib.tip{background:#eefbf0;border-radius:.5em;padding:.25em .4em}.chinfo .tease{color:#b0457a;font-weight:bold}
+  button.chc:hover{filter:brightness(1.05);box-shadow:0 .12em 0 #e8c25a,0 0 0 .12em #ffe9a8}button.chc.view{outline:.18em solid #ff9fd0}.chinfo p{margin:.2em 0 .4em;color:#8a6a4a}
+  .chinfo .sp{font-size:.95em;line-height:1.28;margin-top:.2em;background:#fff1f6;border-radius:.6em;padding:.35em .5em;color:#a35a78}
   .chinfo .fan{font-size:.75em;color:#b09a80;margin-top:.3em}.chinfo .lockmsg{margin-top:.3em;color:#d0456f;font-weight:bold}
   .coinpill{font-weight:bold;color:#c48a12;background:#fff3c4;border-radius:1em;padding:.15em .6em;font-size:.85em;margin-top:.5em}
   .crcard{max-width:36em;width:36em;font-size:.8em;max-height:97%;overflow:auto;padding:.5em 1.1em .7em}
@@ -2702,28 +2706,58 @@ function chRender(){
   $('chTabs').innerHTML=tabs.map(([k,l])=>{ const id=chPick[k], n=id==='random'?'Random':CH[id].name; return `<button class="${k===chUI.tab?'sel':''}" data-tab="${k}">${l}: <b>${kbEsc(n)}</b></button>`; }).join('');
   const cur=chPick[chUI.tab]; let h='';
   if(chUI.tab==='opp') h+=`<button class="chc${cur==='random'?' sel':''}" data-ch="random"><div class="pt rnd">?</div><div class="nm">Random</div></button>`;
-  for(const ch of CHARS){ const lock=chUI.mode!=='online'&&!chUnlocked(ch.id); if(ch.boss&&lock&&chUI.tab!=='opp') { h+=`<button class="chc lock" data-ch="${ch.id}" disabled title="Win the Tournament to unlock"><div class="pt rnd">\uD83D\uDD12</div><div class="nm">???</div></button>`; continue; }
-    h+=`<button class="chc${cur===ch.id?' sel':''}${lock&&chUI.tab!=='opp'?' lock':''}" data-ch="${ch.id}"${lock&&chUI.tab!=='opp'?' title="Locked: unlock it in the Shop or the career"':''}><div class="pt" style="background-image:url(${portURL(ch)});border-color:${ch.col}">${lock&&chUI.tab!=='opp'?'<span class="lk">\uD83D\uDD12</span>':''}</div><div class="nm">${kbEsc(ch.name)}</div>${statBars(ch.st)}</button>`; }
+  for(const ch of CHARS){ const lock=chUI.mode!=='online'&&!chUnlocked(ch.id); if(ch.boss&&lock&&chUI.tab!=='opp') { h+=`<button class="chc lock" data-ch="${ch.id}" title="Win the Tournament to unlock"><div class="pt rnd">\uD83D\uDD12</div><div class="nm">???</div></button>`; continue; }
+    h+=`<button class="chc${cur===ch.id?' sel':''}${lock&&chUI.tab!=='opp'?' lock':''}" data-ch="${ch.id}"${lock&&chUI.tab!=='opp'?' title="Locked: unlock it in the Shop or the career"':''}><div class="pt${lock&&chUI.tab!=='opp'?' sil':''}" style="background-image:url(${portURL(ch)});border-color:${ch.col}">${lock&&chUI.tab!=='opp'?'<span class="lk">\uD83D\uDD12</span>':''}</div><div class="nm">${kbEsc(ch.name)}</div>${statBars(ch.st)}</button>`; }
   $('chGrid').innerHTML=h;
-  chInfo(cur);
-  document.querySelectorAll('#chTabs button').forEach(b=>b.onclick=()=>{ chUI.tab=b.dataset.tab; chRender(); kbFocus('#chGrid .chc.sel')||kbFocus('#chGrid .chc'); });
-  document.querySelectorAll('#chGrid .chc').forEach(b=>{ b.onclick=()=>chChoose(b.dataset.ch); b.onfocus=()=>chInfo(b.dataset.ch); b.onmouseenter=()=>chInfo(b.dataset.ch); b.onmouseleave=()=>chInfo(chPick[chUI.tab]); });
+  chInfo(chUI.view&&(CH[chUI.view]||chUI.view==='random')?chUI.view:cur);
+  document.querySelectorAll('#chTabs button').forEach(b=>b.onclick=()=>{ chUI.tab=b.dataset.tab; chUI.view=null; chRender(); kbFocus('#chGrid .chc.sel')||kbFocus('#chGrid .chc'); });
+  document.querySelectorAll('#chGrid .chc').forEach(b=>{ b.onclick=()=>chChoose(b.dataset.ch); });
   $('chGo').innerHTML=chUI.mode==='online'?'Done':chUI.mode==='career'?'Fight! &#9829;':'Start match &#9829;';
 }
 // v15.4: what the stats really mean in play (same formulas the game uses)
 function statFx(ch){ const p={ch,st:999,boostT:0,lungeT:0,recT:0}, f=x=>x.toFixed(1);
   return {smash:f(60*pPow(p)), run:f(PSPEED*pSpd(p)/PX_M), jump:Math.round(JUMP_V*JUMP_V*pJmp(p)**2/(2*PG)/PX_M*100), win:Math.round(100*pCtl(p)), reach:Math.round(reachOf(p)/PX_M*100), sta:stMax(p)}; }
 function statFxHTML(ch){ const e=statFx(ch); return `<div class="sfx"><span>\uD83D\uDCA5 Smash <b>${e.smash}</b> m/s</span><span>\uD83D\uDC5F Run <b>${e.run}</b> m/s</span><span>\u2B06 Jump <b>${e.jump}</b> cm</span><span>\uD83C\uDFAF Timing <b>\u00b1${e.win}</b> ms</span><span>\uD83C\uDFF8 Reach <b>${e.reach}</b> cm</span><span>\u26A1 Stamina <b>${e.sta}</b></span></div>`; }
-function chInfo(id){ const e=$('chInfo'); if(id==='random'){ e.innerHTML='<h3>Random</h3><p>A random opponent each match.</p>'; return; }
-  const ch=CH[id]; if(!ch) return; const lock=chUI.mode!=='online'&&!chUnlocked(id)&&chUI.tab!=='opp';
-  e.innerHTML=`<div class="pt bigp" style="background-image:url(${portURL(ch)});border-color:${ch.col}"></div><h3 style="color:${ch.col}">${kbEsc(ch.name)}</h3><div class="rk"><img alt="" src="${racketURL(ch,rkEq(id))}"><span><b>${rkName(rkEq(id))}</b><br>${rkMods(rkEq(id))}</span></div><p>${kbEsc(ch.bio)}</p>${statBars(ch.st,true)}${statFxHTML(ch)}
-    <div class="sp"><b>\u2605 ${kbEsc(ch.spName)}</b><br>${SPECIALS[ch.sp]}${spxText(ch.id)}</div>`+(lock?`<div class="lockmsg">\uD83D\uDD12 ${typeof unlockText==='function'?unlockText(id):'Locked'}</div>`:'')+(ch.src==='draw'?'<div class="fan">Fan-made chibi art; character belongs to its owner.</div>':'');
-}
+/* v15.9 character guide: flavour, play style, tactics and the signature twist of each special */
+const DESC={
+  nailoong:{fl:'A round, sunny little dragon who runs on milk and giggles. Small? Yes. Fearless? Also yes! \uD83E\uDD5B',best:'Everything a little bit. No weak spot to exploit',weak:'No stand-out weapon, so you must out-think the CPU',tip:'Mix clears and drops to move the opponent, then fire Milk Power for three guaranteed Perfect shots.',sig:'The milk splash makes the floor slippery for the opponent.'},
+  berry:{fl:'Nailoong\u2019s sweet, pink best friend. Bubbly and quick, and very sneaky at the net. \uD83C\uDF53',best:'Net play, fast feet, tidy control',weak:'Gentle smashes and short reach',tip:'Win the front court: tight net shots, then lift deep when they rush in. Save Sweet Spin Net for a rally at the tape.',sig:'The spin net tumbles over the tape and is almost impossible to kill.'},
+  bombloong:{fl:'A bouncy blue dragon with a short fuse. When he smashes, things go BOOM. \uD83D\uDCA3',best:'Huge smashes and long reach',weak:'Slow to recover and only average speed',tip:'Lift deep to make him move, but punish every short lift with a smash. Boom Smash leaves the returner dazed.',sig:'Returning the bomb stuns you, knocks you back and makes your return pop up very short.'},
+  spidey:{fl:'Your friendly neighbourhood shuttler. Quips, flips and webs everywhere. \uD83D\uDD78\uFE0F',best:'Power, speed, jump, control: the full package',weak:'Short reach and low stamina, so he tires fast',tip:'Play fast, short rallies and finish early. Rest during long clears so you don\u2019t run dry.',sig:'Web shot: the shuttle is pulled down hard past the net and dips about 0.5 m shorter than it looks.'},
+  hulk:{fl:'Big. Green. Not a fan of losing. HULK SMASH (shuttles). \uD83D\uDCAA',best:'Monster smashes, giant reach, huge stamina',weak:'Slow feet and loose timing',tip:'Stay in the middle and let your reach do the running. Attack anything above the net.',sig:'Gamma Smash: whoever returns it is shoved 2 m back and their return pops up short.'},
+  ironman:{fl:'Genius, billionaire, badminton enthusiast. Suit tuned for jump smashes. \uD83E\uDD16',best:'Power and big jumps',weak:'Low stamina and short reach',tip:'Jump smash from mid court and use the Repulsor Drive to push the opponent to the back line.',sig:'Repulsor Drive leaves the racket about 22% faster with a beam trail, and flashes the opponent.'},
+  cap:{fl:'The steady captain. Never panics, never gives up a point easily. \uD83D\uDEE1\uFE0F',best:'Defence, reach and control',weak:'Plain power and an average jump',tip:'Absorb the attack and wait for the short reply. Shield Block turns their best smash against them.',sig:'Shield ricochet: the blocked smash comes straight back as a fast flat drive.'},
+  thor:{fl:'God of Thunder, and of very loud smashes. Mjolnir doubles as a racket. \u26A1',best:'Thunderous smashes and solid stamina',weak:'Slightly slow feet',tip:'Clear deep, wait for a short lift, then Lightning Smash. The stun helps you finish the rally.',sig:'Lightning Smash: the returner is stunned and their return pops up short.'},
+  panther:{fl:'The king of Wakanda moves like a shadow: silent, fast and precise. \uD83D\uDC3E',best:'Speed and control',weak:'Low power',tip:'Run them ragged with drops and drives. Panther Pounce resets your recovery when you\u2019re caught out.',sig:'Kinetic Pulse: your next shot knocks the opponent back and stuns them.'},
+  flash:{fl:'The fastest man alive. Already at the shuttle before you hit it. \u26A1\uD83D\uDC5F',best:'Top speed in the game',weak:'The weakest smash',tip:'Retrieve everything and win long rallies. Use Speed Force when you\u2019re pulled out of position.',sig:'Speed Force: double speed for 2 s, and your next shot leaves the opponent frozen.'},
+  batman:{fl:'The Dark Knight studies every opponent. He doesn\u2019t miss, he plans. \uD83E\uDD87',best:'The best timing control, plus long reach',weak:'Low jump and average power',tip:'Play patient, precise rallies to the corners. Bat Guard auto-blocks a smash with a smoke surprise.',sig:'Smoke bomb: a cloud hides the shuttle for about half a second, and the CPU reacts late.'},
+  superman:{fl:'Faster than a speeding shuttle. Super strong, super polite. \uD83E\uDDB8',best:'Power, speed and jump',weak:'Average control and stamina',tip:'Attack early and often. Heat Smash drains the returner\u2019s stamina, so use it mid-rally.',sig:'Heat Smash: the returner loses 35 stamina, is stunned and their return pops up short.'},
+  wonder:{fl:'An Amazon warrior with perfect balance between power and grace. \u2728',best:'Balanced attack and defence',weak:'No big weakness, no single best stat',tip:'Play the all-court game. Bracelet Block deflects a smash and the lasso drags them off position.',sig:'Lasso: the opponent is yanked off position and stunned.'},
+  naruto:{fl:'Believe it! Never gives up and never runs out of energy, thanks to ramen. \uD83C\uDF5C',best:'Endless stamina and good speed',weak:'Loose timing control',tip:'Drag the CPU into long rallies until they tire. Ramen Second Wind refuels you instantly.',sig:'Shadow clones: your next shot feints the opponent, who is stunned and slowed.'},
+  goku:{fl:'A cheerful Saiyan who just wants a strong opponent. Kame\u2026hame\u2026SMASH! \uD83D\uDD25',best:'Strong all-round attack',weak:'Average reach and stamina',tip:'Keep the pressure on with smashes and net kills. Kame Smash blasts the returner backwards.',sig:'Kame Smash: the returner is blasted back 1.6 m and their return pops up short.'},
+  pikachu:{fl:'Tiny, electric and adorable. Pika-pika, then zap! \u26A1\uD83D\uDC2D',best:'Very fast with a good jump',weak:'Tiny reach and low power',tip:'Get to everything early. Quick Attack zaps the opponent the moment you use it, so use it when they\u2019re about to hit.',sig:'Chain shock: the opponent is shocked on activation, and again by your next shot.'},
+  doraemon:{fl:'The robot cat from the future with a gadget for every situation. \uD83D\uDD14',best:'Control, reach and great stamina',weak:'Slow and a low jump',tip:'Place the shuttle, don\u2019t chase it. Dorayaki Break refuels you, and the Air Cannon shoves them back.',sig:'Air Cannon: your next shot blows the opponent back and slows them for 2 s.'},
+  golden:{fl:'The crowned golden champion of the Nailoong Cup. Shiny, proud and very good. \uD83D\uDC51',best:'Excellent at everything',weak:'Almost nothing. That\u2019s why it\u2019s the final boss',tip:'Use everything you\u2019ve learned. Keep it deep, punish short lifts and save your special for a big point.',sig:'Golden Thunder: the returner is stunned, knocked back and their return pops up short.'}
+};
+const DESC_TEASE={golden:'Only the Tournament champion may wear the crown\u2026',_:'A new rival is waiting in the Tournament\u2026'};
+function chInfo(id,tab){ const e=$('chInfo'); chUI.view=id; if(tab) chUI.itab=tab; const T=chUI.itab||'ov';
+  document.querySelectorAll('#chGrid .chc').forEach(b=>b.classList.toggle('view',b.dataset.ch===id));
+  if(id==='random'){ e.innerHTML='<h3>\u2753 Random</h3><p class="fl">A surprise opponent every match. Who will it be?</p>'; return; }
+  const ch=CH[id]; if(!ch) return; const lock=chUI.mode!=='online'&&!chUnlocked(id)&&chUI.tab!=='opp', D=DESC[id]||{}, hide=lock&&ch.boss;
+  const tabs=`<div class="itabs">${[['ov','Overview'],['sp','\u2605 Special'],['st','Stats']].map(([k,l])=>`<button data-it="${k}" class="${k===T?'sel':''}">${l}</button>`).join('')}</div>`;
+  const head=`<div class="ihead"><div class="pt bigp${lock?' sil':''}" style="background-image:url(${portURL(ch)});border-color:${ch.col}"></div><div><h3 style="color:${ch.col}">${hide?'???':kbEsc(ch.name)}</h3>${lock?'<div class="lockmsg">\uD83D\uDD12 '+unlockText(id)+'</div>':''}</div></div>`;
+  let body='';
+  if(hide) body=`<p class="fl">${DESC_TEASE.golden}</p>`;
+  else if(T==='ov') body=`<p class="fl">${D.fl||kbEsc(ch.bio)}</p>${lock?`<p class="tease">${DESC_TEASE._}</p>`:''}<div class="ib"><b>\uD83D\uDC4D Best at:</b> ${D.best||''}</div><div class="ib"><b>\uD83D\uDC4E Weak at:</b> ${D.weak||''}</div>${lock?'':`<div class="ib tip"><b>\uD83D\uDCA1 Tip:</b> ${D.tip||''}</div>`}`;
+  else if(T==='sp') body=`<div class="sp"><b>\u2605 ${kbEsc(ch.spName)}</b><br>${SPECIALS[ch.sp]}${spxText(ch.id)}${D.sig?`<br><b>Signature:</b> ${D.sig}`:''}</div>`;
+  else body=`${statBars(ch.st,true)}${statFxHTML(ch)}<div class="rk"><img alt="" src="${racketURL(ch,rkEq(id))}"><span><b>${rkName(rkEq(id))}</b><br>${rkMods(rkEq(id))}</span></div>`;
+  e.innerHTML=head+(hide?'':tabs)+`<div class="ibody">${body}</div>`+(ch.src==='draw'&&!hide?'<div class="fan">Fan-made chibi art; character belongs to its owner.</div>':'');
+  e.querySelectorAll('.itabs button').forEach(b=>b.onclick=()=>chInfo(id,b.dataset.it)); }
 function chChoose(id){
   if(id!=='random'&&chUI.mode!=='online'&&chUI.tab!=='opp'&&!chUnlocked(id)){ chInfo(id); tone(200,.1,'square',.06); return; }
-  chPick[chUI.tab]=id; chSave(); tone(800,.05,'sine',.12,1100); chRender(); kbFocus(`#chGrid .chc[data-ch="${id}"]`);
+  chPick[chUI.tab]=id; chUI.view=id; chSave(); tone(800,.05,'sine',.12,1100); chRender(); kbFocus(`#chGrid .chc[data-ch="${id}"]`);
 }
-function chOpen(mode,from){ chUI.mode=mode; chUI.from=from||'title'; chUI.open=true; chUI.tab=chTabs()[0][0];
+function chOpen(mode,from){ chUI.view=null; chUI.mode=mode; chUI.from=from||'title'; chUI.open=true; chUI.tab=chTabs()[0][0];
   ['titleScreen','onlineScreen','careerScreen'].forEach(i=>$(i)&&$(i).classList.add('hidden')); $('chScreen').classList.remove('hidden'); chRender(); kbFocus('#chGrid .chc.sel')||kbFocus('#chGrid .chc'); }
 function chClose(go){ chUI.open=false; $('chScreen').classList.add('hidden');
   if(chUI.mode==='online'){ onShow(NET.role==='guest'?'guest':NET.role==='host'?'host':'main'); netSendChar(); return; }
@@ -2833,7 +2867,7 @@ function progLoad(){ const d=progDefault();
 let PROG=progLoad(); MUS.track=PROG.equip.music||'relax';
 function progSave(){ try{ LS.setItem(PROG_KEY,JSON.stringify(PROG)); }catch(e){} refreshCoins(); }
 const progUnlocked=id=>PROG.unlocked.includes(id);
-function unlockText(id){ const st=LADDER.findIndex(l=>l.un.includes(id)); return st>=0?`Beat stage ${st+1} of the Tournament to unlock.`:'Win the Tournament to unlock.'; }
+function unlockText(id){ const st=LADDER.findIndex(l=>l.un.includes(id)); if(st<0) return 'Win the Tournament to unlock.'; const L=LADDER[st]; if(L.boss||st===LADDER.length-1) return `Win the Tournament final (stage ${st+1}) to unlock.`; return `Beat ${kbEsc(CH[L.ch]?CH[L.ch].name:L.title)} in Tournament stage ${st+1} to unlock.`; }
 function unlockChar(id){ if(!CH[id]||progUnlocked(id)) return false; PROG.unlocked.push(id); progSave(); return true; }
 function addCoins(n){ n=Math.max(0,Math.round(n)); PROG.coins+=n; progSave(); return n; }
 function refreshCoins(){ document.querySelectorAll('.coins').forEach(e=>e.textContent=PROG.coins); }
