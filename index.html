@@ -1228,6 +1228,7 @@ function aiKey(p,t){ const s=shuttle; if(t==='block'||t==='drop'||t==='net'||t==
     if(canSmash(p,s)){ if(p.armed==='thunder'||p.armed==='bomb') return 'smash';   // v16.1: an armed power special is always fired as a real smash, never wasted on a punch clear
       if(t==='punch') return 'punch';   // v16.1: AI punch-clear intent survives the K mapping (it chose to hit late/deep)
       if(t==='flat'&&s.y>NET_TOP-50-.27*PX_M) return 'flat'; }   // v16.1: flat smash kept when contact is low (<~2.4 m)
+    if(t==='flat'&&!canSmash(p,s)&&s.y<FLAT_MIN_Y) return 'flat';   // v16.1: AI flat-attack intent at shoulder height is honoured (v15.9 behaviour), not demoted to a drive/push
     if(t==='smash'&&k==='punch') return 'punch'; return k; }
   return t; }
 function shotFor(p){ let t=shotFor0(p); if(p.ai) t=aiKey(p,t); if(p.ai&&p.ai.style) t=styleShot(p,t); if(game.fun==='smash') t=smashOnly(p,t); return t; }
