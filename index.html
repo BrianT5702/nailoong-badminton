@@ -160,6 +160,15 @@
   button.tile b{font-size:.92em}
   button.tile:hover,button.tile:focus-visible{background:#ffe98f;outline:none;box-shadow:0 .15em 0 #d9a400,0 0 0 .14em #ff9fbe}
   .tfoot{margin-top:.6em;font-size:.68em;color:#b08a6a}
+  .profbadge{position:absolute;top:.75em;right:5.5em;background:rgba(255,255,255,.92);border:0;border-radius:1em;padding:.25em .8em;font:bold .95em inherit;color:#b0457a;box-shadow:0 .12em 0 #f0a8c8;cursor:pointer}
+  .prof{max-width:34em}.pgrid{display:flex;flex-wrap:wrap;gap:.6em;justify-content:center;margin:.7em 0}
+  .pcard{position:relative;width:6.6em;padding:.5em .3em .4em;border-radius:1em;background:#fff;border:.18em solid #ffe08a;cursor:pointer;font-weight:bold;color:#7a4a2a}.pcard.on{border-color:#ff6fb5;box-shadow:0 0 .6em #ff9fd0}
+  .pcard .av{width:3.2em;height:3.2em;border-radius:50%;margin:0 auto .3em;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.3em;text-shadow:0 .05em .1em rgba(0,0,0,.4)}
+  .pcard .ed{position:absolute;top:.15em;font-size:.8em;background:none;border:0;cursor:pointer;padding:.1em}.pcard .ed.r{right:.2em}.pcard .ed.l{left:.2em}
+  .pcard.add{color:#c48a12;border-style:dashed}.pnew input{font:inherit;padding:.3em .6em;border-radius:.6em;border:.12em solid #ffd93b;width:12em}
+  .pav{display:flex;flex-wrap:wrap;gap:.3em;justify-content:center;margin:.5em 0}.pav button{width:2.2em;height:2.2em;border-radius:50%;border:.15em solid transparent;color:#fff;font-weight:bold;cursor:pointer}.pav button.sel{border-color:#333}
+  .prow{display:flex;gap:.4em;justify-content:center;flex-wrap:wrap;margin:.35em 0}.pcode{margin:.4em 0;text-align:left}.pcode summary{cursor:pointer;font-weight:bold;color:#b0457a;text-align:center}
+  .pcode textarea{width:100%;box-sizing:border-box;font:.75em monospace;border-radius:.6em;border:.12em solid #ffd93b;padding:.4em}.pmsg{min-height:1.2em;font-size:.85em;color:#b0457a;margin:.3em 0}
   .coinbadge{position:absolute;top:.75em;left:3.3em;background:rgba(255,255,255,.9);border-radius:1em;padding:.2em .75em;font-weight:bold;color:#c48a12;box-shadow:0 .12em 0 #e8c25a;font-size:.95em}
   .card.scr{max-height:94%;overflow:auto;padding:.8em 1.6em 1em;max-width:none}
   h1.h2{font-size:1.8em;margin:0 0 .3em}
@@ -242,6 +251,19 @@
       <div class="tfoot" id="titleFoot"></div>
     </div>
     <div class="coinbadge" title="Coins">&#129689; <span class="coins">0</span></div>
+    <button class="profbadge" id="profBtn" title="Switch profile"></button>
+  </div>
+  <div class="overlay hidden" id="profScreen">
+    <div class="card scr prof"><h1 class="h2">Who's <span>playing?</span></h1><div class="sub">Each profile keeps its own unlocks, coins, rackets, purchases, settings and keys. Saved on this device only.</div>
+      <div class="pgrid" id="profGrid"></div>
+      <div class="pnew hidden" id="profForm"><input id="profName" maxlength="16" placeholder="Name"><div class="pav" id="profAv"></div>
+        <div class="prow"><button class="small" id="profSave">Save</button><button class="small ghost" id="profCancel">Cancel</button></div></div>
+      <details class="pcode"><summary>&#128190; Save code (export / import)</summary>
+        <div class="prow"><button class="small" id="expBtn">Export this profile</button><button class="small ghost" id="expCopy">Copy</button><button class="small ghost" id="expDl">Download .txt</button></div>
+        <textarea id="codeBox" rows="3" spellcheck="false" placeholder="Paste a save code here to import it"></textarea>
+        <div class="prow"><button class="small" id="impCur">Import into this profile</button><button class="small" id="impNew">Import as new profile</button></div></details>
+      <div class="pmsg" id="profMsg"></div>
+      <button class="small ghost" id="profBack">Done</button></div>
   </div>
 
   <div class="overlay hidden" id="qmScreen">
@@ -413,6 +435,42 @@
 </script>
 <script>
 'use strict';
+/* ================= v15.8 local profiles (no login): every save key is namespaced per profile ================= */
+const PROF=(()=>{ let RL=null; try{ RL=window.localStorage; RL.getItem('x'); }catch(e){ RL=null; }
+  const mem={}, R={get:k=>RL?RL.getItem(k):(k in mem?mem[k]:null), set:(k,v)=>{ if(RL) RL.setItem(k,v); else mem[k]=String(v); }, del:k=>{ if(RL) RL.removeItem(k); else delete mem[k]; },
+    keys:()=>{ if(!RL) return Object.keys(mem); const a=[]; for(let i=0;i<RL.length;i++) a.push(RL.key(i)); return a; } };
+  const LK='nbp_list', AK='nbp_active', MAX=8; let list=null;
+  try{ list=JSON.parse(R.get(LK)||'null'); }catch(e){}
+  if(!Array.isArray(list)||!list.length){   // first run of v15.8: migrate the old single save into 'Player 1' (old keys kept untouched as a backup)
+    const id='p'+Date.now().toString(36); list=[{id,name:'Player 1',av:'nailoong'}];
+    try{ for(const k of R.keys()) if(k&&!k.startsWith('nbp')) R.set('nbp:'+id+':'+k,R.get(k)); }catch(e){}
+    try{ R.set(LK,JSON.stringify(list)); R.set(AK,id); }catch(e){} }
+  let act=R.get(AK); if(!list.find(p=>p.id===act)){ act=list[0].id; try{ R.set(AK,act); }catch(e){} }
+  const pre=id=>'nbp:'+id+':', saveList=()=>{ try{ R.set(LK,JSON.stringify(list)); }catch(e){} };
+  const dataOf=id=>{ const o={}, p=pre(id); for(const k of R.keys()) if(k.startsWith(p)) o[k.slice(p.length)]=R.get(k); return o; };
+  const clear=id=>{ const p=pre(id); for(const k of R.keys()) if(k.startsWith(p)) R.del(k); };
+  const crc32=str=>{ let c,crc=-1; const b=new TextEncoder().encode(str); for(let i=0;i<b.length;i++){ c=(crc^b[i])&255; for(let k=0;k<8;k++) c=c&1?(c>>>1)^0xEDB88320:c>>>1; crc=(crc>>>8)^c; } return ((crc^-1)>>>0).toString(16).padStart(8,'0'); };
+  const b64=u8=>{ let s=''; for(let i=0;i<u8.length;i+=0x8000) s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000)); return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); };
+  const unb64=s=>{ s=s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s+='='; const b=atob(s), u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i); return u; };
+  const pipe=async(u8,T)=>new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(T)).arrayBuffer());
+  const P={ MAX, list:()=>list.slice(), id:()=>act, cur:()=>list.find(p=>p.id===act),
+    LS:{ getItem:k=>R.get(pre(act)+k), setItem:(k,v)=>R.set(pre(act)+k,String(v)), removeItem:k=>R.del(pre(act)+k) },
+    seen:()=>R.get('nbp_seen')==='1', markSeen:()=>{ try{ R.set('nbp_seen','1'); }catch(e){} },
+    switchTo(id){ if(!list.find(p=>p.id===id)) return; R.set(AK,id); R.set('nbp_seen','1'); location.reload(); },
+    create(name,av,go=true){ if(list.length>=MAX) return null; const id='p'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36); list.push({id,name:(name||'Player').slice(0,16),av:av||'nailoong'}); saveList(); if(go) P.switchTo(id); return id; },
+    rename(id,name,av){ const p=list.find(q=>q.id===id); if(!p) return; if(name) p.name=name.slice(0,16); if(av) p.av=av; saveList(); },
+    remove(id){ if(list.length<=1) return false; clear(id); list=list.filter(p=>p.id!==id); saveList(); if(id===act) P.switchTo(list[0].id); return true; },
+    async exportCode(id=act){ const p=list.find(q=>q.id===id), json=JSON.stringify({app:'nailoong-badminton',v:1,name:p.name,av:p.av,data:dataOf(id)}), crc=crc32(json); let u=new TextEncoder().encode(json), m='N';
+      if(typeof CompressionStream==='function'){ try{ u=await pipe(u,new CompressionStream('deflate-raw')); m='D'; }catch(e){} } return `NBSAVE1.${m}.${crc}.${b64(u)}`; },
+    async parseCode(code){ const parts=String(code||'').trim().replace(/\s+/g,'').split('.'); if(parts.length!==4||parts[0]!=='NBSAVE1'||!/^[ND]$/.test(parts[1])) throw new Error('Not a Nailoong save code');
+      let u; try{ u=unb64(parts[3]); }catch(e){ throw new Error('Save code is damaged'); }
+      if(parts[1]==='D'){ if(typeof DecompressionStream!=='function') throw new Error('This browser cannot read compressed codes'); try{ u=await pipe(u,new DecompressionStream('deflate-raw')); }catch(e){ throw new Error('Save code is damaged'); } }
+      const json=new TextDecoder().decode(u); if(crc32(json)!==parts[2]) throw new Error('Checksum mismatch: the code is damaged or incomplete');
+      const o=JSON.parse(json); if(!o||o.app!=='nailoong-badminton'||o.v!==1||typeof o.data!=='object') throw new Error('Unsupported save version'); return o; },
+    importInto(id,o){ clear(id); for(const [k,v] of Object.entries(o.data)) if(typeof v==='string') R.set(pre(id)+k,v); const p=list.find(q=>q.id===id); if(p&&o.av&&!p.renamed) p.av=o.av; saveList(); }
+  };
+  return P; })();
+const LS=PROF.LS;
 /* ================= Personalise me! ================= */
 const GIFT_LINE  = "A little game made with love, just for you \u2665";
 const LOVE_NOTES = [
@@ -455,9 +513,9 @@ addEventListener('resize',resize); resize();
 let actx=null, master=null, muted=false, busSfx=null, busMusic=null, busCrowd=null, busImpact=null, impMaster=null, duck=null;
 // v14 mixer: Music / SFX+Voices / Crowd (saved). Music defaults to ~22% of the SFX level.
 // v14.1 louder defaults (settings key bumped to nb_vol2 so the new defaults apply once; later changes are kept). Sliders go 0-200%.
-const VOL={music:.48,sfx:1,crowd:1.25}, MASTER_G=1.0; try{ Object.assign(VOL,JSON.parse(localStorage.getItem('nb_vol2')||'{}')); localStorage.removeItem('nb_vol'); }catch(e){}
+const VOL={music:.48,sfx:1,crowd:1.25}, MASTER_G=1.0; try{ Object.assign(VOL,JSON.parse(LS.getItem('nb_vol2')||'{}')); LS.removeItem('nb_vol'); }catch(e){}
 function applyVol(){ if(!actx) return; busSfx.gain.value=VOL.sfx; busImpact.gain.value=VOL.sfx; busMusic.gain.value=VOL.music; busCrowd.gain.value=VOL.crowd; }
-try{ muted = localStorage.getItem('nb_muted')==='1'; }catch(e){}
+try{ muted = LS.getItem('nb_muted')==='1'; }catch(e){}
 function ensureAudio(){
   if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); master=actx.createGain(); master.gain.value=muted?0:MASTER_G;
     const comp=actx.createDynamicsCompressor(); comp.threshold.value=-16; comp.knee.value=8; comp.ratio.value=3.5; comp.attack.value=.003; comp.release.value=.18;   // glue + loudness
@@ -717,10 +775,10 @@ const sfx={
       aww:[[.5,1.15,.72,'a']], hup:[[.11,1.05,.8,'u']], squeal:[[.32,1,1.9,'i'],[.12,1.85,1.7,'i'],[.18,1.75,1.95,'e']]}; vox(side,V[kind]||V.cheer,kind==='hup'?.2:.27); },
   cheer(level){ crowdCheer(level); }, ooh(){ crowdOoh(); }
 };
-function setMuted(m){ muted=m; try{localStorage.setItem('nb_muted',m?'1':'0');}catch(e){} if(master) master.gain.value=m?0:MASTER_G; if(impMaster) impMaster.gain.value=m?0:MASTER_G; drawMuteIcon(); }
+function setMuted(m){ muted=m; try{LS.setItem('nb_muted',m?'1':'0');}catch(e){} if(master) master.gain.value=m?0:MASTER_G; if(impMaster) impMaster.gain.value=m?0:MASTER_G; drawMuteIcon(); }
 function initVols(){ document.querySelectorAll('input.vol').forEach(e=>{ const k=e.dataset.k; e.value=Math.round(VOL[k]*100);
   e.addEventListener('input',()=>{ ensureAudio(); setVol(k,e.value/100); }); e.addEventListener('keydown',ev=>ev.stopPropagation()); }); }
-function setVol(k,v){ VOL[k]=clamp(v,0,2); try{ localStorage.setItem('nb_vol2',JSON.stringify(VOL)); }catch(e){} applyVol();
+function setVol(k,v){ VOL[k]=clamp(v,0,2); try{ LS.setItem('nb_vol2',JSON.stringify(VOL)); }catch(e){} applyVol();
   document.querySelectorAll(`input.vol[data-k="${k}"]`).forEach(e=>{ if(+e.value!==Math.round(VOL[k]*100)) e.value=Math.round(VOL[k]*100); }); }
 function drawMuteIcon(){
   $('muteIcon').innerHTML='<path d="M4 9h4l5-4v14l-5-4H4z" fill="#c48a12"/>'+(muted
@@ -753,7 +811,7 @@ function kbDedupe(B,prio){   // a key may only do one thing: keep it in the prio
 }
 function kbLoad(){
   const d=kbClone(KB_DEFAULT);
-  try{ const raw=localStorage.getItem(KB_STORE); if(!raw) return d; const o=JSON.parse(raw); if(!o||typeof o!=='object'||o.v!==1) return d;
+  try{ const raw=LS.getItem(KB_STORE); if(!raw) return d; const o=JSON.parse(raw); if(!o||typeof o!=='object'||o.v!==1) return d;
     for(const g of KB_GROUPS) for(const a in d[g]){ const v=o[g]&&o[g][a];
       if(Array.isArray(v)&&v.length<=KB_MAX&&v.every(k=>typeof k==='string'&&/^[A-Za-z0-9]{1,24}$/.test(k))) d[g][a]=[...new Set(v)]; }
     kbDedupe(d);
@@ -763,7 +821,7 @@ function kbLoad(){
   }catch(e){ return kbClone(KB_DEFAULT); }
 }
 let BINDS=kbLoad(), KB_BOUND=new Set();
-function kbSave(){ try{ localStorage.setItem(KB_STORE,JSON.stringify({v:1,p1:BINDS.p1,p2:BINDS.p2,global:BINDS.global})); }catch(e){} }
+function kbSave(){ try{ LS.setItem(KB_STORE,JSON.stringify({v:1,p1:BINDS.p1,p2:BINDS.p2,global:BINDS.global})); }catch(e){} }
 function kbRebuild(){ KB_BOUND=new Set(); for(const g of KB_GROUPS) for(const a in BINDS[g]) for(const k of BINDS[g][a]) KB_BOUND.add(k); }
 kbRebuild();
 const kbHas=(g,a,code)=>!!(BINDS[g][a]&&BINDS[g][a].includes(code));
@@ -1386,11 +1444,18 @@ function hitShuttle(p,d=0,reach=REACH){
     for(let i=0;i<7;i++) spark(s.x,s.y,'#fff6a8');
   }
   if(weakRet){ type='lift'; big=false; const w=solveShot(s.x,s.y,oppX(p.side,weakRet>1?rand(.22,.34):rand(.3,.45)),[62,66,70,58,74]); if(w) v=w; popup(p.x,p.y-185,'weak pop-up!','#ff9a3c',16); }   // v15.6: a blasted return is a short, attackable lift
+  s.webDip=0; s.hideT=0;
+  if(spec==='wall'&&p.ch.id==='cap'&&!weakRet){ const w=solveShot(s.x,s.y,oppX(p.side,rand(.8,.95)),[3,6,9,12,15,18,22,26,30,34],70*PX_M); if(w){ v=w; type='drive'; }   // v15.8 shield ricochet: the blocked attack comes straight back as a fast flat drive
+    popup(p.x,p.y-200,'RICOCHET!','#9fd3ff',22); if(!NET.fxSkip){ tone(1900,.12,'square',.1,1200); tone(2600,.25,'triangle',.08,1700,.02); } }
+  if(spec==='drive'&&p.ch.id==='ironman'){ const sp0=Math.hypot(v.vx,v.vy), a0=Math.atan2(v.vy,v.vx), dd=Math.sign(v.vx)||1;   // v15.8 repulsor: +22% off the racket, flattened just enough to stay in
+    for(let k=0;k<=20;k++){ const a=a0+dd*k*.025, c={vx:Math.cos(a)*sp0*1.22,vy:Math.sin(a)*sp0*1.22}, sm=simulate(s.x,s.y,c.vx,c.vy,4);
+      if(sm.crossY!==null&&sm.crossY<NET_TOP-6&&sm.landX>COURT_L+8&&sm.landX<COURT_R-8){ v=c; break; } } }
+  if(spec==='spin'&&p.ch.id==='spidey') s.webDip0=dir;   // v15.8 web: the shot dips hard once past the net
   const rid=spec&&spec!=='wall'&&spec!=='rider'?p.ch.id:p.rider?p.rider:spec==='wall'?p.ch.id:null; const fromRider=!spec&&!!p.rider; p.rider=null; if(fromRider&&!rid.endsWith(':chain')) spec='rider';
   if(rid&&rid.endsWith(':chain')){ const id=rid.split(':')[0]; spRider(opp,id,{...SPX[id].chain}); if(SPX[id].rw) s.spRet0=id; if(!spec) spec='rider'; }
   else if(rid&&SPX[rid]){ if(SPX[rid].w==='ret') s.spRet0=rid; else if(SPX[rid].w==='hit'){ spRider(opp,rid); if(SPX[rid].rw) s.spRet0=rid; } }
   s.vx=v.vx; s.vy=v.vy; s.netHit=false; s.netCord=false; s.boostT=0; s.gMul=1; s.bK=BOOST_K; s.tumbleT=type==='net'?.7:0; s.fx=(type==='smash'||type==='netkill'||type==='kill'||type==='flat')?(type==='kill'?1:fxTier):-1; s.fxc=p.side===0?'#ffc61a':'#ff5f9e'; s.hitter=p.side;
-  s.type=type; s.bigSmash=big; s.q=q; s.special=spec; s.spRet=s.spRet0||null; s.spRet0=null; if(spec==='bomb'){ const r=Math.hypot(s.vx,s.vy), a=Math.atan2(s.vy,s.vx), d=Math.sign(s.vx)||1, a2=a+d*.07, nv={vx:Math.cos(a2)*r,vy:Math.sin(a2)*r}, sim=simulate(s.x,s.y,nv.vx,nv.vy,3); if(sim.crossY!==null&&sim.crossY<NET_TOP-4&&(sim.landX-NET_X)*d>1.5*PX_M){ s.vx=nv.vx; s.vy=nv.vy; } s.fx=2; game.shake=.45; hitFreeze(.1); sfx.boom&&sfx.boom(.6); game.camP=1; }   // steeper by ~4 deg when it still clears the tape
+  s.type=type; s.bigSmash=big; s.q=q; s.special=spec; s.spRet=s.spRet0||null; s.spRet0=null; s.webDip=s.webDip0||0; s.webDip0=0; if(spec==='wall'&&p.ch.id==='batman'||rid==='batman') s.hideT=.75; if(spec==='bomb'){ const r=Math.hypot(s.vx,s.vy), a=Math.atan2(s.vy,s.vx), d=Math.sign(s.vx)||1, a2=a+d*.07, nv={vx:Math.cos(a2)*r,vy:Math.sin(a2)*r}, sim=simulate(s.x,s.y,nv.vx,nv.vy,3); if(sim.crossY!==null&&sim.crossY<NET_TOP-4&&(sim.landX-NET_X)*d>1.5*PX_M){ s.vx=nv.vx; s.vy=nv.vy; } s.fx=2; game.shake=.45; hitFreeze(.1); sfx.boom&&sfx.boom(.6); game.camP=1; }   // steeper by ~4 deg when it still clears the tape
   if(spec&&spec!=='thunder'&&spec!=='bomb'){ hitFreeze(.07); game.camP=Math.max(game.camP||0,.5); }
   if(spec){ const col=p.ch.col; popup(s.x,s.y-58,'\u2605 '+p.ch.spName,col,30); for(let i=0;i<14;i++) spark(s.x,s.y,col);
     if(spec==='thunder'){ s.fx=2; game.shake=.5; hitFreeze(.11); sfx.smashBig(1); fxBurst('burst',s.x,s.y,col,0,1.3); fxBurst('speed',s.x,s.y,col,Math.atan2(v.vy,v.vx)); game.camP=1; }
@@ -1489,7 +1554,7 @@ function aiThink(p,dt){
     else tx=base;
   } else if(game.state==='rally'){
     if(game.lastHitter!==p.side){
-      if(a.seen!==game.hitId){ a.seen=game.hitId; a.react=d.react*rand(.7,1.3); a.err=rand(-1,1)*d.err*clamp(1-.08*chD(p,3),.5,1.5);
+      if(a.seen!==game.hitId){ a.seen=game.hitId; a.react=d.react*rand(.7,1.3)+(s.hideT>0?.45:0); a.err=rand(-1,1)*d.err*clamp(1-.08*chD(p,3),.5,1.5);
         a.miss=Math.random()<d.mistake; a.jump=Math.random()<d.jump; a.jroll=Math.random()<d.jump; a.runFrom=p.x; a.leave=Math.random()<d.leave;
         if(s.type==='kill'){ a.react=d.sReact*rand(.8,1.2); a.miss=Math.random()<d.sMiss*1.2; a.jump=false; }
         if(s.type==='netkill'){ a.react=d.sReact*rand(.9,1.3); a.miss=Math.random()<Math.min(.95,d.sMiss+.6); a.jump=false; }
@@ -1669,6 +1734,8 @@ function step(dt){
   } else if(game.state==='rally'){
     const px=s.x, py=s.y;
     if(!s.landT) stepS(s,dt);
+    if(s.webDip&&!s.landT&&(s.x-NET_X)*s.webDip>15){ s.vy+=16*PX_M*dt; }   // v15.8 Spider-Man web pull (extra downward tug past the tape)
+    if(s.hideT>0) s.hideT=Math.max(0,s.hideT-dt);
     if(!s.netHit && (px-NET_X)*(s.x-NET_X)<0){
       const t=(NET_X-px)/(s.x-px), cy=lerp(py,s.y,t);
       if(cy>NET_TOP-3){
@@ -2241,7 +2308,7 @@ function drawShuttleGround(){
   ctx.fillStyle=`rgba(25,55,35,${.2+.35*k})`; ell(s.x,GROUND+1,4+6*k,1.6+2.2*k); ctx.fill();
   ctx.fillStyle=`rgba(25,55,35,${.18+.3*k})`; ell(s.x,GROUND+1,1.6+1.6*k,.8+.6*k); ctx.fill();
   guideLand=null;
-  if(guideOn()&&game.state==='rally'&&!s.netHit&&s.vy>0&&GROUND-s.y>40){
+  if(guideOn()&&game.state==='rally'&&!(s.hideT>0)&&!s.netHit&&s.vy>0&&GROUND-s.y>40){
     const sim=simulate(s.x,s.y,s.vx,s.vy,4,s.boostT||0,s.gMul||1,s.bK||BOOST_K); guideLand=sim.landX;
     const pul=1+.12*Math.sin(game.time*10);
     ctx.save(); ctx.strokeStyle='rgba(255,255,255,.85)'; ctx.lineWidth=2.2; ctx.setLineDash([5,4]);
@@ -2249,7 +2316,7 @@ function drawShuttleGround(){
     ctx.setLineDash([]); ctx.strokeStyle='rgba(255,111,159,.9)'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.ellipse(sim.landX,GROUND+1,4,1.5,0,0,7); ctx.stroke(); ctx.restore(); }
 }
 function drawShuttle(){
-  const s=shuttle;
+  const s=shuttle; if(s.hideT>0&&s.hideT<.52&&game.state==='rally') return;   // v15.8 Batman smoke: shuttle invisible
   // motion streak: dark underlay + white core, stronger when fast
   const tr=s.trail;
   if(tr.length>1){ ctx.save(); ctx.lineCap='round';
@@ -2397,8 +2464,8 @@ function render(){
 
 /* ================= v15 Stamina + special meter ================= */
 // v15.1 stamina: moving is free; shots cost (attacks most), lunge/jump small. Regen ~8/s standing or moving slowly.
-const SET_KEY='nailoong.settings.v1'; const SET={slowmo:true}; try{ Object.assign(SET,JSON.parse(localStorage.getItem(SET_KEY)||'{}')); }catch(e){}
-function saveSet(){ try{ localStorage.setItem(SET_KEY,JSON.stringify(SET)); }catch(e){} }
+const SET_KEY='nailoong.settings.v1'; const SET={slowmo:true}; try{ Object.assign(SET,JSON.parse(LS.getItem(SET_KEY)||'{}')); }catch(e){}
+function saveSet(){ try{ LS.setItem(SET_KEY,JSON.stringify(SET)); }catch(e){} }
 function hitFreeze(t){ if(game.mode==='online'||!SET.slowmo) return; game.hitStop=Math.max(game.hitStop||0,t); }
 const ST={max:100,run:0,lunge:5,jump:4,regenStand:3,regenMove:3,regenFast:2,regenBreak:7.5,low:30,vlow:12,
   shot:{jsmash:20,smash:15,flat:17,netkill:12,kill:12,special:16,punch:8,drive:8,drop:7,block:7,net:7,push:7,clear:4,lift:4,serve:1.5}};   // v15.4: ~1.6-1.8x v15.3
@@ -2425,14 +2492,14 @@ const SPX={
   nailoong:{w:'hit',rw:2,stun:1.3,slow:2,txt:'SLIPPERY MILK!'},
   berry:{w:'hit',stun:1.0,slow:1,txt:'STICKY SYRUP!'},
   bombloong:{w:'ret',stun:1.1,kb:1.2,weak:2,txt:'KNOCKED BACK!'},
-  spidey:{w:'hit',stun:.9,slow:1,txt:'WEBBED!'},
+  spidey:{w:'hit',stun:1.0,slow:1,txt:'WEBBED!'},
   hulk:{w:'ret',stun:.3,kb:2.0,slow:1,weak:1,txt:'SMASHED BACK!'},
   ironman:{w:'hit',rw:1,stun:1.3,slow:.8,txt:'REPULSOR FLASH!'},
-  cap:{w:'hit',stun:.5,slow:.8,txt:'SHIELD RICOCHET!'},
+  cap:{w:'hit',rw:2,stun:1.4,slow:1,txt:'SHIELD RICOCHET!'},
   thor:{w:'ret',stun:1.0,slow:1,weak:1,txt:'LIGHTNING STUN!'},
   panther:{w:'hit',rw:1,stun:1.3,kb:1.6,txt:'KINETIC PULSE!'},
   flash:{w:'hit',rw:2,stun:2.0,slow:1.5,txt:'AFTERIMAGE FEINT!'},
-  batman:{w:'hit',stun:.45,slow:.8,txt:'SMOKE BOMB!'},
+  batman:{w:'hit',stun:.2,txt:'SMOKE BOMB!'},
   superman:{w:'ret',stun:.45,sta:35,slow:.8,weak:1,txt:'HEAT DRAIN!'},
   wonder:{w:'hit',stun:.4,kb:.8,txt:'LASSO PULL!'},
   naruto:{w:'hit',rw:1,stun:.8,slow:1,txt:'SHADOW CLONES!'},
@@ -2543,6 +2610,9 @@ function spfxWatch(dt){
     else if(sp==='bomb'){ spPart({x:s.x-s.vx*.012+rand(-4,4),y:s.y-s.vy*.012+rand(-4,4),vx:rand(-20,20),vy:rand(-50,-15),t:.7,T:.7,col:'rgba(90,90,90,.6)',r:rand(5,9),k:'smoke'}); if(Math.random()<.7) spPart({x:s.x,y:s.y-12,vx:rand(-90,90),vy:rand(-120,-20),t:.25,T:.25,col:Math.random()<.5?'#ffd23a':'#ff7a1a',r:rand(1.5,3),k:'spark'}); }
     else if(sp==='drive'){ spPart({x:s.x,y:s.y,vx:0,vy:0,t:.35,T:.35,col,r:9,k:'glow'}); }
     else spPart({x:s.x,y:s.y,vx:0,vy:0,t:.4,T:.4,col,r:9,k:'glow'});
+    if(s.hideT>.45&&s.hideT<.6) for(let i=0;i<6;i++) spPart({x:s.x+rand(-50,50),y:s.y+rand(-40,40),vx:rand(-40,40),vy:rand(-30,10),t:1,T:1,col:'rgba(35,35,50,.7)',r:rand(22,36),k:'smoke'});
+    if(s.webDip&&Math.random()<.8) spPart({x:s.x,y:s.y,vx:0,vy:0,t:.5,T:.5,col:'#ffffff',r:3,k:'web',ox:s.x-s.vx*.04,oy:s.y-s.vy*.04});
+    if(sp==='drive'&&p.ch.id==='ironman'){ spPart({x:s.x,y:s.y,vx:0,vy:0,t:.45,T:.45,col:'#7fe8ff',r:14,k:'glow'}); spPart({x:s.x-s.vx*.02,y:s.y-s.vy*.02,vx:0,vy:0,t:.3,T:.3,col:'#ffffff',r:6,k:'glow'}); }
     { const id=p.ch.id;   // v15.7 signature trails per character
       if(id==='batman') spPart({x:s.x+rand(-10,10),y:s.y+rand(-10,10),vx:rand(-30,30),vy:rand(-30,10),t:.8,T:.8,col:'rgba(40,40,60,.55)',r:rand(10,18),k:'smoke'});
       else if(id==='pikachu'&&Math.random()<dt*14) spBolt(s.x,s.y,s.x-s.vx*.06+rand(-30,30),s.y-s.vy*.06+rand(-30,30),'#ffe14a',.12);
@@ -2619,8 +2689,8 @@ function spfxHUD(){
 /* ================= v15 Character select ================= */
 const CH_STORE='nailoong.chars.v1';
 let chPick={p1:'nailoong',p2:'berry',opp:'random',online:'nailoong'};
-try{ const o=JSON.parse(localStorage.getItem(CH_STORE)||'null'); if(o&&typeof o==='object') for(const k of ['p1','p2','opp','online']) if(o[k]&&(CH[o[k]]||o[k]==='random')) chPick[k]=o[k]; }catch(e){}
-function chSave(){ try{ localStorage.setItem(CH_STORE,JSON.stringify(chPick)); }catch(e){} }
+try{ const o=JSON.parse(LS.getItem(CH_STORE)||'null'); if(o&&typeof o==='object') for(const k of ['p1','p2','opp','online']) if(o[k]&&(CH[o[k]]||o[k]==='random')) chPick[k]=o[k]; }catch(e){}
+function chSave(){ try{ LS.setItem(CH_STORE,JSON.stringify(chPick)); }catch(e){} }
 const chUnlocked=id=>typeof progUnlocked==='function'?progUnlocked(id):!CH[id].boss;
 const chUI={open:false,mode:'1p',tab:'p1',from:'title'};
 const PORT={};
@@ -2750,7 +2820,7 @@ const diffName=d=>DIFF_NAME[d]||(/^t\d$/.test(d)?`Tournament Lv ${d[1]}`:d);
 const STYLE_LEVEL={easy:0,normal:1,hard:2,champ:3}; TOUR_T.forEach((u,i)=>STYLE_LEVEL['t'+(i+1)]=u<.35?0:u<1?1:u<1.4?2:3);
 function progDefault(){ return {v:1,coins:0,unlocked:[...START_UNLOCK],owned:{racket:['default'],band:['none'],theme:['classic'],music:['relax'],crowd:['default']},equip:{racket:'default',band:'none',theme:'classic',music:'relax',crowd:'default'},career:{stage:0,cleared:0},stats:{},chal:{},rk:{},lad2:1}; }
 function progLoad(){ const d=progDefault();
-  try{ const o=JSON.parse(localStorage.getItem(PROG_KEY)||'null'); if(!o||typeof o!=='object'||o.v!==1) return d;
+  try{ const o=JSON.parse(LS.getItem(PROG_KEY)||'null'); if(!o||typeof o!=='object'||o.v!==1) return d;
     d.coins=Number.isFinite(o.coins)?clamp(Math.floor(o.coins),0,1e7):0;
     if(o.rk&&typeof o.rk==='object') for(const k in o.rk){ const e=o.rk[k]; if(CH[k]&&e&&Array.isArray(e.own)) d.rk[k]={own:e.own.filter(x=>RKT[x]),eq:RKT[e.eq]?e.eq:''}; }
     if(Array.isArray(o.unlocked)) d.unlocked=[...new Set([...START_UNLOCK,...o.unlocked.filter(id=>typeof id==='string'&&CH[id])])];
@@ -2761,7 +2831,7 @@ function progLoad(){ const d=progDefault();
     if(o.stats&&typeof o.stats==='object'&&!Array.isArray(o.stats)) d.stats=o.stats; if(o.chal&&typeof o.chal==='object'&&!Array.isArray(o.chal)) d.chal=o.chal;
     return d; }catch(e){ return d; } }
 let PROG=progLoad(); MUS.track=PROG.equip.music||'relax';
-function progSave(){ try{ localStorage.setItem(PROG_KEY,JSON.stringify(PROG)); }catch(e){} refreshCoins(); }
+function progSave(){ try{ LS.setItem(PROG_KEY,JSON.stringify(PROG)); }catch(e){} refreshCoins(); }
 const progUnlocked=id=>PROG.unlocked.includes(id);
 function unlockText(id){ const st=LADDER.findIndex(l=>l.un.includes(id)); return st>=0?`Beat stage ${st+1} of the Tournament to unlock.`:'Win the Tournament to unlock.'; }
 function unlockChar(id){ if(!CH[id]||progUnlocked(id)) return false; PROG.unlocked.push(id); progSave(); return true; }
@@ -2945,8 +3015,8 @@ function drawRallyCounter(){ if(game.mode==='demo'||game.state!=='rally'||game.r
 /* ================= Screens & UI ================= */
 let menuSel={mode:'1p',diff:'normal',pts:11,bo:1,fun:'none'};
 // landing ring: 'auto' = only on Easy, 'on', 'off' (G toggles in game)
-let GUIDE='auto'; try{ GUIDE=localStorage.getItem('nb_guide')||'auto'; }catch(e){}
-function setGuide(g,announce){ GUIDE=g; try{localStorage.setItem('nb_guide',g);}catch(e){}
+let GUIDE='auto'; try{ GUIDE=LS.getItem('nb_guide')||'auto'; }catch(e){}
+function setGuide(g,announce){ GUIDE=g; try{LS.setItem('nb_guide',g);}catch(e){}
   document.querySelectorAll('button[data-guide]').forEach(o=>o.classList.toggle('sel',o.dataset.guide===g));
   if(announce&&game.state!=='menu') popup(NET_X,150,g==='on'?'Landing ring on':'Landing ring off','#6b5a8a',20); }
 document.querySelectorAll('button[data-guide]').forEach(b=>b.addEventListener('click',()=>{ ensureAudio(); setGuide(b.dataset.guide); }));
@@ -2978,7 +3048,7 @@ function toggleFs(){ try{ if(isFs()) (document.exitFullscreen||document.webkitEx
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>setTimeout(resize,50)));
 $('fsBtn').onclick=()=>{ toggleFs(); $('fsBtn').blur(); };
 $('fsTitleBtn').onclick=()=>{ toggleFs(); $('fsTitleBtn').blur(); };
-function hideAll(){ ['qmScreen','setScreen','howScreen','titleScreen','pauseScreen','winScreen','onlineScreen','kbScreen','chScreen','careerScreen','shopScreen','chalScreen'].forEach(id=>$(id).classList.add('hidden')); kbUI.open=false; kbUI.cap=null; chUI.open=false; }
+function hideAll(){ ['profScreen','qmScreen','setScreen','howScreen','titleScreen','pauseScreen','winScreen','onlineScreen','kbScreen','chScreen','careerScreen','shopScreen','chalScreen'].forEach(id=>$(id).classList.add('hidden')); kbUI.open=false; kbUI.cap=null; chUI.open=false; }
 function startFromMenu(){
   if(menuSel.mode==='online'&&!(document.querySelector('#qmScreen button[data-mode="online"]'))&&$('titleScreen')&&!$('titleScreen').classList.contains('hidden')) menuSel.mode=(document.querySelector('#qmScreen button[data-mode].sel')||{dataset:{mode:'1p'}}).dataset.mode;
   if(menuSel.mode==='online'){ ensureAudio(); onShow('main'); onStatus(''); netCharLine(); setTimeout(()=>$('onCode').focus(),0); return; }
@@ -2986,7 +3056,7 @@ function startFromMenu(){
 }
 function startMatchNow(c0,c1){
   ensureAudio(); hideAll(); game.career=null;
-  try{ const n=+(localStorage.getItem('nbHints')||0); if(n<3){ hintT=7; localStorage.setItem('nbHints',n+1); } }catch(e){ if(!hintShown){ hintT=7; hintShown=true; } } if(document.activeElement) document.activeElement.blur();
+  try{ const n=+(LS.getItem('nbHints')||0); if(n<3){ hintT=7; LS.setItem('nbHints',n+1); } }catch(e){ if(!hintShown){ hintT=7; hintShown=true; } } if(document.activeElement) document.activeElement.blur();
   if(!chUnlocked(chPick.p1)) chPick.p1='nailoong';
   newMatch(menuSel.mode,menuSel.diff,menuSel.pts,c0||chPick.p1,c1||(menuSel.mode==='2p'?chPick.p2:resolveOpp())); game.bo=menuSel.bo; applyFun(menuSel.fun); for(const k in keys) keys[k]=false; for(const k in pressed) delete pressed[k];
   buildTouch(); tone(660,.1,'triangle',.15); tone(990,.15,'triangle',.15,null,.1);
@@ -3036,6 +3106,38 @@ const FUN_DESC={none:'Classic badminton.',smash:'Every hit becomes a smash.',gia
 function funDescUpd(){ $('funDesc').textContent=FUN_DESC[menuSel.fun]||''; }
 const MENU_SCR=['qmScreen','setScreen','howScreen'];
 function showScr(id,focus){ hideAll(); $(id).classList.remove('hidden'); if(focus) kbFocus(focus); }
+function profAvHTML(av){ const c=CH[av]||CH.nailoong; return `<div class="av" style="background:${c.col}">${kbEsc(c.name[0])}</div>`; }
+const profUI={edit:null,av:'nailoong'};
+function profMsg(t){ $('profMsg').textContent=t||''; }
+function profRender(){ const L=PROF.list(), cur=PROF.id(); let h='';
+  for(const p of L) h+=`<div class="pcard${p.id===cur?' on':''}" data-id="${p.id}">${profAvHTML(p.av)}${kbEsc(p.name)}<button class="ed r" data-ren="${p.id}" title="Rename">&#9998;&#65039;</button>${L.length>1?`<button class="ed l" data-del="${p.id}" title="Delete">&#128465;&#65039;</button>`:''}</div>`;
+  if(L.length<PROF.MAX) h+=`<div class="pcard add" data-new="1"><div class="av" style="background:#ffd93b">+</div>New</div>`;
+  $('profGrid').innerHTML=h; const c=PROF.cur(); if(c) $('profBtn').innerHTML=`&#128100; ${kbEsc(c.name)} &middot; Switch`; }
+function profForm(edit){ profUI.edit=edit; const p=edit?PROF.list().find(q=>q.id===edit):null; profUI.av=p?p.av:'nailoong'; $('profName').value=p?p.name:`Player ${PROF.list().length+1}`;
+  const avs=CHARS.filter(c=>chUnlocked(c.id)).map(c=>c.id); if(!avs.includes(profUI.av)) avs.unshift(profUI.av);   // avatars = characters unlocked in the current profile
+  $('profAv').innerHTML=avs.map(id=>`<button data-av="${id}" class="${id===profUI.av?'sel':''}" style="background:${CH[id].col}" title="${kbEsc(CH[id].name)}">${kbEsc(CH[id].name[0])}</button>`).join('');
+  $('profForm').classList.remove('hidden'); $('profName').focus(); }
+function openProfiles(){ hideAll(); profRender(); profMsg(''); $('profForm').classList.add('hidden'); $('profScreen').classList.remove('hidden'); }
+$('profBtn').addEventListener('click',openProfiles);
+$('profBack').addEventListener('click',()=>{ PROF.markSeen(); backToTitle(); });
+$('profGrid').addEventListener('click',e=>{ const t=e.target.closest('[data-ren],[data-del],[data-new],[data-id]'); if(!t) return;
+  if(t.dataset.ren){ profForm(t.dataset.ren); return; }
+  if(t.dataset.del){ const p=PROF.list().find(q=>q.id===t.dataset.del); if(p&&confirm(`Delete profile "${p.name}" and all its progress? This cannot be undone.`)){ PROF.remove(p.id); profRender(); profMsg('Profile deleted.'); } return; }
+  if(t.dataset.new){ profForm(null); return; }
+  if(t.dataset.id===PROF.id()){ PROF.markSeen(); backToTitle(); } else PROF.switchTo(t.dataset.id); });
+$('profAv').addEventListener('click',e=>{ const b=e.target.closest('[data-av]'); if(!b) return; profUI.av=b.dataset.av; $('profAv').querySelectorAll('button').forEach(x=>x.classList.toggle('sel',x===b)); });
+$('profCancel').addEventListener('click',()=>$('profForm').classList.add('hidden'));
+$('profSave').addEventListener('click',()=>{ const n=$('profName').value.trim()||'Player'; if(profUI.edit){ PROF.rename(profUI.edit,n,profUI.av); $('profForm').classList.add('hidden'); profRender(); } else if(!PROF.create(n,profUI.av)) profMsg('Profile limit reached ('+PROF.MAX+').'); });
+$('expBtn').addEventListener('click',async()=>{ try{ $('codeBox').value=await PROF.exportCode(); $('codeBox').select(); profMsg(`Save code for "${PROF.cur().name}" ready (${$('codeBox').value.length} characters). Copy or download it.`); }catch(e){ profMsg('Export failed: '+e.message); } });
+$('expCopy').addEventListener('click',async()=>{ const v=$('codeBox').value; if(!v) return profMsg('Export first.'); try{ await navigator.clipboard.writeText(v); profMsg('Copied!'); }catch(e){ $('codeBox').select(); try{ document.execCommand('copy'); profMsg('Copied!'); }catch(_){ profMsg('Select the code and copy it.'); } } });
+$('expDl').addEventListener('click',()=>{ const v=$('codeBox').value; if(!v) return profMsg('Export first.'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([v],{type:'text/plain'})); a.download=`nailoong-save-${(PROF.cur().name||'player').replace(/[^a-z0-9]+/gi,'_')}.txt`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); });
+async function profImport(asNew){ let o; try{ o=await PROF.parseCode($('codeBox').value); }catch(e){ profMsg('\u26a0\ufe0f '+e.message); return false; }
+  if(asNew){ if(PROF.list().length>=PROF.MAX){ profMsg('Profile limit reached ('+PROF.MAX+'). Delete one first.'); return false; } let nm=o.name||'Imported'; if(PROF.list().some(p=>p.name===nm)) nm=(nm.slice(0,11)+' (2)'); const id=PROF.create(nm,o.av,false); PROF.importInto(id,o); PROF.switchTo(id); return true; }
+  if(!confirm(`Overwrite ALL progress in "${PROF.cur().name}" with the save "${o.name}"? This cannot be undone.`)) return false; PROF.importInto(PROF.id(),o); PROF.switchTo(PROF.id()); return true; }
+$('impCur').addEventListener('click',()=>profImport(false)); $('impNew').addEventListener('click',()=>profImport(true));
+profRender();
+{ let pk=null; try{ pk=sessionStorage.getItem('nbp_pick'); sessionStorage.setItem('nbp_pick','1'); }catch(e){}
+  if(!PROF.seen()||(PROF.list().length>1&&!pk)) setTimeout(()=>{ if(!$('titleScreen').classList.contains('hidden')) openProfiles(); },0); }   // first launch / new session with several profiles: pick who's playing
 function backToTitle(){ hideAll(); $('titleScreen').classList.remove('hidden'); }
 function openOnline(){ ensureAudio(); hideAll(); onShow('main'); onStatus(''); netCharLine(); setTimeout(()=>$('onCode').focus(),0); }
 function openSetup(mode){ if(mode){ menuSel.mode=mode; } $('qmScreen').querySelector(`button[data-mode="${menuSel.mode==='2p'?'2p':'1p'}"]`).click(); showScr('qmScreen','#qmGo'); funDescUpd(); }
@@ -3074,8 +3176,8 @@ addEventListener('keydown',e=>{ const dirs={ArrowDown:1,ArrowRight:1,ArrowUp:-1,
 $('titleFoot').textContent='Play = choose players, difficulty & game mode, then your character \u00b7 Enter to start \u00b7 Esc to go back';
 // v15.2: remember the last match setup
 const MS_KEY='nailoong.match.v1';
-try{ const o=JSON.parse(localStorage.getItem(MS_KEY)||'null'); if(o) for(const [k,attr] of [['mode','mode'],['diff','diff'],['pts','pts'],['bo','bo'],['fun','fun']]){ const b=o[k]!=null&&document.querySelector(`#qmScreen button[data-${attr}="${o[k]}"]`); if(b) b.click(); } }catch(e){}
-document.querySelectorAll('#qmScreen .seg button').forEach(b=>b.addEventListener('click',()=>{ try{ localStorage.setItem(MS_KEY,JSON.stringify({mode:menuSel.mode,diff:menuSel.diff,pts:menuSel.pts,bo:menuSel.bo,fun:menuSel.fun})); }catch(e){} }));
+try{ const o=JSON.parse(LS.getItem(MS_KEY)||'null'); if(o) for(const [k,attr] of [['mode','mode'],['diff','diff'],['pts','pts'],['bo','bo'],['fun','fun']]){ const b=o[k]!=null&&document.querySelector(`#qmScreen button[data-${attr}="${o[k]}"]`); if(b) b.click(); } }catch(e){}
+document.querySelectorAll('#qmScreen .seg button').forEach(b=>b.addEventListener('click',()=>{ try{ LS.setItem(MS_KEY,JSON.stringify({mode:menuSel.mode,diff:menuSel.diff,pts:menuSel.pts,bo:menuSel.bo,fun:menuSel.fun})); }catch(e){} }));
 funDescUpd(); setRender();
 refreshHelp();
 $('kbTitleBtn').onclick=()=>kbOpen('settings'); $('kbPauseBtn').onclick=()=>kbOpen('pause'); $('kbDone').onclick=kbClose;
@@ -3112,7 +3214,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden && game.mo
    Host = Nailoong (authoritative simulation), guest = Berry (sends inputs, predicts itself, interpolates the host).
    Reliable PeerJS channel: lobby/start/fx/win events. Extra unordered, no-retransmit channel: inputs, snapshots, pings. */
 const QS=new URLSearchParams(location.search);
-const NET_VER=18, ROOM_PREFIX='nailoong-badminton-v13-', CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const NET_VER=19, ROOM_PREFIX='nailoong-badminton-v13-', CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const NET={on:false,role:null,side:0,peer:null,conn:null,ch:null,code:'',closing:false,lost:false,
   rtt:0,rtts:[],off:0,offS:[],lastRecv:0,lastPing:0,epoch:0,
   lag:Math.max(0,+QS.get('netlag')||0), loss:clamp(+QS.get('netloss')||0,0,.9),
@@ -3242,7 +3344,7 @@ function onNetMsg(m){
     case 'full': onStatus('That room already has two players.','bad'); break;
     case 'lobby': if(NET.role==='guest') $('onGuestPts').textContent=`Match to ${m.pts}`; break;
     case 'start': if(NET.role==='guest') startOnline(m.pts,m.e,m.c,m.r); break;
-    case 'ch': if(CH[m.c]){ NET.peerCh=m.c; NET.peerRk=RKT[m.r]?m.r:''; netCharLine(); } break;
+    case 'ch': if(CH[m.c]){ NET.peerCh=m.c; NET.peerRk=RKT[m.r]?m.r:''; NET.peerName=typeof m.nm==='string'?m.nm.slice(0,16):''; netCharLine(); } break;
     case 'menu': if(NET.role==='guest'){ toLobby(); onStatus('The host went back to the lobby. Waiting for the next match...','ok'); } break;
     case 'win': if(NET.role==='guest'&&m.e===NET.epoch){ game.score=m.sc; game.winner=m.w; showWin(); } break;
     case 'rematch': NET.rmPeer=true; if(game.state==='win'){ $('winNote').textContent=NET.rmMe?'Starting...':'Your opponent wants a rematch! \u2665'; }
@@ -3278,8 +3380,8 @@ function onlineAgain(){
   $('winNote').textContent=NET.rmPeer?'Starting...':'Waiting for your opponent to accept the rematch...';
 }
 
-function netSendChar(){ if(NET.conn&&NET.conn.open) sendEv({t:'ch',c:chPick.online,r:rkEq(chPick.online)}); netCharLine(); }
-function netCharLine(){ const e=$('onChars'); if(e) e.innerHTML=`You: <b>${kbEsc(CH[chPick.online].name)}</b>`+(NET.conn&&NET.conn.open?` \u00b7 Opponent: <b>${kbEsc(NET.peerCh?CH[NET.peerCh].name:'choosing\u2026')}</b>`:''); }
+function netSendChar(){ if(NET.conn&&NET.conn.open) sendEv({t:'ch',c:chPick.online,r:rkEq(chPick.online),nm:(PROF.cur()||{}).name||''}); netCharLine(); }
+function netCharLine(){ const e=$('onChars'); if(e) e.innerHTML=`You (${kbEsc((PROF.cur()||{}).name||'')}): <b>${kbEsc(CH[chPick.online].name)}</b>`+(NET.conn&&NET.conn.open?` \u00b7 ${kbEsc(NET.peerName||'Opponent')}: <b>${kbEsc(NET.peerCh?CH[NET.peerCh].name:'choosing\u2026')}</b>`:''); }
 /* ---- host side ---- */
 const SHOT_CODE={c:'clear',s:'smash',d:'drop'};
 function netGuestInput(){
@@ -3304,7 +3406,7 @@ function netHostAfter(dt){
   const P=p=>[r(p.x),r(p.y),r(p.vx),r(p.vy),p.onGround?1:0,f3(p.swingT),f3(p.lungeT),f3(p.recT),p.lungeDir||0,f3(p.lungeCD),p.mood||0,f3(p.moodT),p.req||'clear',p.hitDone?1:0,f3(p.squash),p.f,Math.round(p.st*10)/10,Math.round(p.meter),p.armed||0,f3(p.boostT),p.perfN||0,p.spN||0,f3(p.stunT)];
   sendSt({t:'s',e:NET.epoch,ht:now,ack:NET.gSeq,st:game.state,sc:game.score,sv:game.server,sk:+(game.sClock||0).toFixed(2),lh:game.lastHitter,hid:game.hitId,ra:game.rally,
     p:[P(players[0]),P(players[1])],
-    s:[r(s.x),r(s.y),r(s.vx),r(s.vy),f3(s.rot),f3(s.boostT),s.gMul||1,s.bK||BOOST_K,f3(s.tumbleT),s.netHit?1:0,s.type||0,s.landT?1:0,s.fx||0,s.fxc||0,s.special||0],hs:game.hitStop>0?1:0,
+    s:[r(s.x),r(s.y),r(s.vx),r(s.vy),f3(s.rot),f3(s.boostT),s.gMul||1,s.bK||BOOST_K,f3(s.tumbleT),s.netHit?1:0,s.type||0,s.landT?1:0,s.fx||0,s.fxc||0,s.special||0,s.webDip||0,f3(s.hideT)],hs:game.hitStop>0?1:0,
     ns:f3(game.netShake),ch:f3(game.cheer),sh:f3(game.shake),w:game.winner,tm:f3(game.timer)});
 }
 
@@ -3364,7 +3466,7 @@ function guestUpdate(dt){
   rp.blink-=dt; if(rp.blink<0){ rp.blinkT=.13; rp.blink=rand(2,4.5);} rp.blinkT=Math.max(0,rp.blinkT-dt);
   // 4) shuttle: dead-reckon the latest snapshot forward to "now" on the host clock
   const S=L.s, tgt={x:S[0],y:S[1],vx:S[2],vy:S[3],boostT:S[5],gMul:S[6],bK:S[7]};
-  s.netHit=!!S[9]; s.type=S[10]||null; s.tumbleT=S[8]; s.fx=S[12]||0; s.fxc=S[13]||0; s.special=S[14]||null;
+  s.netHit=!!S[9]; s.type=S[10]||null; s.tumbleT=S[8]; s.fx=S[12]||0; s.fxc=S[13]||0; s.special=S[14]||null; s.webDip=S[15]||0; s.hideT=S[16]||0;
   if(game.state==='serve'){ const p=game.server===1?lp:rp; tgt.x=p.x+p.f*35; tgt.y=p.y-49+Math.sin(game.time*4)*2; tgt.vx=tgt.vy=0; }
   else if(game.state==='rally'&&!S[11]){
     let age=L.hs?0:clamp((hn-L.ht)/1000,0,.25); const st=1/120;
