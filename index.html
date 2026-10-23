@@ -997,13 +997,13 @@ const CHARS=[
     bio:'Quick, tidy hands at the net.'},
   {id:'bombloong',name:'Bombloong',src:'bomb',st:[8,6,6,6,7,6,5],sp:'bomb',spName:'Boom Smash',col:'#4fb8e8',frame:'#3a7bd5',grip:'#9fd3f0',
     bio:'Nailoong\'s blue eggshell rival (\u66b4\u66b4\u9f99). Big hitter, big reach, a bit slow.'},
-  {id:'spidey',name:'Spider-Man',src:'draw',st:[9,9,8,9,4,3,4],sp:'spin',spName:'Web Net Trap',col:'#e23b3b',frame:'#1d4fbf',grip:'#e23b3b',
+  {id:'spidey',name:'Spider-Man',src:'draw',st:[9,8,8,8,4,3,4],sp:'spin',spName:'Web Net Trap',col:'#e23b3b',frame:'#1d4fbf',grip:'#e23b3b',
     bio:'Fast, springy and strong, but runs out of breath.',art:{suit:'#d8262b',suit2:'#1f4fbf',head:'mask',mask:'#d8262b',eyes:'lens',web:true,emblem:'spider',boots:'#d8262b'}},
   {id:'hulk',name:'Hulk',src:'draw',st:[9,4,5,4,8,7,3],sp:'thunder',spName:'Gamma Smash',col:'#5fa83a',frame:'#7b3fa0',grip:'#5fa83a',
     bio:'Maximum power and reach. Slow feet, wild control.',art:{skin:'#6fbf44',suit:'#6fbf44',suit2:'#7b3fa0',head:'skin',eyes:'angry',hair:{col:'#23301c',style:'flat'},shorts:true,boots:'#6fbf44',big:1.12}},
   {id:'ironman',name:'Iron Man',src:'draw',st:[8,6,8,6,5,4,5],sp:'drive',spName:'Repulsor Drive',col:'#c8202a',frame:'#b01a24',grip:'#f0c419',
     bio:'Powerful armour with boot-jet jumps; the suit drains energy.',art:{suit:'#c4202a',suit2:'#f0c419',head:'helm',mask:'#c4202a',plate:'#f0c419',eyes:'slit',emblem:'reactor',boots:'#c4202a'}},
-  {id:'cap',name:'Captain America',src:'draw',st:[6,7,5,7,7,6,9],sp:'wall',spName:'Shield Block',col:'#2050b8',frame:'#d8262b',grip:'#ffffff',
+  {id:'cap',name:'Captain America',src:'draw',st:[7,7,5,7,7,6,9],sp:'wall',spName:'Shield Block',col:'#2050b8',frame:'#d8262b',grip:'#ffffff',
     bio:'Solid defender: good reach and control, shield saves a smash.',art:{suit:'#2a55b8',suit2:'#d8262b',head:'cowl',mask:'#2a55b8',skin:'#f6d2b0',eyes:'cute',emblem:'star',stripes:true,boots:'#d8262b',shield:true}},
   {id:'thor',name:'Thor',src:'draw',st:[9,5,6,5,6,6,5],sp:'thunder',spName:'Lightning Smash',col:'#7a8fa8',frame:'#c0c8d8',grip:'#8a5a2b',
     bio:'Thunderous smashes, heavy on his feet.',art:{suit:'#46506a',suit2:'#2b3348',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#f2c94c',style:'long'},cape:'#c8202a',emblem:'discs',boots:'#2b3348'}},
@@ -1825,7 +1825,7 @@ function step(dt){
     }
     for(const p of players){
       if(p.armed==='wall'&&ATTACK_T.has(s.type)&&game.lastHitter!==p.side&&!s.netHit&&(p.side===0?s.x<=NET_X+1:s.x>=NET_X-1)){   // v15 shield: auto-perfect return
-        const hc=hitCenter(p); if(Math.hypot(s.x-hc.x,s.y-hc.y)<reachOf(p)*1.7){ p.armed=null; p.wallHit=true; p.swingT=SW_PEAK; p.hitDone=false; p.req='clear';
+        const hc=hitCenter(p); if(Math.hypot(s.x-hc.x,s.y-hc.y)<reachOf(p)*(p.ch.id==='cap'?1.7:p.ch.id==='batman'?1.4:1.7)){ p.armed=null; p.wallHit=true; if(p.ch.id==='cap') p.st=Math.min(stMax(p),p.st+18); p.swingT=SW_PEAK; p.hitDone=false; p.req='clear';
           popup(p.x,p.y-170,'\u2605 '+p.ch.spName+'!',p.ch.col,26); fxBurst('flash',s.x,s.y,p.ch.col,0,1.2); hitShuttle(p,0,reachOf(p)); break; } }
       if(p.swingT>=SW_START && p.swingT<SW_END && !p.hitDone && game.lastHitter!==p.side && !s.netHit){
         // online guest: judge the swing against where the shuttle was when they saw it (rewind ~half the ping)
@@ -2623,7 +2623,8 @@ function trySpecial(p){
   if(p.meter<100||game.mode==='demo'||game.state==='win'||game.state==='point'||p.armed||p.perfN>0) return false;
   const t=p.ch.sp; p.meter=0; p.spFx=.8; p.spN=(p.spN||0)+1; game.spUsed=(game.spUsed||0)+1;
   if(t==='perfect') p.perfN=3;
-  else if(t==='dash'){ p.lungeCD=0; p.recT=0; p.lungeT=0; p.boostT=p.ch.id==='flash'||p.ch.id==='sonic'?2:1.6; p.boostK=p.ch.id==='flash'?2:p.ch.id==='sonic'?2.2:1.5; dust(p.x,GROUND,10); }
+  else if(t==='dash'){ p.lungeCD=0; p.recT=0; p.lungeT=0; p.boostT=p.ch.id==='flash'||p.ch.id==='sonic'?2:1.6; if(p.ch.id==='pikachu') p.st=Math.min(stMax(p),p.st+40);   // v16.3 Quick Attack also catches Pikachu's breath
+ p.boostK=p.ch.id==='flash'?2:p.ch.id==='sonic'?2.2:1.5; dust(p.x,GROUND,10); }
   else if(t==='wind'){ p.st=stMax(p); p.boostT=3; p.boostK=1.2; }
   if(SPX[p.ch.id]){ if(SPX[p.ch.id].w==='act'){ spRider(players[1-p.side],p.ch.id); if(SPX[p.ch.id].chain) p.rider=p.ch.id+':chain'; } else if(t==='perfect'||t==='dash'||t==='wind') p.rider=p.ch.id; }   // v15.6: instant specials ride on your next shot
   if(t==='perfect'||t==='dash'||t==='wind'); else p.armed=t;   // thunder / spin / wall / drive wait for the right shot
