@@ -1855,7 +1855,7 @@ function step(dt){
       pointTo(side,reason);
     }
     // feather trail
-    { const atk=ATTACK_T.has(s.type); s.trail.push({x:s.x,y:s.y,l:atk?(s.fx===2?.34:.26):.14,v:Math.hypot(s.vx,s.vy),a:atk?1:0,fx:atk?s.fx:-1,c:s.fxc}); if(s.trail.length>70) s.trail.shift(); }   // v14: attacking shots keep a strong streak to the floor
+    { const atk=ATTACK_T.has(s.type); s.trail.push({x:s.x,y:s.y,l:atk?(s.fx===2?.34:.26):.14,v:Math.hypot(s.vx,s.vy),a:atk?1:0,fx:atk?s.fx:-1,c:s.fxc,h:game.lastHitter}); if(s.trail.length>70) s.trail.shift(); }   // v14: attacking shots keep a strong streak to the floor
   } else if(game.state==='point'){
     game.timer-=dt;
     if(game.timer<=0){
@@ -2396,8 +2396,11 @@ function drawShuttle(){
       ctx.strokeStyle=`rgba(35,30,60,${al*.45*(b.fx===0?.6:1)})`; ctx.lineWidth=(1.6+3.4*f*al)*(b.fx===0?.55:1); ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
       ctx.strokeStyle=`rgba(255,255,255,${al})`; ctx.lineWidth=.8+1.8*f*al; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
     ctx.restore(); }
+  drawTrailFx(tr);
   // ~1.5x v8 (still well under v5's oversized shuttle); cork leads
   ctx.save(); ctx.translate(s.x,s.y); ctx.rotate(s.rot); { const z=game.fun==='giant'?1.25:.6; ctx.scale(z,z); }
+  // v16.2 visibility: a dark rim + bright yellow ring around the shuttle so it reads on every court/sky
+  ctx.save(); ctx.rotate(-s.rot); ctx.lineWidth=4; ctx.strokeStyle='rgba(20,15,45,.55)'; ctx.beginPath(); ctx.arc(-6,0,24,0,7); ctx.stroke(); ctx.lineWidth=2.2; ctx.strokeStyle='rgba(255,226,60,.9)'; ctx.beginPath(); ctx.arc(-6,0,24,0,7); ctx.stroke(); ctx.restore();
   // soft dark halo so the white skirt pops on clouds / sky / banners / lines
   ctx.shadowColor='rgba(20,15,45,.75)'; ctx.shadowBlur=4*scale*dpr;
   ctx.fillStyle='#ffffff'; ctx.strokeStyle='#2f2a45'; ctx.lineWidth=2.2;
@@ -2901,6 +2904,21 @@ function drawDeco(T){ const d=T.deco, t=game.time; if(!d) return; ctx.save();
   else if(d==='neon'){ for(let i=0;i<22;i++){ const x=-100+i*70, h=120+((i*53)%180); ctx.fillStyle='#0e0620'; ctx.fillRect(x,GROUND-190-h,62,h); for(let r=0;r<h/18;r++) for(let c=0;c<3;c++) if((i*7+r*3+c)%4){ ctx.fillStyle=(i+r+c)%5?'rgba(255,230,140,.55)':'rgba(120,255,240,.7)'; ctx.fillRect(x+8+c*18,GROUND-180-h+r*18,9,8); } } for(const [x,y,c,tx] of [[230,GROUND-420,'#ff3af0','BADMINTON'],[980,GROUND-440,'#3affea','NAILOONG']]){ ctx.shadowColor=c; ctx.shadowBlur=18; ctx.fillStyle=c; ctx.font='bold 34px "Trebuchet MS",sans-serif'; ctx.textAlign='center'; ctx.globalAlpha=.75+.25*Math.sin(t*5+x); ctx.fillText(tx,x,y); ctx.globalAlpha=1; } ctx.shadowBlur=0; }
   else if(d==='temple'){ for(const [x,s2] of [[170,1],[1110,.85]]){ ctx.save(); ctx.translate(x,GROUND-190); ctx.scale(s2,s2); ctx.fillStyle='#7a2a1a'; for(let k=0;k<3;k++){ const w=150-k*36, y=-60-k*70; ctx.fillRect(-w/2+14,y,w-28,60); ctx.fillStyle='#3a2a20'; ctx.beginPath(); ctx.moveTo(-w/2-20,y+4); ctx.quadraticCurveTo(0,y-30,w/2+20,y+4); ctx.lineTo(w/2,y+14); ctx.lineTo(-w/2,y+14); ctx.fill(); ctx.fillStyle='#7a2a1a'; } ctx.restore(); } for(let i=0;i<6;i++){ const x=380+i*105, y=GROUND-300+Math.sin(t*2+i)*4; ctx.strokeStyle='#3a2a20'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x,GROUND-340); ctx.lineTo(x,y-14); ctx.stroke(); ctx.fillStyle='#e8402a'; ell(x,y,13,16); ctx.fill(); ctx.fillStyle='rgba(255,220,120,.35)'; ell(x,y,22,24); ctx.fill(); } }
   ctx.restore(); }
+const TRAILS={none:{name:'No trail',price:0},rainbow:{name:'Rainbow',price:150,cols:['#ff4d4d','#ffa63d','#ffe14d','#5fd35f','#4da6ff','#9a6bff']},
+  fire:{name:'Fire',price:200,cols:['#fff27a','#ffb02e','#ff5a1f','#c81e1e']},ice:{name:'Ice',price:200,cols:['#ffffff','#bff0ff','#6fd0ff','#3a8ee8']},
+  hearts:{name:'Hearts',price:250,cols:['#ff7aa2','#ff4f8b'],glyph:'heart'},stars:{name:'Stars',price:250,cols:['#fff27a','#ffd23a'],glyph:'star'},
+  neon:{name:'Neon Lightning',price:300,cols:['#39ff14','#00f0ff'],zig:1},milk:{name:'Milk Splash',price:180,cols:['#ffffff','#fff6d8'],glyph:'drop'}};
+function drawTrailFx(tr){ const id=(typeof PROG!=='undefined'&&PROG.equip.trail)||'none', T=TRAILS[id]; if(!T||id==='none'||tr.length<2) return;
+  const me=game.mode==='online'?NET.side:0; if(game.mode==='demo') return; const P=players[me]; if(!P||P.ai) return;
+  ctx.save(); ctx.lineCap='round'; const n=tr.length;
+  for(let i=1;i<n;i++){ const a=tr[i-1], b=tr[i]; if(b.h!==me) continue; const al=clamp(b.l/.3,0,1)*clamp(i/n*1.4,0,1); if(al<.03) continue;
+    const c=T.cols[(T.cols.length*i/n|0)%T.cols.length]; ctx.globalAlpha=al*.85; ctx.strokeStyle=c; ctx.lineWidth=2+6*al;
+    ctx.beginPath(); if(T.zig){ const mx=(a.x+b.x)/2+(i%2?5:-5), my=(a.y+b.y)/2+(i%2?-5:5); ctx.moveTo(a.x,a.y); ctx.lineTo(mx,my); ctx.lineTo(b.x,b.y); ctx.shadowColor=c; ctx.shadowBlur=8; } else { ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); } ctx.stroke(); ctx.shadowBlur=0;
+    if(T.glyph&&i%4===0){ ctx.fillStyle=T.cols[i/4%T.cols.length|0]; const r=3+3*al; ctx.beginPath();
+      if(T.glyph==='heart'){ ctx.moveTo(b.x,b.y+r); ctx.bezierCurveTo(b.x-r*2,b.y-r*.4,b.x-r*.6,b.y-r*1.8,b.x,b.y-r*.5); ctx.bezierCurveTo(b.x+r*.6,b.y-r*1.8,b.x+r*2,b.y-r*.4,b.x,b.y+r); }
+      else if(T.glyph==='star'){ for(let k=0;k<10;k++){ const rr=k%2?r*.45:r*1.2, an=k*Math.PI/5-Math.PI/2; ctx.lineTo(b.x+Math.cos(an)*rr,b.y+Math.sin(an)*rr); } ctx.closePath(); }
+      else { ctx.arc(b.x,b.y,r*.8,0,7); } ctx.fill(); } }
+  ctx.restore(); }
 const COSM={
   racket:[{id:'default',name:'Character colours',price:0},{id:'gold',name:'Gold',price:60,frame:'#e0a800',grip:'#fff2a0'},{id:'neon',name:'Neon',price:60,frame:'#39d814',grip:'#1a1a1a'},
     {id:'ice',name:'Ice',price:60,frame:'#5fd0ff',grip:'#e8f8ff'},{id:'lava',name:'Lava',price:80,frame:'#ff4d1a',grip:'#2a1a1a'},{id:'galaxy',name:'Galaxy',price:80,frame:'#7b3fa0',grip:'#1a1a40'}],
@@ -2908,7 +2926,8 @@ const COSM={
     {id:'black',name:'Black headband',price:50,col:'#2a2a33'},{id:'pink',name:'Pink headband',price:50,col:'#ff7aa2'},{id:'gold',name:'Gold headband',price:90,col:'#f0c419'}],
   theme:Object.entries(THEMES).map(([id,t])=>({id,name:t.name,price:t.price})),
   music:Object.entries(TRACKS).map(([id,t])=>({id,name:t.name,price:t.price})),
-  crowd:Object.entries(CROWDS).map(([id,t])=>({id,name:t.name,price:t.price}))
+  crowd:Object.entries(CROWDS).map(([id,t])=>({id,name:t.name,price:t.price})),
+  trail:Object.entries(TRAILS).map(([id,t])=>({id,name:t.name,price:t.price}))   // v16.2 shuttle trails
 };
 // career ladder: 8 opponents with a playstyle and rising difficulty, ending in the Champion boss
 // v15.5 Tournament: you fight a character, you unlock that character (one per stage). 15 stages + the Champion Nailoong boss.
@@ -2948,7 +2967,7 @@ TOUR_T.forEach((u,i)=>{ DIFF['t'+(i+1)]=u<=1?diffLerp(DIFF.oldNormal,DIFF.hard,u
 const DIFF_NAME={easy:'Easy',normal:'Normal',hard:'Hard',champ:'Champion',rookie:'Rookie'};
 const diffName=d=>DIFF_NAME[d]||(/^t\d$/.test(d)?`Tournament Lv ${d[1]}`:d);
 const STYLE_LEVEL={easy:0,normal:1,hard:2,champ:3}; TOUR_T.forEach((u,i)=>STYLE_LEVEL['t'+(i+1)]=u<.35?0:u<1?1:u<1.4?2:3);
-function progDefault(){ return {v:1,coins:0,unlocked:[...START_UNLOCK],owned:{racket:['default'],band:['none'],theme:['classic'],music:['relax'],crowd:['default']},equip:{racket:'default',band:'none',theme:'classic',music:'relax',crowd:'default'},career:{stage:0,cleared:0},stats:{},chal:{},rk:{},lad2:1,lad3:1}; }
+function progDefault(){ return {v:1,coins:0,unlocked:[...START_UNLOCK],owned:{racket:['default'],band:['none'],theme:['classic'],music:['relax'],crowd:['default'],trail:['none']},equip:{racket:'default',band:'none',theme:'classic',music:'relax',crowd:'default',trail:'none'},career:{stage:0,cleared:0},stats:{},chal:{},rk:{},lad2:1,lad3:1}; }
 function progLoad(){ const d=progDefault();
   try{ const o=JSON.parse(LS.getItem(PROG_KEY)||'null'); if(!o||typeof o!=='object'||o.v!==1) return d;
     d.coins=Number.isFinite(o.coins)?clamp(Math.floor(o.coins),0,1e7):0;
@@ -3023,7 +3042,7 @@ function careerFight(){ const i=Math.min(PROG.career.stage,LADDER.length-1), L=L
 const shopUI={tab:'char',confirm:false};
 function shopOpen(){ hideAll(); $('shopScreen').classList.remove('hidden'); shopUI.confirm=false; shopRender(); kbFocus('#shopBody button'); }
 function shopRender(){
-  const T=[['char','Characters (Tournament)'],['pro','Pro rackets'],['racket','Racket colours'],['music','Music'],['crowd','Crowd'],['band','Headbands'],['theme','Courts']];
+  const T=[['char','Characters (Tournament)'],['pro','Pro rackets'],['racket','Racket colours'],['music','Music'],['crowd','Crowd'],['trail','Shuttle trails'],['band','Headbands'],['theme','Courts']];
   $('shopTabs').innerHTML=T.map(([k,l])=>`<button data-st="${k}" class="${shopUI.tab===k?'sel':''}">${l}</button>`).join('');
   let h='';
   if(shopUI.tab==='char'){ for(const ch of CHARS){ const own=progUnlocked(ch.id);
@@ -3039,7 +3058,7 @@ function shopRender(){
     h+=`<div class="rkstd"><span>\uD83C\uDFF8 Standard (free, no modifiers)</span>${!E.eq?'<span class="own">\u2714 equipped</span>':'<button data-rkeq="">Use Standard</button>'}<span class="rkeqn">Equipped: <b>${rkName(E.eq||'')}</b></span></div>`;
     for(const [t,ic,nm,ds] of RK_TYPES) if(F==='all'||F===t) h+=`<div class="rkrow"><div class="rkt"><b>${ic} ${nm}</b><small>${ds}</small></div>${[1,2,3].map(l=>card(t+l)).join('')}</div>`; }
   else for(const it of COSM[shopUI.tab]){ const own=PROG.owned[shopUI.tab].includes(it.id), eq=PROG.equip[shopUI.tab]===it.id;
-    const sw=shopUI.tab==='racket'?`<div class="sw" style="background:linear-gradient(90deg,${it.frame||'#ff6f9f'} 50%,${it.grip||'#ff9ec0'} 50%)"></div>`:shopUI.tab==='band'?`<div class="sw" style="background:${it.col||'#fff'}"></div>`:shopUI.tab==='music'?'<div class="sw ic">\u266B</div>':shopUI.tab==='crowd'?`<div class="sw" style="background:linear-gradient(90deg,${CROWDS[it.id].cols.join(',')})"></div>`:`<div class="sw" style="background:linear-gradient(${THEMES[it.id].sky[0]},${THEMES[it.id].court})"></div>`;
+    const sw=shopUI.tab==='racket'?`<div class="sw" style="background:linear-gradient(90deg,${it.frame||'#ff6f9f'} 50%,${it.grip||'#ff9ec0'} 50%)"></div>`:shopUI.tab==='band'?`<div class="sw" style="background:${it.col||'#fff'}"></div>`:shopUI.tab==='music'?'<div class="sw ic">\u266B</div>':shopUI.tab==='crowd'?`<div class="sw" style="background:linear-gradient(90deg,${CROWDS[it.id].cols.join(',')})"></div>`:shopUI.tab==='trail'?`<div class="sw" style="background:${it.id==='none'?'#eee':'linear-gradient(90deg,transparent,'+TRAILS[it.id].cols.join(',')+')'}"></div>`:`<div class="sw" style="background:linear-gradient(${THEMES[it.id].sky[0]},${THEMES[it.id].court})"></div>`;
     h+=`<div class="item">${sw}<div class="iname">${kbEsc(it.name)}</div>`+((shopUI.tab==='music'||shopUI.tab==='crowd')?`<button class="pv" data-pv="${shopUI.tab}:${it.id}">\u25B6 Preview</button>`:'')+(eq?'<div class="own">\u2714 equipped</div>':own?`<button data-eq="${shopUI.tab}:${it.id}">Equip</button>`:`<button data-buy="${shopUI.tab}:${it.id}"${PROG.coins<it.price?' disabled':''}>Buy ${it.price} \uD83E\uDE99</button>`)+'</div>'; }
   $('shopBody').innerHTML=h; refreshCoins();
   $('shopReset').textContent=shopUI.confirm?'Really reset ALL progress? Click again':'Reset progress\u2026'; $('shopReset').classList.toggle('danger',shopUI.confirm);
@@ -3134,7 +3153,7 @@ function startReplay(){ const fr=game.lastRec; if(!fr||fr.length<20||game.replay
   game.replay={fr,i:0,acc:0,save:{p:players.map(p=>RP_P.map(k=>p[k])),s:RP_S.map(k=>shuttle[k]),trail:shuttle.trail,time:game.time}}; shuttle.trail=[]; return true; }
 function replayStep(dt){ const R=game.replay; R.acc+=dt*.5; while(R.acc>=1/60&&R.i<R.fr.length-1){ R.acc-=1/60; R.i++; }   // half speed
   const f=R.fr[R.i]; players.forEach((p,k)=>RP_P.forEach((key,j)=>p[key]=f.p[k][j])); RP_S.forEach((key,j)=>shuttle[key]=f.s[j]); game.time=f.t;
-  if(shuttle.y<GROUND-5){ shuttle.trail.push({x:shuttle.x,y:shuttle.y,l:.3,v:Math.hypot(shuttle.vx,shuttle.vy),a:ATTACK_T.has(shuttle.type)?1:0,fx:ATTACK_T.has(shuttle.type)?shuttle.fx:-1,c:shuttle.fxc}); if(shuttle.trail.length>40) shuttle.trail.shift(); }
+  if(shuttle.y<GROUND-5){ shuttle.trail.push({x:shuttle.x,y:shuttle.y,l:.3,v:Math.hypot(shuttle.vx,shuttle.vy),a:ATTACK_T.has(shuttle.type)?1:0,fx:ATTACK_T.has(shuttle.type)?shuttle.fx:-1,c:shuttle.fxc,h:game.lastHitter}); if(shuttle.trail.length>40) shuttle.trail.shift(); }
   for(const t of shuttle.trail) t.l-=dt*.5; shuttle.trail=shuttle.trail.filter(t=>t.l>0);
   if(R.i>=R.fr.length-1) endReplay(); }
 function endReplay(){ const R=game.replay; if(!R) return; players.forEach((p,k)=>RP_P.forEach((key,j)=>p[key]=R.save.p[k][j])); RP_S.forEach((key,j)=>shuttle[key]=R.save.s[j]); shuttle.trail=R.save.trail; game.time=R.save.time; game.replay=null; }
@@ -3619,7 +3638,7 @@ function guestUpdate(dt){
   // smooth small jumps of the displayed shuttle, snap big ones (new hit, serve)
   // (no positional smoothing: extrapolation is continuous between snapshots, and smoothing would add visible lag)
   s.x=tgt.x; s.y=tgt.y; s.vx=tgt.vx; s.vy=tgt.vy;
-  if(game.state==='rally'){ const atk=ATTACK_T.has(s.type); s.trail.push({x:s.x,y:s.y,l:atk?(s.fx===2?.34:.26):.14,v:Math.hypot(s.vx,s.vy),a:atk?1:0,fx:atk?s.fx:-1,c:s.fxc}); if(s.trail.length>70) s.trail.shift(); } else if(game.state==='serve') s.trail=[];
+  if(game.state==='rally'){ const atk=ATTACK_T.has(s.type); s.trail.push({x:s.x,y:s.y,l:atk?(s.fx===2?.34:.26):.14,v:Math.hypot(s.vx,s.vy),a:atk?1:0,fx:atk?s.fx:-1,c:s.fxc,h:game.lastHitter}); if(s.trail.length>70) s.trail.shift(); } else if(game.state==='serve') s.trail=[];
   const sp=Math.hypot(s.vx,s.vy);
   const target=game.state==='rally'&&sp>30?Math.atan2(s.vy,s.vx):(game.state==='serve'?Math.PI/2:0.35);
   if(s.tumbleT>0) s.rot+=dt*(s.vx>0?-19:19);
