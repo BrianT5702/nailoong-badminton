@@ -1458,7 +1458,8 @@ function hitShuttle(p,d=0,reach=REACH){
             const sc=sp/PX_M-Math.abs(sim.landX-tx)*.12+(ang>=40&&ang<=55?4:0); if(sc>best){ best=sc; v=c; } } }
         if(v) nkOut='kill';
       }
-      if(!v){                                                        // failed: into the net, or too early/hard = long
+      if(!v&&!(p.st<ST.vlow)&&(q>=.7||(q>=.6&&Math.random()<.75))){ type='push'; q=Math.min(q,.79); }   // v16.10: a Perfect/Great net kill with no clean kill line is played as a safe push over the tape, never into the net (only weak or exhausted contacts net)
+      else if(!v){                                                        // failed: into the net, or too early/hard = long
         const early=e>.02, outP=h<6?.08:early?.6:.2;
         if(Math.random()<outP){ nkOut='out';
           const tx=(dir>0?COURT_R:COURT_L)+dir*rand(18,70); let bestErr=1e9;
@@ -3527,7 +3528,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden && game.mo
    Host = Nailoong (authoritative simulation), guest = Berry (sends inputs, predicts itself, interpolates the host).
    Reliable PeerJS channel: lobby/start/fx/win events. Extra unordered, no-retransmit channel: inputs, snapshots, pings. */
 const QS=new URLSearchParams(location.search);
-const NET_VER=23, ROOM_PREFIX='nailoong-badminton-v13-', CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const NET_VER=24, ROOM_PREFIX='nailoong-badminton-v13-', CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const NET={on:false,role:null,side:0,peer:null,conn:null,ch:null,code:'',closing:false,lost:false,
   rtt:0,rtts:[],off:0,offS:[],lastRecv:0,lastPing:0,epoch:0,
   lag:Math.max(0,+QS.get('netlag')||0), loss:clamp(+QS.get('netloss')||0,0,.9),
