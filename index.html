@@ -533,7 +533,7 @@ function ensureAudio(){
   if(actx && actx.state==='suspended') actx.resume();
 }
 function tone(f,dur,type='sine',vol=.2,f2=null,delay=0,bus=null){
-  if(!actx||muted||game.mode==='demo') return;
+  if(!actx||muted||(game.mode==='demo'&&!AUD_FORCE)) return;
   const t=actx.currentTime+delay, o=actx.createOscillator(), g=actx.createGain();
   o.type=type; o.frequency.setValueAtTime(f,t); if(f2) o.frequency.exponentialRampToValueAtTime(f2,t+dur);
   g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+.01); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
@@ -541,7 +541,7 @@ function tone(f,dur,type='sine',vol=.2,f2=null,delay=0,bus=null){
 }
 let noiseBuf=null;
 function noise(dur,vol,freq,delay=0,bus=null,q=1.2){
-  if(!actx||muted||game.mode==='demo') return;
+  if(!actx||muted||(game.mode==='demo'&&!AUD_FORCE)) return;
   if(!noiseBuf){ noiseBuf=actx.createBuffer(1,actx.sampleRate*.5,actx.sampleRate); const d=noiseBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; }
   const t=actx.currentTime+delay, s=actx.createBufferSource(), f=actx.createBiquadFilter(), g=actx.createGain();
   s.buffer=noiseBuf; f.type='bandpass'; f.frequency.value=freq; f.Q.value=q;
@@ -678,9 +678,11 @@ const CROWDS={
   library:{name:'Quiet Library',price:150,cols:['#a89880','#8a9aa8','#b8a890','#9a8a7a'],prop:'book',polite:1}
 };
 const curCrowd=()=>CROWDS[(typeof PROG!=='undefined'&&PROG.equip.crowd)||'default']||CROWDS.default;
-function crowdCheer(level=1){
-  if(!actx||muted||game.mode==='demo') return; const CP=curCrowd(), t0=actx.currentTime;
-  if(CP.polite){ const n=6+level*3; for(let i=0;i<n;i++) noise(.03,.03,rand(1400,2200),i*.18+rand(0,.06),busCrowd,2.2); if(level>=3) noise(.5,.02,5000,1.6,busCrowd,.4); return; }   // polite claps ... then 'shhh'
+let AUD_FORCE=false;   // v16.2: shop previews play even while the title demo runs behind the menu
+function crowdCheer(level=1,force=false){ AUD_FORCE=force; try{ crowdCheer0(level,force); } finally{ AUD_FORCE=false; } }
+function crowdCheer0(level,force){
+  if(!actx||muted||(game.mode==='demo'&&!force)) return; if(actx.state==='suspended') actx.resume(); const CP=curCrowd(), t0=actx.currentTime;
+  if(CP.polite){ const n=6+level*3; for(let i=0;i<n;i++) noise(.03,.1,rand(1400,2200),i*.18+rand(0,.06),busCrowd,2.2); if(level>=3) noise(.5,.05,5000,1.6,busCrowd,.4); return; }   // polite claps ... then 'shhh'
   if(CP.drums) for(let i=0;i<2+level;i++){ const o=actx.createOscillator(), g=actx.createGain(), tt=t0+i*.22; o.frequency.setValueAtTime(90,tt); o.frequency.exponentialRampToValueAtTime(45,tt+.18); g.gain.setValueAtTime(.4,tt); g.gain.exponentialRampToValueAtTime(.0001,tt+.25); o.connect(g); g.connect(busCrowd); o.start(tt); o.stop(tt+.3); }
   if(CP.horn&&level>=2) for(const f of [233,294,349]){ const o=actx.createOscillator(), g=actx.createGain(); o.type='sawtooth'; o.frequency.value=f; g.gain.setValueAtTime(.0001,t0); g.gain.exponentialRampToValueAtTime(.03,t0+.05); g.gain.setValueAtTime(.03,t0+.55); g.gain.exponentialRampToValueAtTime(.0001,t0+.7); o.connect(g); g.connect(busCrowd); o.start(t0); o.stop(t0+.75); }
   if(CP.whistle){ const o=actx.createOscillator(), g=actx.createGain(); o.frequency.setValueAtTime(2200,t0+.1); o.frequency.linearRampToValueAtTime(2900,t0+.35); g.gain.setValueAtTime(.0001,t0+.1); g.gain.exponentialRampToValueAtTime(.03,t0+.14); g.gain.exponentialRampToValueAtTime(.0001,t0+.45); o.connect(g); g.connect(busCrowd); o.start(t0+.1); o.stop(t0+.5); }
@@ -688,8 +690,8 @@ function crowdCheer(level=1){
   if(CP.gong&&level>=2){ const o=actx.createOscillator(), g=actx.createGain(); o.frequency.value=98; g.gain.setValueAtTime(.12,t0); g.gain.exponentialRampToValueAtTime(.0001,t0+2.5); o.connect(g); g.connect(busCrowd); o.start(t0); o.stop(t0+2.6); }
   if(CP.crackers) for(let i=0;i<6+level*5;i++) noise(.03,.08,rand(2000,5000),.2+Math.random()*1.4,busCrowd,.8);
   const L=clamp(level,1,4), dur=.9+L*.55, n=Math.round((30+L*28)*(CP.claps||1));
-  for(let i=0;i<n;i++){ const tt=Math.pow(Math.random(),1.4)*dur; noise(.035,.05+.03*Math.random(),rand(1200,2600),tt,busCrowd,2.2); }   // claps
-  noise(dur*.9,(.06+.025*L)*(CP.roar||1),CP.roar?520:900,0,busCrowd,.5);                                                    // roar bed
+  for(let i=0;i<n;i++){ const tt=Math.pow(Math.random(),1.4)*dur; noise(.035,(.05+.03*Math.random())*1.9,rand(1200,2600),tt,busCrowd,2.2); }   // claps (v16.2: louder)
+  noise(dur*.9,(.06+.025*L)*(CP.roar||1)*1.6,CP.roar?520:900,0,busCrowd,.5);                                                    // roar bed
   if(L>=2) for(let k=0;k<(3+L)*(CP.wooN||1);k++){ const o=actx.createOscillator(), g=actx.createGain(), bp=actx.createBiquadFilter(), t=actx.currentTime+rand(0,.25);   // 'woo!'
     o.type='sawtooth'; const f=rand(230,420)*(CP.woo||1); o.frequency.setValueAtTime(f,t); o.frequency.exponentialRampToValueAtTime(f*1.6,t+.35); o.frequency.exponentialRampToValueAtTime(f*1.2,t+.8);
     bp.type='bandpass'; bp.frequency.value=650; bp.Q.value=3; g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.022,t+.08); g.gain.exponentialRampToValueAtTime(.0001,t+.85);
@@ -3047,7 +3049,7 @@ function shopRender(){
   document.querySelectorAll('#shopBody button[data-rkeq]').forEach(b=>b.onclick=()=>{ const E=PROG.rk[shopUI.rc]=PROG.rk[shopUI.rc]||{own:[],eq:''}; E.eq=b.dataset.rkeq; progSave(); shopMsg(`${CH[shopUI.rc].name} now uses: ${rkName(E.eq)}.`); shopRender(); kbFocus('#shopBody button[data-rkeq],#shopBody button[data-rkbuy]'); });
   document.querySelectorAll('#shopBody button[data-rkbuy]').forEach(b=>b.onclick=()=>{ const id=b.dataset.rkbuy, it=RKT[id]; if(!it) return; if(PROG.coins<it.price) return shopMsg('Not enough coins yet.');
     const E=PROG.rk[shopUI.rc]=PROG.rk[shopUI.rc]||{own:[],eq:''}; if(E.own.includes(id)) return; PROG.coins-=it.price; E.own.push(id); E.eq=id; progSave(); tone(990,.08,'triangle',.14,1480); shopMsg(`Bought ${rkName(id)} for ${CH[shopUI.rc].name}! \u2665`); shopRender(); kbFocus('#shopBody button[data-rkeq],#shopBody button[data-rkbuy]'); });
-  document.querySelectorAll('#shopBody button[data-pv]').forEach(b=>b.onclick=()=>{ const [k,id]=b.dataset.pv.split(':'); ensureAudio(); if(k==='music') musPreview(id); else { const was=PROG.equip.crowd; PROG.equip.crowd=id; crowdCheer(3); PROG.equip.crowd=was; } shopMsg(`Previewing ${k==='music'?TRACKS[id].name:CROWDS[id].name}\u2026`); });
+  document.querySelectorAll('#shopBody button[data-pv]').forEach(b=>b.onclick=()=>{ const [k,id]=b.dataset.pv.split(':'); ensureAudio(); if(k==='music') musPreview(id); else { const was=PROG.equip.crowd; PROG.equip.crowd=id; crowdCheer(3,true); PROG.equip.crowd=was; } shopMsg(`Previewing ${k==='music'?TRACKS[id].name:CROWDS[id].name}\u2026`); });
   document.querySelectorAll('#shopBody button[data-buy]').forEach(b=>b.onclick=()=>shopBuy(...b.dataset.buy.split(':')));
   document.querySelectorAll('#shopBody button[data-eq]').forEach(b=>b.onclick=()=>{ const [k,id]=b.dataset.eq.split(':'); PROG.equip[k]=id; if(k==='music') MUS.track=id; progSave(); shopMsg(`Equipped ${COSM[k].find(c=>c.id===id).name}.`); shopRender(); kbFocus('#shopBody button'); });
 }
