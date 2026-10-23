@@ -234,7 +234,7 @@
 .tarr.l{left:-.3em}.tarr.r{right:-.3em}.tabwrap.fl .tarr.l,.tabwrap.fr .tarr.r{display:block}
   .ctrl table.pk2 td,.ctrl table.pk2 th{padding:.15em .5em}
   .kbsec{font-size:.78em;color:#a08060;font-weight:normal;margin-left:.5em;letter-spacing:0;text-transform:none}
-.atag{display:inline-block;color:#fff;font-size:11px;font-weight:700;border-radius:9px;padding:1px 7px;margin:2px 0;white-space:nowrap}.chc .atag{font-size:9px;padding:0 5px}
+.atag{display:inline-block;color:#fff;font-size:11px;font-weight:700;border-radius:9px;padding:1px 7px;margin:2px 0;white-space:nowrap}.chc{position:relative}.aico{position:absolute;top:2px;right:3px;font-size:12px;line-height:1;pointer-events:none}
 </style>
 </head>
 <body>
@@ -1043,7 +1043,7 @@ const CHARS=[
     bio:'Explosive power and jumps, short arms.',art:{suit:'#f28c28',suit2:'#2a50b0',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#1a1a22',style:'goku'},belt:'#2a50b0',undershirt:'#2a50b0',boots:'#2a50b0'}},
   {id:'pikachu',name:'Pikachu',src:'draw',st:[4,7,7,6,3,7,4],sp:'dash',spName:'Quick Attack',col:'#f5d020',frame:'#f5d020',grip:'#8a5a2b',
     bio:'Tiny and electric-quick; very short reach.',art:{suit:'#f7d531',suit2:'#f7d531',skin:'#f7d531',head:'skin',eyes:'dot',ears:'pika',cheeks:'#e8433a',stripes2:'#8a5a12',tail:'bolt',boots:'#f7d531',small:.9}},
-  {id:'doraemon',name:'Doraemon',src:'draw',st:[4,5,5,7,6,7,6],sp:'wind',spName:'Air Cannon Gadget',col:'#1fa0e0',frame:'#1fa0e0',grip:'#ffd23a',
+  {id:'doraemon',name:'Doraemon',src:'draw',st:[4,5,6,7,6,7,6],sp:'wind',spName:'Air Cannon Gadget',col:'#1fa0e0',frame:'#1fa0e0',grip:'#ffd23a',
     bio:'Steady, tireless and tidy; no big jumps or smashes.',art:{suit:'#1fa0e0',suit2:'#ffffff',skin:'#1fa0e0',head:'dora',eyes:'dora',whiskers:true,nose:'#d8262b',collar:'#d8262b',bell:'#f5d020',belly:'#ffffff',pocket:true,boots:'#ffffff'}},
   {id:'xiaoqi',name:'Xiao Qi',src:'draw',st:[5,7,7,8,5,5,6],sp:'wind',spName:'Gadget Grabber',col:'#3a8ee8',frame:'#3a8ee8',grip:'#ff9a2e',
     bio:'Nailoong\u2019s best friend: a 14-year-old inventor with a gadget for everything.'},
@@ -1563,7 +1563,7 @@ function hitShuttle(p,d=0,reach=REACH){
     let risk=Math.max(0,.68-q)*.7+pres*(defShot?.2:.06)*clamp(1-.17*chD(p,6),.62,1.6)-.012*chD(p,3)+(defShot&&!p.ai?Math.max(0,-chD(p,6))*.035*pres*clamp(1+.07*chD(opp,0),.7,1.4):0); if(p.ai) risk*=p.ai.diff==='easy'?1.4:p.ai.diff==='normal'?1.1:.9;   // v16.6: poor contact and low DEF err far more (v16.10: this AI line had been swallowed by the comment)
     if(tired(p)){ const fg=fatigue(p); risk+=(.08+.3*fg)*(ATTACK_T.has(type)?1.2:1)*clamp(1-.04*chD(p,5),.75,1.25)*(q>=.8?.8:1); }   // v16.3: fatigue errors on every shot; Perfect timing only softens them
     { const A=archOf(p), ramp=clamp((game.rally-4)/12,0,1), dash=Math.abs(p.vx)>PSPEED*.85||p.lungeT>0||p.recT>0;   // v16.11 archetypes
-      if(A==='speed') risk+=(.02+.07*ramp)*clamp(1-.1*chD(p,3),.6,1.4)+(dash?.07:0);   // Speed: inconsistent, worse in long rallies and when hitting on the run / in a lunge
+      if(A==='speed') risk+=(.01+.06*ramp)*clamp(1-.1*chD(p,3),.6,1.4)+(dash?.05:0);   // Speed: inconsistent, worse in long rallies and when hitting on the run / in a lunge
       else if(A==='agile') risk+=.025*ramp;
       else if(A==='wall'&&defShot) risk*=.75;
       if(defShot&&tired(p)) risk+=.05+.12*fatigue(p); }   // v16.11 tired defence: more errors on blocks / smash returns / lifts
@@ -1690,7 +1690,7 @@ function aiThink(p,dt){
         a.miss=Math.random()<d.mistake; a.jump=Math.random()<d.jump; a.jroll=Math.random()<d.jump; a.runFrom=p.x; a.leave=Math.random()<d.leave;
         if(s.type==='kill'){ a.react=d.sReact*rand(.8,1.2); a.miss=Math.random()<d.sMiss*1.2; a.jump=false; }
         if(s.type==='netkill'){ a.react=d.sReact*rand(.9,1.3); a.miss=Math.random()<Math.min(.95,d.sMiss+.6); a.jump=false; }
-        if(s.type==='smash'){ const sq=s.q===undefined?1:s.q; a.react=d.sReact*rand(.8,1.25)*(.5+.5*sq); const pace=clamp((Math.hypot(s.vx,s.vy)/PX_M-45)/40,0,1.3); a.miss=Math.random()<((s.bigSmash?d.bigMiss:d.sMiss)*(.25+.75*sq)+.14*pace*(sq>=.8?1.5:sq>=.6?1:.5))*clamp(1+.08*chD(players[1-p.side],0)-.16*chD(p,6),.3,2)*(archOf(players[1-p.side])==='power'?(sq>=.8?1.15:.75):archOf(players[1-p.side])==='speed'?.75:1);   /* v16.11: Power needs a Perfect to break through; Speed smashes rarely win outright */ a.jump=false; }   // v16.9: raw pace beats even top levels; DEF decides how often
+        if(s.type==='smash'){ const sq=s.q===undefined?1:s.q; a.react=d.sReact*rand(.8,1.25)*(.5+.5*sq); const pace=clamp((Math.hypot(s.vx,s.vy)/PX_M-45)/40,0,1.3); a.miss=Math.random()<((s.bigSmash?d.bigMiss:d.sMiss)*(.25+.75*sq)+.14*pace*(sq>=.8?1.5:sq>=.6?1:.5))*clamp(1+.08*chD(players[1-p.side],0)-.16*chD(p,6),.3,2)*(archOf(players[1-p.side])==='power'?(sq>=.8?1.15:.75):archOf(players[1-p.side])==='speed'?.85:1);   /* v16.11: Power needs a Perfect to break through; Speed smashes rarely win outright */ a.jump=false; }   // v16.9: raw pace beats even top levels; DEF decides how often
         if(s.type==='flat'){ const sq=s.q===undefined?1:s.q, pace=clamp((Math.hypot(s.vx,s.vy)/PX_M-16)/26,0,1);   // v14.2: fast flat attack: the faster and cleaner, the more often even Hard is beaten for pace
           a.react=d.sReact*rand(.8,1.15)*(.6+.4*sq); a.miss=Math.random()<Math.min(.92,(d.fMiss??.4)*FLAT_MISS/2.4)*pace*sq; a.jump=false; }
         if(s.type==='drop'||s.type==='block'||s.type==='net') a.jump=false;
@@ -2642,7 +2642,7 @@ const SPIDER=p=>p.ch&&p.ch.id==='spidey';   // v16.11 Spider reach: Reach 6, a s
 const pJmp=p=>(1+.05*chD(p,2))*(SPIDER(p)?1.05:1)*(p.st<ST.vlow&&game.mode!=='demo'?.74:tired(p)?.82:1);
 const pPow=p=>(1+.06*chD(p,0))*(p.st<ST.vlow&&game.mode!=='demo'?.68:tired(p)?.8:1);   // v16.2: Power counts more, tiredness hurts more
 const pCtl=p=>(1+.1*chD(p,3))*(p.st<ST.vlow&&game.mode!=='demo'?.45:tired(p)?.62:1);
-function staCost(p,v){ if(game.mode==='demo'||game.noStamina) return; const A=archOf(p); v*=A==='power'?1+clamp((game.rally-6)/10,0,1)*.45:A==='endure'?.85:1;   // v16.11: Power tires in long rallies (up to +45%), Endurance pays 15% less
+function staCost(p,v){ if(game.mode==='demo'||game.noStamina) return; const A=archOf(p); v*=A==='power'?1+clamp((game.rally-6)/10,0,1)*.45:A==='endure'?.9:1;   // v16.11: Power tires in long rallies (up to +45%), Endurance pays 15% less
   p.st=Math.max(0,p.st-v*(1-.025*chD(p,5))*(1+(p.rk?p.rk.cost:0))); }
 const SP_WIN=6, SP_REFUND=25;   // v16.9: an armed special must be used within 6 s of rally time; on expiry it fizzles and 25% of the bar comes back
 function spPending(p){ return !!(p.armed||p.perfN>0||p.cloneN>0); }
@@ -2916,7 +2916,7 @@ function chRender(){
   const cur=chPick[chUI.tab]; let h='';
   if(chUI.tab==='opp') h+=`<button class="chc rndc${cur==='random'?' sel':''}" data-ch="random"><div class="pt rnd">?</div><div class="nm">Random</div></button>`;
   for(const ch of CHARS_ORD()){ const lock=chUI.mode!=='online'&&!chUnlocked(ch.id); if(ch.boss&&lock&&chUI.tab!=='opp') { h+=`<button class="chc lock" data-ch="${ch.id}" title="Win the Tournament to unlock"><div class="pt rnd">\uD83D\uDD12</div><div class="nm">???</div></button>`; continue; }
-    h+=`<button class="chc${cur===ch.id?' sel':''}${lock&&chUI.tab!=='opp'?' lock':''}" data-ch="${ch.id}"${lock&&chUI.tab!=='opp'?' title="Locked: unlock it in the Shop or the career"':''}><div class="pt${lock&&chUI.tab!=='opp'?' sil':''}" style="background-image:url(${portURL(ch)});border-color:${ch.col}">${lock&&chUI.tab!=='opp'?'<span class="lk">\uD83D\uDD12</span>':''}</div><div class="nm">${kbEsc(ch.name)}</div>${archTag(ch)}</button>`; }
+    h+=`<button class="chc${cur===ch.id?' sel':''}${lock&&chUI.tab!=='opp'?' lock':''}" data-ch="${ch.id}"${lock&&chUI.tab!=='opp'?' title="Locked: unlock it in the Shop or the career"':''}><div class="pt${lock&&chUI.tab!=='opp'?' sil':''}" style="background-image:url(${portURL(ch)});border-color:${ch.col}">${lock&&chUI.tab!=='opp'?'<span class="lk">\uD83D\uDD12</span>':''}</div><div class="nm">${kbEsc(ch.name)}</div><span class="aico" title="${ARCH_INFO[ARCH[ch.id]||'all'][0]}">${ARCH_INFO[ARCH[ch.id]||'all'][0].split(' ')[0]}</span></button>`; }
   $('chGrid').innerHTML=h;
   // v16.5: shrink any name that would not fit its card (no mid-word breaks, never cut off)
   requestAnimationFrame(()=>document.querySelectorAll('#chGrid .chc .nm').forEach(el=>{ let f=.74; while(f>.5&&(el.scrollWidth>el.clientWidth+1||el.scrollHeight>el.clientHeight+1)){ f-=.03; el.style.fontSize=f+'em'; } }));
