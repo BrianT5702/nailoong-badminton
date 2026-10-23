@@ -2750,17 +2750,22 @@ function spActivate(p){
   { const col0=spCol(p); spRing(p.x,p.y-90,col0,260,.6,16); spRing(p.x,p.y-90,'#fff',170,.4,8); SPFX.edge={col:col0,t:.4}; game.shake=Math.max(game.shake||0,.3);   // v15.7 big character-coloured activation burst
     for(let i=0;i<30;i++){ const a=rand(0,6.283), v=rand(200,520); spPart({x:p.x,y:p.y-90,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:.6,T:.6,col:i%3?col0:'#fff',r:rand(3,6),k:'spark'}); }
     if(!NET.fxSkip){ const h=[...p.ch.id].reduce((a,c)=>a+c.charCodeAt(0),0), f0=200+h%7*45; tone(f0,.14,'square',.09,f0*1.5); tone(f0*1.26,.18,'triangle',.11,f0*2,.08); tone(f0*1.5,.3,'sawtooth',.07,f0*3,.16); } }   // character 'voice' sting
-  SPFX.ban={text:`${SPFX_ICON[t]||'\u2605'} ${p.ch.name.toUpperCase()}: ${p.ch.spName}!`,col,t:1.5,side:p.side};
+  SPFX.ban={text:`${p.ch.id==="dalaba"?"\uD83D\uDCE2":SPFX_ICON[t]||'\u2605'} ${p.ch.name.toUpperCase()}: ${p.ch.spName}!`,col,t:1.5,side:p.side};
   SPFX.edge={col,t:.6};
   for(let i=0;i<26;i++){ const a=rand(0,6.283), v=rand(80,260); spPart({x:p.x,y:p.y-80,vx:Math.cos(a)*v,vy:Math.sin(a)*v-60,t:rand(.5,.9),T:.9,col,r:rand(2,5),k:'spark'}); }
   spRing(p.x,p.y-80,col,110,.5,6);
   if(t==='dash'){ for(let i=0;i<14;i++) spPart({x:p.x+rand(-20,20),y:GROUND-4,vx:rand(-160,160),vy:rand(-120,-30),t:rand(.4,.7),T:.7,col:'rgba(200,180,140,.8)',r:rand(5,10),k:'dust'}); }
-  if(t==='thunder') spBolt(p.x+rand(-30,30),-40,p.x+p.f*30,p.y-150,col,.3);
+  if(t==='thunder'){ if(p.ch.id==='dalaba'){ hornWaves(p.x+p.f*40,p.y-130,col,p.f,3); hornHonk(.7); } else spBolt(p.x+rand(-30,30),-40,p.x+p.f*30,p.y-150,col,.3); }
 }
+function hornWaves(x,y,col,f,n=4){ for(let i=0;i<n;i++) setTimeout(()=>{ spRing(x+f*i*18,y,i%2?'#fff':col,90+i*40,.45,7); },i*70); }   // v16.10 Da Laba: sound-wave rings instead of lightning
+function hornHonk(v=1){ if(!actx||muted||game.mode==='demo'||NET.fxSkip) return; const t=actx.currentTime, s=actx.createBufferSource(), g=actx.createGain(); s.buffer=crowdNoiseBuf(); g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(.5*v,t+.03); g.gain.setTargetAtTime(.0001,t+.45,.12);
+  for(const [f,q,w] of [[233,14,1.4],[466,12,1],[700,10,.6],[1170,8,.35]]){ const b=actx.createBiquadFilter(), gg=actx.createGain(); b.type='bandpass'; b.frequency.value=f; b.Q.value=q; gg.gain.value=w*3; s.connect(b); b.connect(gg); gg.connect(g); }
+  g.connect(busSfx); s.start(t,Math.random()*2); s.stop(t+1.1); }   // a breathy 'BWAAA' horn from filtered noise
 function spShot(p,spec,s){
   const col=spCol(p), rx=s.x, ry=s.y;
   SPFX.lastSpec=spec; SPFX.lastSpecSide=p.side;
-  if(spec==='thunder'){ for(let k=0;k<3;k++) spBolt(rx+rand(-60,60),-60,rx,ry,k?'#fff':col,.22+k*.06); spRing(rx,ry,col,140,.4,10); SPFX.edge={col,t:.35}; }
+  if(spec==='thunder'&&p.ch.id==='dalaba'){ hornWaves(rx,ry,col,p.side===0?1:-1,5); spRing(rx,ry,col,140,.4,10); SPFX.edge={col,t:.3}; hornHonk(1); }
+  else if(spec==='thunder'){ for(let k=0;k<3;k++) spBolt(rx+rand(-60,60),-60,rx,ry,k?'#fff':col,.22+k*.06); spRing(rx,ry,col,140,.4,10); SPFX.edge={col,t:.35}; }
   else if(spec==='drive'){ spRing(rx,ry,col,80,.3,12); for(let i=0;i<16;i++){ const a=Math.atan2(s.vy,s.vx)+rand(-.25,.25), v=rand(200,520); spPart({x:rx,y:ry,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:.4,T:.4,col,r:rand(3,6),k:'glow'}); } }
   else if(spec==='spin'){ for(let i=0;i<14;i++) spPart({x:rx,y:ry,vx:rand(-120,120),vy:rand(-160,40),t:rand(.5,.9),T:.9,col:i%2?'#fff':col,r:rand(2,4),k:'star'}); }
   else if(spec==='wall'){ SPFX.domes.push({x:p.x,y:p.y,col,t:.6,T:.6,f:p.f}); spRing(rx,ry,'#fff',90,.3,6); }
@@ -2784,7 +2789,7 @@ function spfxWatch(dt){
   if(game.hitId!==SPFX.prevHit){ SPFX.prevHit=game.hitId; if(s.special&&game.lastHitter!=null) spShot(players[game.lastHitter],s.special,s); else SPFX.lastSpec=null; }
   // shuttle trails for special shots
   if(s.special&&game.state==='rally'){ const p=players[game.lastHitter]||players[0], col=spCol(p), sp=s.special;
-    if(sp==='thunder'){ spPart({x:s.x+rand(-6,6),y:s.y+rand(-6,6),vx:rand(-60,60),vy:rand(-60,60),t:.3,T:.3,col:Math.random()<.4?'#fff':col,r:rand(2,4),k:'glow'}); if(Math.random()<dt*10) spBolt(s.x,s.y,s.x-s.vx*.05+rand(-30,30),s.y-s.vy*.05+rand(-30,30),col,.1); }
+    if(sp==='thunder'){ spPart({x:s.x+rand(-6,6),y:s.y+rand(-6,6),vx:rand(-60,60),vy:rand(-60,60),t:.3,T:.3,col:Math.random()<.4?'#fff':col,r:rand(2,4),k:'glow'}); if(Math.random()<dt*10){ if((players[s.hitter]||{}).ch?.id==='dalaba') spRing(s.x,s.y,col,40,.2,3); else spBolt(s.x,s.y,s.x-s.vx*.05+rand(-30,30),s.y-s.vy*.05+rand(-30,30),col,.1); } }
     else if(sp==='spin'){ const a=game.time*18; spPart({x:s.x+Math.cos(a)*14,y:s.y+Math.sin(a)*14,vx:0,vy:20,t:.6,T:.6,col:Math.random()<.5?'#fff':col,r:rand(2,3.5),k:p.ch.id==='spidey'?'web':'star',ox:s.x,oy:s.y}); }
     else if(sp==='bomb'){ spPart({x:s.x-s.vx*.012+rand(-4,4),y:s.y-s.vy*.012+rand(-4,4),vx:rand(-20,20),vy:rand(-50,-15),t:.7,T:.7,col:'rgba(90,90,90,.6)',r:rand(5,9),k:'smoke'}); if(Math.random()<.7) spPart({x:s.x,y:s.y-12,vx:rand(-90,90),vy:rand(-120,-20),t:.25,T:.25,col:Math.random()<.5?'#ffd23a':'#ff7a1a',r:rand(1.5,3),k:'spark'}); }
     else if(sp==='drive'){ spPart({x:s.x,y:s.y,vx:0,vy:0,t:.35,T:.35,col,r:9,k:'glow'}); }
@@ -2802,6 +2807,7 @@ function spfxWatch(dt){
   const landed=s.landT||(s.landFx&&game.time-s.landFx<.25);
   if(landed&&!SPFX.prevLand&&SPFX.lastSpec){ const p=players[SPFX.lastSpecSide], col=spCol(p);
     if(SPFX.lastSpec==='bomb'){ bombBlast(s.x,GROUND-10,1); game.shake=Math.max(game.shake,.5); sfx.boom&&sfx.boom(1); }
+    else if(SPFX.lastSpec==='thunder'&&p.ch.id==='dalaba'){ spRing(s.x,GROUND,col,170,.55,12); hornWaves(s.x,GROUND-30,col,1,3); SPFX.edge={col,t:.3}; }
     else if(SPFX.lastSpec==='thunder'){ spRing(s.x,GROUND,col,170,.55,12); spRing(s.x,GROUND,'#fff',110,.35,6); spBolt(s.x+rand(-20,20),-60,s.x,GROUND,'#fff',.25); SPFX.edge={col,t:.3}; }
     else { spRing(s.x,GROUND,col,170,.55,12); spRing(s.x,GROUND,'#fff',100,.35,6); SPFX.edge={col,t:.25}; game.shake=Math.max(game.shake,.35); }   // v15.7 bigger impact
     for(let i=0;i<16;i++) spPart({x:s.x,y:GROUND-4,vx:rand(-220,220),vy:rand(-260,-60),t:.6,T:.6,col,r:rand(2,5),k:'spark'});
@@ -2917,7 +2923,7 @@ const DESC={
   pikachu:{fl:'Tiny, electric and adorable. Pika-pika, then zap! \u26A1\uD83D\uDC2D',best:'Very fast with a good jump',weak:'Tiny reach and low power',tip:'Get to everything early. Quick Attack zaps the opponent the moment you use it, so use it when they\u2019re about to hit.',sig:'Chain shock: +40 extra stamina, the opponent is shocked on activation, and again by your next shot.'},
   doraemon:{fl:'The robot cat from the future with a gadget for every situation. \uD83D\uDD14',best:'Control, reach and great stamina',weak:'Slow and a low jump',tip:'Place the shuttle, don\u2019t chase it. The Air Cannon Gadget from the 4D pocket refuels you and shoves them back.',sig:'Air Cannon: your next shot blows the opponent back, slows them for 2 s and their return pops up short.'},
   xiaoqi:{fl:'Nailoong\u2019s genius best friend. \u201cNailoong, try my new invention!\u201d \uD83D\uDD27',best:'Control and quick feet',weak:'Average power and stamina',tip:'Place the shuttle into the corners and let the gadget drag them out of position.',sig:'Second wind, then a robot arm yanks the opponent 1 m to the net (stun 1.4 s); weak return.'},
-  dalaba:{fl:'Bombloong\u2019s loudest Purple Soldier. Loves purple sweet potatoes and laughing at the wrong moment. \uD83D\uDCE2',best:'Long reach and a big stamina tank',weak:'Slow feet and an average jump',tip:'Stand tall in the middle, smash anything short, and blast the Big Horn when they are tired.',sig:'Returner deafened 0.7 s, loses 15 stamina; weak return.'},
+  dalaba:{fl:'Bombloong\u2019s loudest Purple Soldier. Loves purple sweet potatoes and laughing at the wrong moment. \uD83D\uDCE2',best:'Long reach and a big stamina tank',weak:'Slow feet and an average jump',tip:'Stand tall in the middle, smash anything short, and blast the Big Horn when they are tired.',sig:'A horn-blast smash: the returner is deafened 0.7 s, slowed 1.2 s, loses 15 stamina and pops up a weak return.'},
   sheep:{fl:'A fluffy little pastry chef. Everything she serves is sweet, especially her net shots. \uD83E\uDDC1',best:'Superb control, good stamina',weak:'The softest smash in the game',tip:'Win at the net with tight spinning shots, and rest with high lifts.',sig:'Sugar Swirl Net: a spinning net shot and the opponent is stuck in sugar (stunned 0.8 s, slowed 1.2 s).'},
   luffy:{fl:'A rubber pirate who wants to be King of Badminton. Stretchy arms, huge appetite. \uD83C\uDFF4',best:'Huge reach and a strong smash',weak:'Loose timing, low stamina',tip:'Stretch for everything, attack early, finish rallies before you tire.',sig:'Rocket shot: opponent flung 2.4 m back (the biggest knock-back), stunned 0.8 s; weak return.'},
   tanjiro:{fl:'A kind, determined boy with a strong sense of smell \u2014 he can sniff out a weak return. \uD83C\uDF0A',best:'Perfectly balanced, no weak spot',weak:'No stand-out weapon',tip:'Play patient all-court rallies and drive the shuttle deep when they come forward.',sig:'Perfect punch clear: opponent stunned 1.6 s, slowed, pushed 0.5 m; weak return.'},
