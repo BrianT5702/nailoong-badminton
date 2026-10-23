@@ -1016,7 +1016,7 @@ const CHARS=[
     bio:'Quick, tidy hands at the net.'},
   {id:'bombloong',name:'Bombloong',src:'bomb',st:[8,6,6,6,6,6,5],sp:'bomb',spName:'Boom Smash',col:'#4fb8e8',frame:'#3a7bd5',grip:'#9fd3f0',
     bio:'Nailoong\'s blue eggshell rival (\u66b4\u66b4\u9f99). Big hitter, big reach, a bit slow.'},
-  {id:'spidey',name:'Spider-Man',src:'draw',st:[7,7,6,5,4,7,4],sp:'spin',spName:'Web Net Trap',col:'#e23b3b',frame:'#1d4fbf',grip:'#e23b3b',
+  {id:'spidey',name:'Spider-Man',src:'draw',st:[7,7,6,5,6,7,4],sp:'spin',spName:'Web Net Trap',col:'#e23b3b',frame:'#1d4fbf',grip:'#e23b3b',
     bio:'Fast, springy and strong, but runs out of breath.',art:{suit:'#d8262b',suit2:'#1f4fbf',head:'mask',mask:'#d8262b',eyes:'lens',web:true,emblem:'spider',boots:'#d8262b'}},
   {id:'hulk',name:'Hulk',src:'draw',st:[8,4,5,5,8,7,3],sp:'thunder',spName:'Gamma Smash',col:'#5fa83a',frame:'#7b3fa0',grip:'#5fa83a',
     bio:'Maximum power and reach. Slow feet, wild control.',art:{skin:'#6fbf44',suit:'#6fbf44',suit2:'#7b3fa0',head:'skin',eyes:'angry',hair:{col:'#23301c',style:'flat'},shorts:true,boots:'#6fbf44',big:1.12}},
@@ -1646,7 +1646,7 @@ function updatePlayer(p,dt){
 function hitCenter(p){ const l=(p.lungeT>0||p.recT>0)?1:0;
   const nk=p.req==='smash'&&p.swingT>=0&&Math.abs(p.x-NET_X)<NK_PX;   // net kill: arm up, racket above the tape
   return {x:p.x+p.f*25+(l?(p.lungeDir||0)*9:0), y:p.y-(nk?(p.onGround?122:140):(p.onGround?75:100))+l*12}; }   // airborne = arm stretched overhead
-function reachOf(p){ return ((p.ai?REACH:REACH+5)+4*chD(p,4)+(ATTACK_T.has(shuttle.type)&&game.lastHitter!==p.side?3*chD(p,6):0)+((p.lungeT>0||p.recT>0)?LUNGE_REACH*(1+.08*chD(p,4)):0))*PHYS.reach; }
+function reachOf(p){ return ((p.ai?REACH:REACH+5)+4*chD(p,4)+(SPIDER(p)&&!p.onGround?12:0)+(ATTACK_T.has(shuttle.type)&&game.lastHitter!==p.side?3*chD(p,6):0)+((p.lungeT>0||p.recT>0)?LUNGE_REACH*(1+.08*chD(p,4)):0))*PHYS.reach; }
 
 /* ================= AI ================= */
 function aiThink(p,dt){
@@ -2614,7 +2614,8 @@ const perfWin=p=>game.mode==='demo'||game.noStamina||!tired(p)?1:clamp(.52-.32*f
 const fatigue=p=>game.mode==='demo'||game.noStamina?0:clamp((ST.low-p.st)/(ST.low-2),0,1);   // v16.3: 0 at the tired line, 1 when empty
 const stMax=p=>ST.max+3.5*chD(p,5);   // v16.10: Stamina stat compressed (89..110)   // v15.4: stamina stat = bigger tank (79..121) + faster regen
 const pSpd=p=>(p.stunT>0?.3:1)*(p.slowT>0?.6:1)*(1+.055*chD(p,1))*(p.st<ST.vlow&&game.mode!=='demo'?.74:tired(p)?.82:1)*(p.boostT>0?(p.boostK||1.35):1);
-const pJmp=p=>(1+.05*chD(p,2))*(p.st<ST.vlow&&game.mode!=='demo'?.74:tired(p)?.82:1);
+const SPIDER=p=>p.ch&&p.ch.id==='spidey';   // v16.11 Spider reach: Reach 6, a slightly springier leap and +12 px racket stretch while airborne, so jump smashes are easy to reach
+const pJmp=p=>(1+.05*chD(p,2))*(SPIDER(p)?1.05:1)*(p.st<ST.vlow&&game.mode!=='demo'?.74:tired(p)?.82:1);
 const pPow=p=>(1+.06*chD(p,0))*(p.st<ST.vlow&&game.mode!=='demo'?.68:tired(p)?.8:1);   // v16.2: Power counts more, tiredness hurts more
 const pCtl=p=>(1+.1*chD(p,3))*(p.st<ST.vlow&&game.mode!=='demo'?.45:tired(p)?.62:1);
 function staCost(p,v){ if(game.mode==='demo'||game.noStamina) return; p.st=Math.max(0,p.st-v*(1-.025*chD(p,5))*(1+(p.rk?p.rk.cost:0))); }
@@ -3540,7 +3541,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden && game.mo
    Host = Nailoong (authoritative simulation), guest = Berry (sends inputs, predicts itself, interpolates the host).
    Reliable PeerJS channel: lobby/start/fx/win events. Extra unordered, no-retransmit channel: inputs, snapshots, pings. */
 const QS=new URLSearchParams(location.search);
-const NET_VER=25, ROOM_PREFIX='nailoong-badminton-v13-', CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const NET_VER=26, ROOM_PREFIX='nailoong-badminton-v13-', CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const NET={on:false,role:null,side:0,peer:null,conn:null,ch:null,code:'',closing:false,lost:false,
   rtt:0,rtts:[],off:0,offS:[],lastRecv:0,lastPing:0,epoch:0,
   lag:Math.max(0,+QS.get('netlag')||0), loss:clamp(+QS.get('netloss')||0,0,.9),
