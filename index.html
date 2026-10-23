@@ -222,6 +222,16 @@
   svg.ill{width:4.6em;height:1.85em;flex:none}svg.ill .tr{fill:none;stroke:#ff8fb1;stroke-width:2.4;stroke-dasharray:4 3;stroke-linecap:round}svg.ill .tr.sm{stroke:#ff5f3f;stroke-dasharray:none;stroke-width:3}
   svg.ill circle{fill:#c48a12}svg.ill .net{fill:#8a6a4a}
   .chtabs button{white-space:nowrap}
+.tabwrap{position:relative;margin:.2em 0 .4em}
+.tabrow{justify-content:flex-start;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;margin:0;padding:.15em 0;cursor:grab;touch-action:pan-y;overscroll-behavior-x:contain}
+.tabrow::-webkit-scrollbar{display:none}.tabrow.drag{cursor:grabbing}.tabrow.drag button{pointer-events:none}
+.tabrow>:first-child{margin-left:auto}.tabrow>:last-child{margin-right:auto}
+.tabwrap.fl .tabrow{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 2.6em);mask-image:linear-gradient(90deg,transparent 0,#000 2.6em)}
+.tabwrap.fr .tabrow{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 2.6em),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 2.6em),transparent)}
+.tabwrap.fl.fr .tabrow{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 2.6em,#000 calc(100% - 2.6em),transparent);mask-image:linear-gradient(90deg,transparent 0,#000 2.6em,#000 calc(100% - 2.6em),transparent)}
+.tarr{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:1.8em;height:1.8em;padding:0;border-radius:50%;font-size:1em;line-height:1;display:none;box-shadow:0 .1em .3em rgba(0,0,0,.2)}
+.shgrid canvas.trprev{width:100%;max-width:9em;height:2.6em;background:linear-gradient(#3a4a6a,#24304a);border-radius:.5em}
+.tarr.l{left:-.3em}.tarr.r{right:-.3em}.tabwrap.fl .tarr.l,.tabwrap.fr .tarr.r{display:block}
   .ctrl table.pk2 td,.ctrl table.pk2 th{padding:.15em .5em}
   .kbsec{font-size:.78em;color:#a08060;font-weight:normal;margin-left:.5em;letter-spacing:0;text-transform:none}
 </style>
@@ -411,7 +421,7 @@
   <div class="overlay hidden" id="shopScreen">
     <div class="card shcard"><h1 style="font-size:1.6em">Shop <span>&amp; Locker</span></h1>
       <div class="sub">&#129689; <b class="coins">0</b> coins for rackets, headbands and courts. Characters unlock in the Tournament.</div>
-      <div class="chtabs" id="shopTabs"></div><div id="shopBody" class="shgrid"></div><div class="kbmsg" id="shopMsg"></div>
+      <div class="tabwrap" id="shopTabWrap"><button class="tarr l" aria-label="Scroll tabs left" tabindex="-1">‹</button><div class="chtabs tabrow" id="shopTabs"></div><button class="tarr r" aria-label="Scroll tabs right" tabindex="-1">›</button></div><div id="shopBody" class="shgrid"></div><div class="kbmsg" id="shopMsg"></div>
       <div class="kbbtns"><button class="big alt" id="shopBack">Back</button><button id="shopReset">Reset progress&hellip;</button></div></div>
   </div>
 
@@ -1022,13 +1032,13 @@ const CHARS=[
     bio:'Strong and fast, but slow to get his breath back.',art:{suit:'#1f5fd0',suit2:'#d8262b',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#1a1a22',style:'curl'},cape:'#d8262b',emblem:'diamond',belt:'#f5d020',boots:'#d8262b'}},
   {id:'wonder',name:'Wonder Woman',src:'draw',st:[7,6,6,7,6,5,9],sp:'wall',spName:'Bracelet Block',col:'#c8202a',frame:'#d8dce6',grip:'#c8202a',
     bio:'A strong all-rounder who deflects smashes.',art:{suit:'#c8202a',suit2:'#1f4fbf',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#1a1a22',style:'long'},tiara:'#f0c419',emblem:'W',belt:'#f0c419',cuffs:'#d0d4dc',boots:'#c8202a'}},
-  {id:'naruto',name:'Naruto',src:'draw',st:[5,5,5,4,5,8,4],sp:'wind',spName:'Ramen Second Wind',col:'#f28c28',frame:'#f28c28',grip:'#1a1a1a',
+  {id:'naruto',name:'Naruto',src:'draw',st:[5,5,5,4,5,8,4],sp:'clone',spName:'Shadow Clone Fake Shot',col:'#f28c28',frame:'#f28c28',grip:'#1a1a1a',
     bio:'Never runs out of energy; a bit wild with the racket.',art:{suit:'#f28c28',suit2:'#1f3f8f',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#f5d020',style:'spiky'},headband:'#1f3f8f',whiskers:true,boots:'#1f3f8f',collar:'#1f3f8f'}},
   {id:'goku',name:'Goku',src:'draw',st:[7,7,7,7,5,5,6],sp:'thunder',spName:'Kame Smash',col:'#f28c28',frame:'#ff8c1a',grip:'#2a50b0',
     bio:'Explosive power and jumps, short arms.',art:{suit:'#f28c28',suit2:'#2a50b0',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#1a1a22',style:'goku'},belt:'#2a50b0',undershirt:'#2a50b0',boots:'#2a50b0'}},
   {id:'pikachu',name:'Pikachu',src:'draw',st:[4,7,7,6,3,7,4],sp:'dash',spName:'Quick Attack',col:'#f5d020',frame:'#f5d020',grip:'#8a5a2b',
     bio:'Tiny and electric-quick; very short reach.',art:{suit:'#f7d531',suit2:'#f7d531',skin:'#f7d531',head:'skin',eyes:'dot',ears:'pika',cheeks:'#e8433a',stripes2:'#8a5a12',tail:'bolt',boots:'#f7d531',small:.9}},
-  {id:'doraemon',name:'Doraemon',src:'draw',st:[4,5,4,7,6,7,6],sp:'wind',spName:'Dorayaki Break',col:'#1fa0e0',frame:'#1fa0e0',grip:'#ffd23a',
+  {id:'doraemon',name:'Doraemon',src:'draw',st:[4,5,4,7,6,7,6],sp:'wind',spName:'Air Cannon Gadget',col:'#1fa0e0',frame:'#1fa0e0',grip:'#ffd23a',
     bio:'Steady, tireless and tidy; no big jumps or smashes.',art:{suit:'#1fa0e0',suit2:'#ffffff',skin:'#1fa0e0',head:'dora',eyes:'dora',whiskers:true,nose:'#d8262b',collar:'#d8262b',bell:'#f5d020',belly:'#ffffff',pocket:true,boots:'#ffffff'}},
   {id:'xiaoqi',name:'Xiao Qi',src:'draw',st:[5,7,6,8,5,5,6],sp:'wind',spName:'Gadget Grabber',col:'#3a8ee8',frame:'#3a8ee8',grip:'#ff9a2e',
     bio:'Nailoong\u2019s best friend: a 14-year-old inventor with a gadget for everything.'},
@@ -1058,6 +1068,7 @@ const STAT_N=['Power','Speed','Jump','Control','Reach','Stamina','Defence'];
 const STAT_TIP=['Power: smash and attack speed (+6% per point) and how hard your attacks are to return.','Speed: running speed (+5.5% per point).','Jump: jump height (+5% per point) for higher jump smashes.','Control: timing window and shot accuracy. More Control = a wider Perfect window, tighter placement and fewer errors (net / out / too short).','Reach: how far your racket reaches from your body (+4 px per point) and your lunge distance: reach shuttles others would miss.','Stamina: max stamina (+7 per point) and slower drain. Tired players move, jump and hit worse.','Defence: return quality against strong attacks. Higher Defence = cleaner blocks and lifts against smashes, fewer defensive errors.'];
 const SPECIALS={
   perfect:'Your next 3 shots are automatically Perfect.',
+  clone:'A shadow clone swings with you: your next 2 shots each send a real shuttle plus an identical decoy on another path (the decoy vanishes after ~1 s).',
   bomb:'Your next smash (or flat attack) becomes a lit bomb: 25% faster and steeper, explodes on landing.',
   thunder:'Your next smash (or flat attack) is a huge thunder shot: much faster, slow-motion, very hard to return.',
   spin:'Your next drop / net shot spins and tumbles tight over the tape: nearly impossible to kill.',
@@ -1539,6 +1550,11 @@ function hitShuttle(p,d=0,reach=REACH){
       if(!nv){ nv={vx:v.vx*.45,vy:Math.max(v.vy,-120)}; mode='net'; }
       if(nv){ v=nv; if(mode==='short'){ type='lift'; big=false; } p.errN=(p.errN||0)+1; popups.length=Math.min(popups.length,pop0); Q.label=null; if(!p.ai&&game.mode!=='demo') popup(p.x,p.y-205,mode==='net'?'Into the net!':mode==='out'?'Too long!':defShot?'Frame!':'Up short!','#d0456f',18); } }
       else if(defShot&&(type==='lift'||type==='clear'||type==='block'||type==='drive')&&Math.random()<pres*clamp(.27-.045*chD(p,6),.08,.6)*(q>=.8?.8:q<.6?1.3:1)){ const w=solveShot(s.x,s.y,oppX(p.side,rand(.3,.48)),[60,64,68,72,56]); if(w){ v=w; type='lift'; big=false; p.popN=(p.popN||0)+1; if(!p.ai&&game.mode!=='demo') popup(p.x,p.y-205,'Weak pop-up','#ff9a3c',18); } } }   // v16.6 low DEF: soft, killable pop-ups under fire
+  if(p.cloneN&&v&&game.state==='rally'){ p.cloneN--; const real=simulate(s.x,s.y,v.vx,v.vy,6), deep=Math.abs(real.landX-NET_X)/(NET_X-COURT_L)>.5;   // v16.7 Shadow Clone: a decoy on a different path
+    const dv=deep?(solveShot(s.x,s.y,oppX(p.side,rand(.18,.3)),[20,26,32,38,44,14])||null):(solveShot(s.x,s.y,oppX(p.side,rand(.85,.95)),[40,46,52,34,58])||null);
+    if(dv){ game.decoy={x:s.x,y:s.y,vx:dv.vx,vy:dv.vy,t:1.0,side:p.side,tr:[],rot:0,landT:0}; game.cloneFx={side:p.side,t:.5,x:p.x-p.f*48};
+      const o=players[1-p.side]; game.decoyDelay=0; if(o.ai){ const base={easy:.75,normal:.6,hard:.5}[o.ai.diff]??.55, fool=Math.random()<base*clamp(1-.07*chD(o,3),.6,1.4); game.decoyDelay=fool?.35:.12; game.decoyFool=fool; game.decoyOff=clamp(simulate(s.x,s.y,dv.vx,dv.vy,6).landX-real.landX,-260,260); }
+      popup(p.x,p.y-175,'SHADOW CLONE!','#f28c28',22); } }
   s.type=type; s.bigSmash=big; s.q=q; s.special=spec; s.spRet=s.spRet0||null; s.spRet0=null; s.webDip=s.webDip0||0; s.webDip0=0; if(spec==='wall'&&p.ch.id==='batman'||rid==='batman') s.hideT=.45; if(spec==='bomb'){ const r=Math.hypot(s.vx,s.vy), a=Math.atan2(s.vy,s.vx), d=Math.sign(s.vx)||1, a2=a+d*.07, nv={vx:Math.cos(a2)*r,vy:Math.sin(a2)*r}, sim=simulate(s.x,s.y,nv.vx,nv.vy,3); if(sim.crossY!==null&&sim.crossY<NET_TOP-4&&(sim.landX-NET_X)*d>1.5*PX_M){ s.vx=nv.vx; s.vy=nv.vy; } s.fx=2; game.shake=.45; hitFreeze(.1); sfx.boom&&sfx.boom(.6); game.camP=1; }   // steeper by ~4 deg when it still clears the tape
   if(spec&&spec!=='thunder'&&spec!=='bomb'){ hitFreeze(.07); game.camP=Math.max(game.camP||0,.5); }
   if(spec){ const col=p.ch.col; popup(s.x,s.y-58,'\u2605 '+p.ch.spName,col,30); for(let i=0;i<14;i++) spark(s.x,s.y,col);
@@ -1639,7 +1655,7 @@ function aiThink(p,dt){
     else tx=base;
   } else if(game.state==='rally'){
     if(game.lastHitter!==p.side){
-      if(a.seen!==game.hitId){ a.seen=game.hitId; a.react=d.react*rand(.7,1.3)+(s.hideT>0?.45:0); a.err=rand(-1,1)*d.err*clamp(1-.08*chD(p,3),.5,1.5);
+      if(a.seen!==game.hitId){ a.seen=game.hitId; a.react=d.react*rand(.7,1.3)+(s.hideT>0?.45:0)+(game.decoy&&game.decoy.side!==p.side?game.decoyDelay||0:0); a.err=rand(-1,1)*d.err*clamp(1-.08*chD(p,3),.5,1.5);
         a.miss=Math.random()<d.mistake; a.jump=Math.random()<d.jump; a.jroll=Math.random()<d.jump; a.runFrom=p.x; a.leave=Math.random()<d.leave;
         if(s.type==='kill'){ a.react=d.sReact*rand(.8,1.2); a.miss=Math.random()<d.sMiss*1.2; a.jump=false; }
         if(s.type==='netkill'){ a.react=d.sReact*rand(.9,1.3); a.miss=Math.random()<Math.min(.95,d.sMiss+.6); a.jump=false; }
@@ -1653,6 +1669,7 @@ function aiThink(p,dt){
           if(s.special==='thunder'){ a.react*=1.3; if(Math.random()<.45) a.miss=true; } if(s.special==='bomb'){ a.react*=1.3; if(Math.random()<.45) a.miss=true; } }
         if(s.special==='spin'){ a.react*=1.25; a.nkRoll=false; }
         if(s.special==='drive'&&Math.random()<.3) a.miss=true;
+        if(game.decoy&&game.decoyFool&&game.decoy.side!==p.side&&Math.random()<.8) a.miss=true;   // v16.7 guessed the decoy: committed the wrong way
         if(p.armed==='wall'&&ATTACK_T.has(s.type)) a.miss=false;
         if(d.smart&&p.st<38) a.jump=a.jump&&Math.random()<.25; if(p.st<12) a.jump=false;   // v15 Hard: no jump-smash spam when tired
         if(d.smart){ const T={drop:['drop','net','block','kill'],clear:['clear','punch','lift','drive'],smash:['smash','netkill','drive','flat']}[a.readReq]||[];
@@ -1684,7 +1701,7 @@ function aiThink(p,dt){
       if(!reachIx && a.jroll && s.type!=='smash' && xi!==null && s.type!=='drop' && s.type!=='block' && Math.abs(xi-p.f*25-p.x)<spd*Math.max(0,ti-Math.max(0,a.react))+20){
         target=xi; if(a.icptId!==game.hitId){ a.icptId=game.hitId; a.icptT=game.time+ti; } }
       if(a.react<=0 && a.icptId!==game.hitId && target===ix && ix!==null && Math.abs(ix-p.f*25-p.x)>REACH*.5 && Math.abs(ix-p.f*25-p.x)/spd>tI-.45){ a.lateId=game.hitId; a.jump=false; }
-      if(target!==null && !letGo) tx=target-p.f*25+a.err; else tx=letGo?(p.side===0?base:base):base;
+      if(target!==null && !letGo) tx=target-p.f*25+a.err+(game.decoy&&game.decoyFool&&game.decoy.side!==p.side?game.decoyOff||0:0);   // v16.7 fooled by the shadow clone: chases the decoy's path else tx=letGo?(p.side===0?base:base):base;
       if(a.react>0){ a.react-=dt; tx=p.x; }
       else if(a.canLunge && p.onGround && target!==null && !letGo){   // same lunge rules as the player
         const need=Math.abs(tx-p.x), sp=PSPEED*d.speed*pSpd(p);
@@ -1799,6 +1816,7 @@ function update(dt){
   const onl=game.mode==='online';
   if(game.hitStop>0&&(onl||!SET.slowmo)) game.hitStop=0;   // v15.1: freeze-frames are offline + setting only (online never time-scales)
   if(game.hitStop>0){ game.hitStop-=dt; if(game.hitStop<=0) game.slow=SET.slowmo?.25:0; return; }
+  if(game.cloneFx){ game.cloneFx.t-=dt; if(game.cloneFx.t<=0) game.cloneFx=null; }
   if(game.slow>0&&!onl&&SET.slowmo){ const k=Math.min(1,game.slow/.25); game.slow-=dt; dt*=1-.5*k*k; } else game.slow=0;   // v15.1: short eased catch-up (<=0.25 s from 0.5x)   // v15 slow motion (offline only)   // v14: ~65 ms hit-stop on perfect smashes
   for(const p of players) p.input = p.ai? aiThink(p,dt) : (game.state==='win'?(onl&&p.side===1?(netGuestInput(),{}):{}):(onl&&p.side===1?netGuestInput():humanInput(p.side)));
   for(const p of players){ if(p.input.jump) p.wantJump=true; if(p.input.shot) p.wantShot=p.input.shot; if(p.input.special) trySpecial(p); }
@@ -1822,6 +1840,7 @@ function step(dt){
   } else if(game.state==='rally'){
     const px=s.x, py=s.y;
     if(!s.landT) stepS(s,dt);
+    if(game.decoy){ const D=game.decoy; D.t-=dt; stepS(D,dt); if(D.t<=0||D.y>GROUND-30||game.lastHitter!==D.side) game.decoy=null; }   // v16.7 the decoy vanishes after ~1 s, before it lands, or once the real one is returned
     if(s.webDip&&!s.landT&&(s.x-NET_X)*s.webDip>15){ s.vy+=16*PX_M*dt; }   // v15.8 Spider-Man web pull (extra downward tug past the tape)
     if(s.hideT>0) s.hideT=Math.max(0,s.hideT-dt);
     if(!s.netHit && (px-NET_X)*(s.x-NET_X)<0){
@@ -2557,7 +2576,9 @@ function render(){
   if(game.mode!=='demo') spfxBehind();
   for(const p of players){ if(p.ch.id==='golden'){ const r=95+Math.sin(game.time*4)*8, g=ctx.createRadialGradient(p.x,p.y-70,10,p.x,p.y-70,r); g.addColorStop(0,'rgba(255,220,80,.38)'); g.addColorStop(1,'rgba(255,220,80,0)'); ctx.fillStyle=g; ctx.fillRect(p.x-r,p.y-70-r,r*2,r*2); }   // champion gold aura
     if(charSprites(p.ch)) drawSpriteDino(p); else drawDino(p); }
+  if(game.cloneFx&&game.cloneFx.x!=null){ const C=game.cloneFx, p=players[C.side]; if(p&&p.ch.id==='naruto'){ const ox=p.x; p.x=C.x; ctx.save(); ctx.globalAlpha=.55*clamp(C.t/.5,0,1); if(charSprites(p.ch)) drawSpriteDino(p); else drawDino(p); ctx.restore(); p.x=ox; } }   // v16.7 shadow clone beside Naruto
   for(const p of players) drawPlayerBars(p);
+  if(game.decoy&&game.state==='rally'){ const D=game.decoy, S={x:shuttle.x,y:shuttle.y,vx:shuttle.vx,vy:shuttle.vy,trail:shuttle.trail,hideT:shuttle.hideT}; Object.assign(shuttle,{x:D.x,y:D.y,vx:D.vx,vy:D.vy,trail:[],hideT:0}); ctx.save(); ctx.globalAlpha=clamp(D.t/.15,0,1); game.decoyDraw=1; drawShuttle(); game.decoyDraw=0; ctx.restore(); Object.assign(shuttle,S); }   // v16.7 decoy looks identical
   drawShuttle();
   drawNet('near');
   drawParticles();
@@ -2614,11 +2635,10 @@ const SPX={
   batman:{w:'hit',stun:0,txt:'SMOKE BOMB!'},
   superman:{w:'ret',stun:.2,sta:20,slow:.5,weak:0,txt:'HEAT DRAIN!'},
   wonder:{w:'hit',stun:.2,kb:.6,txt:'LASSO PULL!'},
-  naruto:{w:'hit',rw:1,stun:.6,slow:.8,txt:'SHADOW CLONES!'},
   goku:{w:'ret',stun:.5,kb:1.3,slow:.8,weak:0,txt:'KAME BLAST!'},
   pikachu:{w:'act',rw:2,stun:3.0,chain:{stun:3.0,kb:.8,slow:1.5,txt:'CHAIN SHOCK!'},txt:'SHOCKED!'},
   doraemon:{w:'hit',rw:1,stun:.6,kb:1.0,slow:2,txt:'AIR CANNON!'},
-  xiaoqi:{w:'hit',rw:2,stun:1.4,kb:-1.0,slow:2,txt:'GRABBED!'},
+  xiaoqi:{w:'hit',rw:2,stun:1.8,kb:-1.0,slow:2,txt:'GRABBED!'},
   dalaba:{w:'ret',stun:.7,sta:15,slow:1.2,weak:1,txt:'HORN BLAST!'},
   sheep:{w:'hit',stun:.8,slow:1.2,txt:'SUGAR RUSH!'},
   luffy:{w:'hit',rw:2,stun:.6,kb:2.4,txt:'RUBBER ROCKET!'},
@@ -2626,7 +2646,7 @@ const SPX={
   sailor:{w:'hit',rw:1,stun:.75,txt:'MOON TIARA!'},
   sonic:{w:'hit',rw:2,stun:2.4,kb:1.0,slow:1.5,txt:'SPIN DASHED!'},
   shinchan:{w:'hit',rw:2,stun:2.6,kb:.8,slow:2,txt:'GIGGLE FIT!'},
-  deadpool:{w:'hit',rw:2,stun:1.6,kb:1.2,txt:'CHIMICHANGA BOOM!'},
+  deadpool:{w:'hit',rw:0,stun:1.0,kb:.9,txt:'CHIMICHANGA BOOM!'},
   spongebob:{w:'hit',rw:1,stun:.95,kb:.8,slow:2.5,txt:'BUBBLED!'},
   golden:{w:'ret',stun:.5,kb:.7,slow:1,weak:1,txt:'GOLDEN STUN!'}
 };
@@ -2641,11 +2661,12 @@ function trySpecial(p){
   const t=p.ch.sp; p.meter=0; p.spFx=.8; p.spN=(p.spN||0)+1; game.spUsed=(game.spUsed||0)+1;
   if(t!=='wind') p.st=Math.min(stMax(p),p.st+15);   // v16.3: every special is also a breather (+15 stamina; wind specials refill fully)
   if(t==='perfect') p.perfN=3;
-  else if(t==='dash'){ p.lungeCD=0; p.recT=0; p.lungeT=0; p.boostT=p.ch.id==='flash'||p.ch.id==='sonic'?2:1.6; if(p.ch.id==='pikachu') p.st=Math.min(stMax(p),p.st+40);   // v16.3 Quick Attack also catches Pikachu's breath
+  else if(t==='dash'){ p.lungeCD=0; p.recT=0; p.lungeT=0; p.boostT=p.ch.id==='flash'||p.ch.id==='sonic'?2:p.ch.id==='pikachu'?2.4:1.6; if(p.ch.id==='pikachu') p.st=Math.min(stMax(p),p.st+40);   // v16.3 Quick Attack also catches Pikachu's breath
  p.boostK=p.ch.id==='flash'?2:p.ch.id==='sonic'?2.2:1.5; dust(p.x,GROUND,10); }
   else if(t==='wind'){ p.st=stMax(p); p.boostT=3; p.boostK=1.2; }
+  else if(t==='clone'){ p.cloneN=2; p.st=stMax(p); game.cloneFx={side:p.side,t:.6}; }   // v16.7 Naruto: the next shot comes with a decoy
   if(SPX[p.ch.id]){ if(SPX[p.ch.id].w==='act'){ spRider(players[1-p.side],p.ch.id); if(SPX[p.ch.id].chain) p.rider=p.ch.id+':chain'; } else if(t==='perfect'||t==='dash'||t==='wind') p.rider=p.ch.id; }   // v15.6: instant specials ride on your next shot
-  if(t==='perfect'||t==='dash'||t==='wind'); else p.armed=t;   // thunder / spin / wall / drive wait for the right shot
+  if(t==='perfect'||t==='dash'||t==='wind'||t==='clone'); else p.armed=t;   // thunder / spin / wall / drive wait for the right shot
   for(let i=0;i<10;i++) spark(p.x,p.y-90,p.ch.col);   // v15.1: the big name banner + aura come from the SPFX layer
   if(!NET.fxSkip){ tone(520,.18,'sawtooth',.08,1040); tone(780,.22,'triangle',.12,1560,.06); }
   (game.spLog=game.spLog||[]).push({side:p.side,t});
@@ -2679,7 +2700,7 @@ function drawPlayerBars(p){
 }
 /* ================= v15.1 Special-move VFX (visual only; driven by synced state so the online guest sees them too) ================= */
 const SPFX_COL={xiaoqi:'#5aa8ff',dalaba:'#a87aff',sheep:'#ffb0d8',luffy:'#ff4a3a',tanjiro:'#3ad0c0',sailor:'#ff8fd0',sonic:'#3a8aff',shinchan:'#ff5a5a',deadpool:'#ff3a4a',spongebob:'#fff060',hulk:'#5fe03a',superman:'#ff3b2f',goku:'#4fb8ff',thor:'#9fe4ff',spidey:'#ff4f6a',ironman:'#7fe8ff',bombloong:'#7fd8ff',nailoong:'#ffe07a',golden:'#ffd84a',flash:'#ffd23a',panther:'#b77cff',pikachu:'#ffe14a',naruto:'#ff9a2e',doraemon:'#5cc8ff',cap:'#6fa8ff',wonder:'#ffd34a',batman:'#ffd84a',berry:'#ff8fc8'};
-const SPFX_ICON={bomb:'\uD83D\uDCA3',thunder:'\u26a1',spin:'\ud83c\udf00',wall:'\ud83d\udee1\ufe0f',dash:'\ud83d\udca8',wind:'\ud83c\udf2a\ufe0f',drive:'\u2726',perfect:'\ud83e\udd5b'};
+const SPFX_ICON={bomb:'\uD83D\uDCA3',thunder:'\u26a1',spin:'\ud83c\udf00',wall:'\ud83d\udee1\ufe0f',dash:'\ud83d\udca8',wind:'\ud83c\udf2a\ufe0f',drive:'\u2726',perfect:'\ud83e\udd5b',clone:'\ud83c\udf65'};
 const spCol=p=>SPFX_COL[p.ch.id]||p.ch.col;
 function bombBlast(x,y,k){ spRing(x,y,'#ff7a1a',200*k,.5,14); spRing(x,y,'#fff3c0',120*k,.3,8); SPFX.edge={col:'#ff7a1a',t:.3};
   spPart({x,y,vx:0,vy:0,t:.35,T:.35,col:'#ffcf3a',r:70*k,k:'glow'}); spPart({x,y,vx:0,vy:0,t:.5,T:.5,col:'#ff5a1a',r:45*k,k:'glow'});
@@ -2857,10 +2878,10 @@ const DESC={
   batman:{fl:'The Dark Knight studies every opponent. He doesn\u2019t miss, he plans. \uD83E\uDD87',best:'The best timing control, plus long reach',weak:'Low jump and average power',tip:'Play patient, precise rallies to the corners. Bat Guard auto-blocks a smash with a smoke surprise.',sig:'Smoke bomb: a cloud hides the shuttle for about half a second, and the CPU reacts late.'},
   superman:{fl:'Faster than a speeding shuttle. Super strong, super polite. \uD83E\uDDB8',best:'Power, speed and jump',weak:'Average control and stamina',tip:'Attack early and often. Heat Smash drains the returner\u2019s stamina, so use it mid-rally.',sig:'Heat Smash: the returner loses 20 stamina and is briefly stunned.'},
   wonder:{fl:'An Amazon warrior with perfect balance between power and grace. \u2728',best:'Balanced attack and defence',weak:'No big weakness, no single best stat',tip:'Play the all-court game. Bracelet Block deflects a smash and the lasso drags them off position.',sig:'Lasso: the opponent is yanked off position.'},
-  naruto:{fl:'Believe it! Never gives up and never runs out of energy, thanks to ramen. \uD83C\uDF5C',best:'Endless stamina and good speed',weak:'Loose timing control',tip:'Drag the CPU into long rallies until they tire. Ramen Second Wind refuels you instantly.',sig:'Shadow clones: your next shot feints the opponent, who is stunned and slowed.'},
+  naruto:{fl:'Believe it! Never gives up and never runs out of energy, thanks to ramen. \uD83C\uDF5C',best:'Endless stamina and good speed',weak:'Loose timing control',tip:'Drag the CPU into long rallies until they tire, then fire the Shadow Clone Fake Shot.',sig:'Shadow Clone Fake Shot: a clone pops up beside you and both swing. On your next 2 shots a real shuttle and an identical decoy fly on different paths; each decoy vanishes after about 1 s. The CPU has to guess (weaker CPUs and low Control guess wrong more).'},
   goku:{fl:'A cheerful Saiyan who just wants a strong opponent. Kame\u2026hame\u2026SMASH! \uD83D\uDD25',best:'Strong all-round attack',weak:'Average reach and stamina',tip:'Keep the pressure on with smashes and net kills. Kame Smash blasts the returner backwards.',sig:'Kame Smash: the returner is stunned and blasted back 1.3 m.'},
   pikachu:{fl:'Tiny, electric and adorable. Pika-pika, then zap! \u26A1\uD83D\uDC2D',best:'Very fast with a good jump',weak:'Tiny reach and low power',tip:'Get to everything early. Quick Attack zaps the opponent the moment you use it, so use it when they\u2019re about to hit.',sig:'Chain shock: +40 extra stamina, the opponent is shocked on activation, and again by your next shot.'},
-  doraemon:{fl:'The robot cat from the future with a gadget for every situation. \uD83D\uDD14',best:'Control, reach and great stamina',weak:'Slow and a low jump',tip:'Place the shuttle, don\u2019t chase it. Dorayaki Break refuels you, and the Air Cannon shoves them back.',sig:'Air Cannon: your next shot blows the opponent back, slows them for 2 s and their return pops up short.'},
+  doraemon:{fl:'The robot cat from the future with a gadget for every situation. \uD83D\uDD14',best:'Control, reach and great stamina',weak:'Slow and a low jump',tip:'Place the shuttle, don\u2019t chase it. The Air Cannon Gadget from the 4D pocket refuels you and shoves them back.',sig:'Air Cannon: your next shot blows the opponent back, slows them for 2 s and their return pops up short.'},
   xiaoqi:{fl:'Nailoong\u2019s genius best friend. \u201cNailoong, try my new invention!\u201d \uD83D\uDD27',best:'Control and quick feet',weak:'Average power and stamina',tip:'Place the shuttle into the corners and let the gadget drag them out of position.',sig:'Second wind, then a robot arm yanks the opponent 1 m to the net (stun 1.4 s); weak return.'},
   dalaba:{fl:'Bombloong\u2019s loudest Purple Soldier. Loves purple sweet potatoes and laughing at the wrong moment. \uD83D\uDCE2',best:'Long reach and a big stamina tank',weak:'Slow feet and an average jump',tip:'Stand tall in the middle, smash anything short, and blast the Big Horn when they are tired.',sig:'Returner deafened 0.7 s, loses 15 stamina; weak return.'},
   sheep:{fl:'A fluffy little pastry chef. Everything she serves is sweet, especially her net shots. \uD83E\uDDC1',best:'Superb control, good stamina',weak:'The softest smash in the game',tip:'Win at the net with tight spinning shots, and rest with high lifts.',sig:'Sugar Swirl Net: a spinning net shot and the opponent is stuck in sugar (stunned 0.8 s, slowed 1.2 s).'},
@@ -2953,17 +2974,50 @@ const TRAILS={none:{name:'No trail',price:0},rainbow:{name:'Rainbow',price:150,c
   fire:{name:'Fire',price:200,cols:['#fff27a','#ffb02e','#ff5a1f','#c81e1e']},ice:{name:'Ice',price:200,cols:['#ffffff','#bff0ff','#6fd0ff','#3a8ee8']},
   hearts:{name:'Hearts',price:250,cols:['#ff7aa2','#ff4f8b'],glyph:'heart'},stars:{name:'Stars',price:250,cols:['#fff27a','#ffd23a'],glyph:'star'},
   neon:{name:'Neon Lightning',price:300,cols:['#39ff14','#00f0ff'],zig:1},milk:{name:'Milk Splash',price:180,cols:['#ffffff','#fff6d8'],glyph:'drop'}};
-function drawTrailFx(tr){ const id=(typeof PROG!=='undefined'&&PROG.equip.trail)||'none', T=TRAILS[id]; if(!T||id==='none'||tr.length<2) return;
-  const me=game.mode==='online'?NET.side:0; if(game.mode==='demo') return; const P=players[me]; if(!P) return;
-  ctx.save(); ctx.lineCap='round'; const n=tr.length;
-  for(let i=1;i<n;i++){ const a=tr[i-1], b=tr[i]; if(b.h!==me) continue; const al=clamp(b.l/.08,0,1)*clamp(i/n*1.6,0,1); if(al<.03) continue;
-    const c=T.cols[(T.cols.length*i/n|0)%T.cols.length]; ctx.globalAlpha=al*.9; ctx.strokeStyle=c; ctx.lineWidth=3+7*al;
-    ctx.beginPath(); if(T.zig){ const mx=(a.x+b.x)/2+(i%2?5:-5), my=(a.y+b.y)/2+(i%2?-5:5); ctx.moveTo(a.x,a.y); ctx.lineTo(mx,my); ctx.lineTo(b.x,b.y); ctx.shadowColor=c; ctx.shadowBlur=8; } else { ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); } ctx.stroke(); ctx.shadowBlur=0;
-    if(T.glyph&&i%4===0){ ctx.fillStyle=T.cols[i/4%T.cols.length|0]; const r=3+3*al; ctx.beginPath();
-      if(T.glyph==='heart'){ ctx.moveTo(b.x,b.y+r); ctx.bezierCurveTo(b.x-r*2,b.y-r*.4,b.x-r*.6,b.y-r*1.8,b.x,b.y-r*.5); ctx.bezierCurveTo(b.x+r*.6,b.y-r*1.8,b.x+r*2,b.y-r*.4,b.x,b.y+r); }
-      else if(T.glyph==='star'){ for(let k=0;k<10;k++){ const rr=k%2?r*.45:r*1.2, an=k*Math.PI/5-Math.PI/2; ctx.lineTo(b.x+Math.cos(an)*rr,b.y+Math.sin(an)*rr); } ctx.closePath(); }
-      else { ctx.arc(b.x,b.y,r*.8,0,7); } ctx.fill(); } }
-  ctx.restore(); }
+// v16.7 cosmetic trails: longer, tapered and fading, with richer per-style effects. Purely local: every shot (mine, the opponent's, the AI's)
+// is drawn in MY equipped trail; nothing is sent over the network.
+const TRAIL_LIFE=.6, TRAIL_N=170; let CTR=[], CTR_T=0, TBURST=[], TB_ID=-1;
+function trailRand(k){ const x=Math.sin(k*127.1+311.7)*43758.5453; return x-Math.floor(x); }
+function drawTrailPath(c,pts,id,now,z){ const T=TRAILS[id]; if(!T||id==='none'||pts.length<2) return; z=z||1; const n=pts.length, head=pts[n-1];
+  c.save(); c.lineCap='round'; c.lineJoin='round';
+  const seg=(i)=>{ const a=pts[i-1], b=pts[i], u=clamp((now-b.t)/(TRAIL_LIFE*(b.p?1.45:1)),0,1), dx=b.x-a.x, dy=b.y-a.y, L=Math.hypot(dx,dy)||1; return {a,b,u,nx:-dy/L,ny:dx/L,dh:Math.hypot(b.x-head.x,b.y-head.y)}; };
+  for(let i=1;i<n;i++){ const S=seg(i); if(S.dh<9*z) continue;   // keep clear of the shuttle itself
+    const P=S.b.p?1:0, k=1-S.u, al=Math.min(1,Math.pow(k,1.25)*clamp(S.dh/(26*z),0,1)*(1+.35*P)), w=(1.5+8.5*k)*z*(1+.7*P), a=S.a, b=S.b; if(al<.02) continue;   // v16.7 P = Perfect smash: longer, thicker, brighter
+    if(P){ c.shadowColor=TRAILS[id].cols[0]; c.shadowBlur=(id==='neon'?16:9)*z; }
+    if(id==='rainbow'){ const C=T.cols; for(let q=0;q<3;q++){ const off=(q-1)*w*.42; c.globalAlpha=al*.85; c.strokeStyle=C[(q*2+(i>>3))%C.length]; c.lineWidth=w*.45; c.beginPath(); c.moveTo(a.x+S.nx*off,a.y+S.ny*off); c.lineTo(b.x+S.nx*off,b.y+S.ny*off); c.stroke(); } }
+    else if(id==='fire'){ const fl=.75+.5*trailRand(b.k+(now*20|0)), C=T.cols; c.globalAlpha=al*.8; c.strokeStyle=C[Math.min(C.length-1,S.u*C.length|0)]; c.lineWidth=w*fl*1.15; c.beginPath(); c.moveTo(a.x,a.y); c.lineTo(b.x,b.y); c.stroke();
+      c.globalAlpha=al*.9; c.strokeStyle='#fff6c0'; c.lineWidth=w*.3*k; c.stroke(); }
+    else if(id==='neon'){ const j1=(trailRand(b.k*3+(now*30|0))-.5)*w*(1.6+1.6*P); c.globalAlpha=al; c.shadowColor=T.cols[i%2]; c.shadowBlur=(10+10*P)*z; c.strokeStyle=T.cols[(i>>2)%2]; c.lineWidth=w*.45; c.beginPath(); c.moveTo(a.x,a.y); c.lineTo((a.x+b.x)/2+S.nx*j1,(a.y+b.y)/2+S.ny*j1); c.lineTo(b.x,b.y); c.stroke(); c.shadowBlur=0; c.strokeStyle='#fff'; c.lineWidth=w*.15; c.stroke(); }
+    else { const C=T.cols; c.globalAlpha=al*(id==='milk'?.7:.6); c.strokeStyle=C[(C.length*i/n|0)%C.length]; c.lineWidth=w*(id==='ice'?.9:.7); c.beginPath(); c.moveTo(a.x,a.y); c.lineTo(b.x,b.y); c.stroke();
+      if(id==='ice'){ c.globalAlpha=al*.9; c.strokeStyle='#fff'; c.lineWidth=w*.22; c.stroke(); } }
+    c.shadowBlur=0;
+    // particles riding on the trail (denser on a Perfect smash)
+    if(i%(P?2:5)===0){ const r=(2.4+3.2*k)*z*(1+.5*P), px=b.x+(trailRand(b.k)-.5)*w*1.4, rr=trailRand(b.k*7);
+      if(id==='fire'){ const ey=b.y-S.u*30*z; c.globalAlpha=al; c.fillStyle=rr<.5?'#ffd23a':'#ff7a1f'; c.beginPath(); c.arc(px,ey,r*.45,0,7); c.fill(); }
+      else if(id==='ice'){ c.globalAlpha=al; c.strokeStyle='#e8fbff'; c.lineWidth=1.1*z; c.save(); c.translate(px,b.y); c.rotate(rr*3+S.u*2); for(let m=0;m<3;m++){ c.rotate(Math.PI/3); c.beginPath(); c.moveTo(-r,0); c.lineTo(r,0); c.stroke(); } c.restore(); }
+      else if(id==='hearts'||id==='stars'){ const y=b.y-S.u*12*z, R=r*(1+.4*S.u); c.globalAlpha=al; c.fillStyle=T.cols[i/5%T.cols.length|0]; c.beginPath();
+        if(id==='hearts'){ c.moveTo(px,y+R); c.bezierCurveTo(px-R*2,y-R*.4,px-R*.6,y-R*1.8,px,y-R*.5); c.bezierCurveTo(px+R*.6,y-R*1.8,px+R*2,y-R*.4,px,y+R); }
+        else { const sp=now*3+rr*6; for(let q=0;q<10;q++){ const rq=q%2?R*.45:R*1.2, an=q*Math.PI/5-Math.PI/2+sp; c.lineTo(px+Math.cos(an)*rq,y+Math.sin(an)*rq); } c.closePath(); } c.fill(); }
+      else if(id==='milk'){ const y=b.y+S.u*S.u*40*z; c.globalAlpha=al; c.fillStyle='#fff'; c.beginPath(); c.ellipse(px,y,r*.6,r*.85,0,0,7); c.fill(); c.globalAlpha=al*.6; c.fillStyle='#fff6d8'; c.beginPath(); c.arc(px+r,y-r*.6,r*.35,0,7); c.fill(); }
+      else if(id==='rainbow'&&rr<.5){ c.globalAlpha=al; c.fillStyle='#fff'; c.beginPath(); c.arc(px,b.y,r*.35,0,7); c.fill(); } } }
+  c.restore(); }
+function trailBurst(c,id,B,now,z){ const T=TRAILS[id], u=(now-B.t)/.32; if(u>=1) return false; c.save();
+  for(let q=0;q<14;q++){ const an=q/14*6.283+B.t, d=(14+46*u)*z, x=B.x+Math.cos(an)*d, y=B.y+Math.sin(an)*d, r=(4*(1-u)+1.5)*z; c.globalAlpha=1-u; c.fillStyle=T.cols[q%T.cols.length];
+    if(id==='neon'){ c.strokeStyle=c.fillStyle; c.lineWidth=2*z; c.beginPath(); c.moveTo(B.x+Math.cos(an)*d*.4,B.y+Math.sin(an)*d*.4); c.lineTo(x+(q%2?4:-4)*z,y); c.stroke(); }
+    else if(id==='ice'){ c.strokeStyle='#e8fbff'; c.lineWidth=1.6*z; c.beginPath(); c.moveTo(x-Math.cos(an)*r*2,y-Math.sin(an)*r*2); c.lineTo(x+Math.cos(an)*r*2,y+Math.sin(an)*r*2); c.stroke(); }
+    else { c.beginPath(); c.arc(x,y+(id==='milk'?u*u*20*z:0),r,0,7); c.fill(); } }
+  c.globalAlpha=(1-u)*.5; c.strokeStyle=T.cols[0]; c.lineWidth=3*z*(1-u); c.beginPath(); c.arc(B.x,B.y,(10+40*u)*z,0,7); c.stroke(); c.restore(); return true; }
+function drawTrailFx(){ if(game.decoyDraw) return; const id=(typeof PROG!=='undefined'&&PROG.equip.trail)||'none'; if(id==='none'||!TRAILS[id]||game.mode==='demo'){ CTR.length=0; return; }
+  const now=performance.now()/1000, s=shuttle, live=(game.state==='rally'||game.replay)&&s.y<GROUND-4, last=CTR[CTR.length-1];
+  if(live){ if(last&&Math.hypot(s.x-last.x,s.y-last.y)>220) CTR.length=0; const pf=s.type==='smash'&&s.fx===2; if(pf&&TB_ID!==game.hitId){ TB_ID=game.hitId; TBURST.push({x:s.x,y:s.y,t:now}); }
+    if(!last||Math.hypot(s.x-last.x,s.y-last.y)>1.5) CTR.push({x:s.x,y:s.y,t:now,k:++CTR_T,p:pf?1:0}); }
+  while(CTR.length&&(now-CTR[0].t>TRAIL_LIFE*(CTR[0].p?1.45:1)||CTR.length>TRAIL_N)) CTR.shift();
+  TBURST=TBURST.filter(B=>trailBurst(ctx,id,B,now,1));
+  if(CTR.length>1) drawTrailPath(ctx,live?CTR:CTR,id,now,1); }
+// shop preview: a long sample arc in the given style
+function trailPreview(cv,id){ const c=cv.getContext('2d'), W=cv.width, H=cv.height, now=performance.now()/1000, pts=[]; c.clearRect(0,0,W,H);
+  for(let i=0;i<=60;i++){ const u=i/60; pts.push({x:8+u*(W-26),y:H*.78-Math.sin(u*Math.PI*.9)*H*.55,t:now-(1-u)*TRAIL_LIFE*.95,k:i+1}); }
+  drawTrailPath(c,pts,id,now,W/150); const h=pts[60]; c.fillStyle='#fff'; c.strokeStyle='#555'; c.lineWidth=1; c.beginPath(); c.arc(h.x,h.y,3.2*W/150,0,7); c.fill(); c.stroke(); }
 const COSM={
   racket:[{id:'default',name:'Character colours',price:0},{id:'gold',name:'Gold',price:60,frame:'#e0a800',grip:'#fff2a0'},{id:'neon',name:'Neon',price:60,frame:'#39d814',grip:'#1a1a1a'},
     {id:'ice',name:'Ice',price:60,frame:'#5fd0ff',grip:'#e8f8ff'},{id:'lava',name:'Lava',price:80,frame:'#ff4d1a',grip:'#2a1a1a'},{id:'galaxy',name:'Galaxy',price:80,frame:'#7b3fa0',grip:'#1a1a40'}],
@@ -3086,8 +3140,21 @@ function careerFight(){ const i=Math.min(PROG.career.stage,LADDER.length-1), L=L
 /* ---- shop / locker ---- */
 const shopUI={tab:'char',confirm:false};
 function shopOpen(){ hideAll(); $('shopScreen').classList.remove('hidden'); shopUI.confirm=false; shopRender(); kbFocus('#shopBody button'); }
+// v16.7 scrollable tab bar: drag (mouse/touch) with momentum, wheel, edge arrows, edge fades, selected tab kept in view; a drag never clicks
+function tabScrollUpd(w){ const r=w.querySelector('.tabrow'), m=r.scrollWidth-r.clientWidth; w.classList.toggle('fl',r.scrollLeft>2); w.classList.toggle('fr',r.scrollLeft<m-2); }
+function tabScrollSel(id,smooth){ const w=$(id); if(!w) return; const r=w.querySelector('.tabrow'), b=r.querySelector('button.sel'); requestAnimationFrame(()=>{ if(b){ const x=b.offsetLeft-r.offsetLeft-(r.clientWidth-b.offsetWidth)/2; r.scrollTo({left:x,behavior:smooth?'smooth':'auto'}); } tabScrollUpd(w); }); }
+function tabScrollInit(id){ const w=$(id); if(!w||w.dataset.ts) return; w.dataset.ts=1; const r=w.querySelector('.tabrow'); let down=null, moved=false, vx=0, lt=0, lx=0, raf=0;
+  const upd=()=>tabScrollUpd(w); r.addEventListener('scroll',upd,{passive:true}); addEventListener('resize',upd);
+  w.querySelector('.tarr.l').onclick=()=>r.scrollBy({left:-r.clientWidth*.6,behavior:'smooth'}); w.querySelector('.tarr.r').onclick=()=>r.scrollBy({left:r.clientWidth*.6,behavior:'smooth'});
+  r.addEventListener('wheel',e=>{ const d=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY; if(r.scrollWidth<=r.clientWidth) return; e.preventDefault(); r.scrollLeft+=d; },{passive:false});
+  r.addEventListener('pointerdown',e=>{ if(e.button>0) return; cancelAnimationFrame(raf); down={x:e.clientX,sl:r.scrollLeft,id:e.pointerId}; moved=false; vx=0; lx=e.clientX; lt=performance.now(); });
+  addEventListener('pointermove',e=>{ if(!down||e.pointerId!==down.id) return; const dx=e.clientX-down.x; if(!moved&&Math.abs(dx)>6){ moved=true; r.classList.add('drag'); try{ r.setPointerCapture(e.pointerId); }catch(_){} }
+    if(moved){ r.scrollLeft=down.sl-dx; const t=performance.now(), dt=Math.max(1,t-lt); vx=.8*vx+.2*((e.clientX-lx)/dt); lx=e.clientX; lt=t; } });
+  const end=e=>{ if(!down) return; down=null; if(moved){ r.classList.remove('drag'); let v=-vx*16; const step=()=>{ if(Math.abs(v)<.4) return; r.scrollLeft+=v; v*=.93; raf=requestAnimationFrame(step); }; step(); } };
+  addEventListener('pointerup',end); addEventListener('pointercancel',end);
+  r.addEventListener('click',e=>{ if(moved){ e.stopPropagation(); e.preventDefault(); moved=false; } },true); }
 function shopRender(){
-  const T=[['char','Characters (Tournament)'],['pro','Pro rackets'],['racket','Racket colours'],['music','Music'],['crowd','Crowd'],['trail','Shuttle trails'],['band','Headbands'],['theme','Courts']];
+  const T=[['char','Characters'],['pro','Pro rackets'],['racket','Racket colours'],['music','Music'],['crowd','Crowd'],['trail','Shuttle trails'],['band','Headbands'],['theme','Courts']];
   $('shopTabs').innerHTML=T.map(([k,l])=>`<button data-st="${k}" class="${shopUI.tab===k?'sel':''}">${l}</button>`).join('');
   let h='';
   if(shopUI.tab==='char'){ for(const ch of CHARS_ORD()){ const own=progUnlocked(ch.id);
@@ -3103,11 +3170,13 @@ function shopRender(){
     h+=`<div class="rkstd"><span>\uD83C\uDFF8 Standard (free, no modifiers)</span>${!E.eq?'<span class="own">\u2714 equipped</span>':'<button data-rkeq="">Use Standard</button>'}<span class="rkeqn">Equipped: <b>${rkName(E.eq||'')}</b></span></div>`;
     for(const [t,ic,nm,ds] of RK_TYPES) if(F==='all'||F===t) h+=`<div class="rkrow"><div class="rkt"><b>${ic} ${nm}</b><small>${ds}</small></div>${[1,2,3].map(l=>card(t+l)).join('')}</div>`; }
   else for(const it of COSM[shopUI.tab]){ const own=PROG.owned[shopUI.tab].includes(it.id), eq=PROG.equip[shopUI.tab]===it.id;
-    const sw=shopUI.tab==='racket'?`<div class="sw" style="background:linear-gradient(90deg,${it.frame||'#ff6f9f'} 50%,${it.grip||'#ff9ec0'} 50%)"></div>`:shopUI.tab==='band'?`<div class="sw" style="background:${it.col||'#fff'}"></div>`:shopUI.tab==='music'?'<div class="sw ic">\u266B</div>':shopUI.tab==='crowd'?`<div class="sw" style="background:linear-gradient(90deg,${CROWDS[it.id].cols.join(',')})"></div>`:shopUI.tab==='trail'?`<div class="sw" style="background:${it.id==='none'?'#eee':'linear-gradient(90deg,transparent,'+TRAILS[it.id].cols.join(',')+')'}"></div>`:`<div class="sw" style="background:linear-gradient(${THEMES[it.id].sky[0]},${THEMES[it.id].court})"></div>`;
+    const sw=shopUI.tab==='racket'?`<div class="sw" style="background:linear-gradient(90deg,${it.frame||'#ff6f9f'} 50%,${it.grip||'#ff9ec0'} 50%)"></div>`:shopUI.tab==='band'?`<div class="sw" style="background:${it.col||'#fff'}"></div>`:shopUI.tab==='music'?'<div class="sw ic">\u266B</div>':shopUI.tab==='crowd'?`<div class="sw" style="background:linear-gradient(90deg,${CROWDS[it.id].cols.join(',')})"></div>`:shopUI.tab==='trail'?(it.id==='none'?'<div class="sw" style="background:#eee"></div>':`<canvas class="trprev" data-tr="${it.id}" width="300" height="88"></canvas>`):`<div class="sw" style="background:linear-gradient(${THEMES[it.id].sky[0]},${THEMES[it.id].court})"></div>`;
     h+=`<div class="item">${sw}<div class="iname">${kbEsc(it.name)}</div>`+((shopUI.tab==='music'||shopUI.tab==='crowd')?`<button class="pv" data-pv="${shopUI.tab}:${it.id}">\u25B6 Preview</button>`:'')+(eq?'<div class="own">\u2714 equipped</div>':own?`<button data-eq="${shopUI.tab}:${it.id}">Equip</button>`:`<button data-buy="${shopUI.tab}:${it.id}"${PROG.coins<it.price?' disabled':''}>Buy ${it.price} \uD83E\uDE99</button>`)+'</div>'; }
   $('shopBody').innerHTML=h; refreshCoins();
   $('shopReset').textContent=shopUI.confirm?'Really reset ALL progress? Click again':'Reset progress\u2026'; $('shopReset').classList.toggle('danger',shopUI.confirm);
   document.querySelectorAll('#shopTabs button').forEach(b=>b.onclick=()=>{ shopUI.tab=b.dataset.st; shopRender(); kbFocus(`#shopTabs button[data-st="${shopUI.tab}"]`); });
+  tabScrollInit('shopTabWrap'); tabScrollSel('shopTabWrap');
+  if(shopUI.tab==='trail'){ const tick=()=>{ const cs=document.querySelectorAll('#shopBody canvas.trprev'); if(!cs.length||shopUI.tab!=='trail'||$('shopBody').offsetParent===null) return; cs.forEach(cv=>trailPreview(cv,cv.dataset.tr)); requestAnimationFrame(tick); }; requestAnimationFrame(tick); }
   document.querySelectorAll('#shopBody button[data-rf]').forEach(b=>b.onclick=()=>{ shopUI.rf=b.dataset.rf; shopRender(); kbFocus(`#shopBody button[data-rf="${shopUI.rf}"]`); });
   document.querySelectorAll('#shopBody button[data-rc]').forEach(b=>b.onclick=()=>{ shopUI.rc=b.dataset.rc; shopRender(); kbFocus(`#shopBody button[data-rc="${shopUI.rc}"]`); });
   document.querySelectorAll('#shopBody button[data-rkeq]').forEach(b=>b.onclick=()=>{ const E=PROG.rk[shopUI.rc]=PROG.rk[shopUI.rc]||{own:[],eq:''}; E.eq=b.dataset.rkeq; progSave(); shopMsg(`${CH[shopUI.rc].name} now uses: ${rkName(E.eq)}.`); shopRender(); kbFocus('#shopBody button[data-rkeq],#shopBody button[data-rkbuy]'); });
