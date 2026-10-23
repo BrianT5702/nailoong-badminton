@@ -1035,7 +1035,7 @@ const CHARS=[
     bio:'Master tactician: best control and great reach, low jump.',art:{suit:'#5a6070',suit2:'#2a2d36',head:'cowl',mask:'#2a2d36',skin:'#f6d2b0',eyes:'lensW',ears:'bat',cape:'#22252c',emblem:'bat',belt:'#f0c419',boots:'#2a2d36'}},
   {id:'superman',name:'Superman',src:'draw',st:[8,7,7,5,5,5,7],sp:'thunder',spName:'Heat Smash',col:'#1f5fd0',frame:'#d8262b',grip:'#1f5fd0',
     bio:'Strong and fast, but slow to get his breath back.',art:{suit:'#1f5fd0',suit2:'#d8262b',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#1a1a22',style:'curl'},cape:'#d8262b',emblem:'diamond',belt:'#f5d020',boots:'#d8262b'}},
-  {id:'wonder',name:'Wonder Woman',src:'draw',st:[7,6,6,7,6,5,9],sp:'wall',spName:'Bracelet Block',col:'#c8202a',frame:'#d8dce6',grip:'#c8202a',
+  {id:'wonder',name:'Wonder Woman',src:'draw',st:[7,6,6,6,6,5,9],sp:'wall',spName:'Bracelet Block',col:'#c8202a',frame:'#d8dce6',grip:'#c8202a',
     bio:'A strong all-rounder who deflects smashes.',art:{suit:'#c8202a',suit2:'#1f4fbf',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#1a1a22',style:'long'},tiara:'#f0c419',emblem:'W',belt:'#f0c419',cuffs:'#d0d4dc',boots:'#c8202a'}},
   {id:'naruto',name:'Naruto',src:'draw',st:[5,5,5,5,5,8,4],sp:'clone',spName:'Shadow Clone Fake Shot',col:'#f28c28',frame:'#f28c28',grip:'#1a1a1a',
     bio:'Never runs out of energy; a bit wild with the racket.',art:{suit:'#f28c28',suit2:'#1f3f8f',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#f5d020',style:'spiky'},headband:'#1f3f8f',whiskers:true,boots:'#1f3f8f',collar:'#1f3f8f'}},
@@ -1055,11 +1055,11 @@ const CHARS=[
     bio:'A rubber-limbed pirate with endless reach and zero patience.'},
   {id:'tanjiro',name:'Tanjiro',src:'draw',st:[6,6,6,7,6,6,6],sp:'drive',spName:'Water Wheel Drive',col:'#2a9a7a',frame:'#1a1a1a',grip:'#2a9a7a',
     bio:'A kind, balanced swordsman-turned-shuttler.'},
-  {id:'sailor',name:'Sailor Moon',src:'draw',st:[5,7,7,6,5,5,7],sp:'wall',spName:'Moon Tiara Guard',col:'#ff6fb5',frame:'#ffd23a',grip:'#ff6fb5',
+  {id:'sailor',name:'Sailor Moon',src:'draw',st:[5,7,6,6,5,5,7],sp:'wall',spName:'Moon Tiara Guard',col:'#ff6fb5',frame:'#ffd23a',grip:'#ff6fb5',
     bio:'A magical guardian with graceful footwork.'},
   {id:'sonic',name:'Sonic',src:'draw',st:[5,9,7,5,5,6,4],sp:'dash',spName:'Spin Dash',col:'#1f5fe0',frame:'#1f5fe0',grip:'#d8262b',
     bio:'Gotta go fast. The quickest feet on the court.'},
-  {id:'shinchan',name:'Shin-chan',src:'draw',st:[4,5,6,6,5,8,4],sp:'perfect',spName:'Butt-Wiggle Feint',col:'#e8303a',frame:'#e8303a',grip:'#f5d020',
+  {id:'shinchan',name:'Shin-chan',src:'draw',st:[4,5,6,6,5,7,4],sp:'perfect',spName:'Butt-Wiggle Feint',col:'#e8303a',frame:'#e8303a',grip:'#f5d020',
     bio:'A cheeky five-year-old who never, ever gets tired.'},
   {id:'deadpool',name:'Deadpool',src:'draw',st:[8,6,6,7,6,5,5],sp:'bomb',spName:'Chimichanga Bomb',col:'#b01a24',frame:'#1a1a1a',grip:'#b01a24',
     bio:'A chatty masked mercenary who smashes and jokes.'},
@@ -1511,7 +1511,7 @@ function hitShuttle(p,d=0,reach=REACH){
     else if(type==='drop' && Math.random()<netFailChance(p,s,q,'drop')) v=intoTape(s,v,dir)||v;
   }
   if(type==='kill'){ game.shake=.15; sfx.smash(); popup(s.x,s.y-30,'Push kill','#ff5f8f',28); for(let i=0;i<10;i++) spark(s.x,s.y,'#ffe066'); }
-  else if(type==='net'){ sfx.hit(.3); for(let i=0;i<4;i++) spark(s.x,s.y,'#fff6a8'); if(!p.ai) popup(s.x,s.y-30,netV==='spin'?'Spin net!':(p.netRep>=2?'Net shot (predictable)':'Net shot'),'#7aa0d8',24); }
+  else if(type==='net'){ sfx.hit(.3); for(let i=0;i<4;i++) spark(s.x,s.y,'#fff6a8'); }
   else if(type==='smash'){
     // v14: effects scale with quality (timing + contact) and jump vs ground
     fxTier=q>=.8?2:q>=.6?1:0; const col=p.side===0?'#ffc61a':'#ff5f9e', a=Math.atan2(v.vy,v.vx);
@@ -1602,7 +1602,7 @@ function hitShuttle(p,d=0,reach=REACH){
   { const atk=type==='smash'||type==='flat'||type==='kill'||type==='netkill'; p.atkN=atk?(p.atkN||0)+1:0; staCost(p,((spec?ST.shot.special:0)||(type==='smash'&&big?ST.shot.jsmash:type==='punch'&&s.jp?ST.shot.jpunch:type==='punch'&&p.req==='clear'?ST.shot.punchJ:ST.shot[type]??3))*(atk?1+.12*Math.min(5,p.atkN-1):1)); }   // v16.10: back-to-back attacks cost +12% each (up to +60%), so nobody attacks for free   // v15.1: every shot costs a little, attacks cost the most
   (game.shotLog=game.shotLog||[]).push({side:p.side,type,big,r:game.rally,q:+q.toFixed(2),x:Math.round(s.x),y:Math.round(s.y)}); if(game.shotLog.length>400) game.shotLog.shift();
   if((type==='drop'||type==='block') && !p.ai) popup(s.x,s.y-30,type==='block'?'Block':'Drop','#7aa0d8',26);
-  if(!p.ai && game.mode!=='demo' && !spec){ const SN={punch:s.jp?'Jump Punch Clear':'Punch clear',clear:'High clear',lift:netV==='lift'?'Net lift':'Lift',flat:'Flat smash',drive:'Drive',push:'Push',smash:big?'Jump smash':'Smash',netkill:'Net kill',kill:'Kill',net:'Net shot',drop:'Drop',block:'Block'}; const shortJ=(type==='lift'||type==='clear'||type==='punch')&&q<.6; if(SN[type]&&(!['smash','flat','drop','block'].includes(type)||(type==='smash'&&!big))) popup(s.x,s.y-30,shortJ?'Short lift!':SN[type],type==='flat'||type==='smash'||type==='netkill'||type==='kill'?'#e8603a':'#58a0c8',22); }   // v16.2: every shot is named so the player sees which one fired
+  if(!p.ai && game.mode!=='demo' && !spec){ const SN={punch:s.jp?'Jump Punch Clear':'Punch clear',clear:'High clear',lift:netV==='lift'?'Net lift':'Lift',flat:'Flat smash',drive:'Drive',push:'Push',smash:big?'Jump smash':'Smash',netkill:'Net kill',kill:'Kill',net:netV==='spin'?'Spin net!':p.netRep>=2?'Net shot (predictable)':'Net shot',drop:'Drop',block:'Block'}; const shortJ=(type==='lift'||type==='clear'||type==='punch')&&q<.6; if(SN[type]&&(!['smash','flat','drop','block'].includes(type)||(type==='smash'&&!big))) popup(s.x,s.y-30,shortJ?'Short lift!':SN[type],type==='flat'||type==='smash'||type==='netkill'||type==='kill'?'#e8603a':'#58a0c8',22); }   // v16.2: every shot is named so the player sees which one fired
   if((type==='push'||type==='drive') && !p.ai && game.mode!=='demo') popup(s.x,s.y-30,type==='push'?'Push':'Drive','#7a9ad8',22);
 }
 const SHORT_PX=Math.round(1.98*(COURT_R-COURT_L)/13.4);   // short service line distance from the net
