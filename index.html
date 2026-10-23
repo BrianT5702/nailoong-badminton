@@ -1349,7 +1349,7 @@ function solveDrop(x0,y0,dir,tx,q=1){
 // Chance that a net shot / tight drop clips the tape: timing, contact very low below the tape, far from the net, rushing
 function netFailChance(p,s,q,type){
   let c=Math.max(0,.78-q)*(type==='net'?.75:.4);
-  if(type==='net'){ if(s.y>GROUND-45) c+=.14; if(Math.abs(s.x-NET_X)>70) c+=.1; }
+  if(type==='net'){ if(s.y>NET_TOP+20) c+=.06; if(s.y>GROUND-45) c+=.14; if(Math.abs(s.x-NET_X)>70) c+=.1; }
   if(p.lungeT>0||p.recT>0) c+=.1; if(!p.onGround) c+=.05;
   if(q>=.8) c=Math.min(c,.03);                                    // perfect = reliable (but tight)
   if(p.ai) c*=DIFF[p.ai.diff].nfF;
@@ -1379,16 +1379,16 @@ function solveNet(x0,y0,dir,q=1){
   return cands[k];
 }
 const SW_START=.03, SW_PEAK=.11, SW_END=.22;
-function archWin(p,inAtk){ const A=archOf(p); return A==='tech'?1.25:A==='power'&&inAtk?.7:A==='wall'&&inAtk?1.25:1; }   // v16.11 archetype Perfect-window scale
+function archWin(p,inAtk){ const A=archOf(p); return A==='power'&&inAtk?.7:A==='wall'&&inAtk?1.4:1; }   // v16.11 archetype Perfect-window scale
 function contactQuality(p,d,reach){
   const inAtk=ATTACK_T.has(shuttle.type)&&game.lastHitter!==p.side&&!shuttle.special, pw=perfWin(p);
   if(p.ai){ const r=DIFF[p.ai.diff].q, late=p.ai.lateId===game.hitId; let q=clamp(rand(r[0],r[1])+.035*chD(p,3)+(inAtk?.05*chD(p,6):0),0,1)*(late?.65:1);
     if(q>=.8&&Math.random()>pw*archWin(p,inAtk)) q=rand(.66,.79);   // v16.11: the AI's Perfect odds follow the same archetype window   // v16.6: a tired AI lands Perfect only inside the same shrunken window
-    if(q<.8) q=clamp(q-(p.st<ST.vlow?.16:tired(p)?.1:0),0,1); return {q,label:null}; }
+    if(q<.8) q=clamp(q-(p.st<ST.vlow?.16:tired(p)?.1:0)-(inAtk&&tired(p)?.06+.1*fatigue(p):0),0,1); return {q,label:null}; }
   const atkr=players[1-p.side], pf=inAtk?clamp((Math.hypot(shuttle.vx,shuttle.vy)/PX_M-35)/50,0,1.3)*clamp(1+.07*chD(atkr,0),.7,1.4):0, dv=chD(p,6), dW=inAtk?clamp(1+.07*dv+.09*dv*pf,.55,1.45):1;   // v16.10: DEF scales the human's defence by incoming pace x attacker Power
-  const e=p.swingT-SW_PEAK, win=.1*pCtl(p)*dW, tq=clamp(1-Math.abs(e)/win,0,1);   // v16.6 DEF: a wider timing window against attacks
+  const e=p.swingT-SW_PEAK, win=.1*pCtl(p)*dW*(inAtk&&tired(p)?clamp(1-.35*fatigue(p),.55,1):1), tq=clamp(1-Math.abs(e)/win,0,1);   // v16.6 DEF: a wider timing window against attacks
   const cq=clamp(1-(d-reach*.35)/(reach*.65),0,1);
-  const AW=archWin(p,inAtk); const perf=Math.abs(e)<=.028*(1+.1*chD(p,3))*dW*pw*AW&&cq>=.5;   // v16.6: Perfect = a timing window that shrinks hard with fatigue (fresh 100% / tired ~50% / exhausted ~20%)
+  const AW=archWin(p,inAtk)*(inAtk&&tired(p)?clamp(1-.45*fatigue(p)-(p.st<ST.vlow?.15:0),.4,1):1);   /* v16.11 tired defence: smaller windows */ const perf=Math.abs(e)<=.028*(1+.1*chD(p,3))*dW*pw*AW&&cq>=.5;   // v16.6: Perfect = a timing window that shrinks hard with fatigue (fresh 100% / tired ~50% / exhausted ~20%)
   let q=clamp(tq*.55+cq*.45+(inAtk?.05*dv+.05*dv*pf:0)-(tired(p)?.08+.14*fatigue(p):0),0,1);   // v16.3: tired contacts are worse   // v16.2/16.6 Defence: cleaner returns against attacks
   q=perf?Math.max(q,.8+.2*tq):Math.min(q,.79);
   let label= q>=.8?'Perfect!': q>=.7?'Great!': q>=.6?'Good': q<.4?'Weak': (1-tq)*.55>(1-cq)*.45 ? (e<0?'Late':'Early') : 'Off-centre';
@@ -1407,7 +1407,7 @@ function hitShuttle(p,d=0,reach=REACH){
   if(type==='smash'){
     big=!p.onGround; if(big&&p.st<=0&&game.mode!=='demo'){ big=false; popup(p.x,p.y-160,'too tired to jump-smash','#d0456f',16); }
     if(p.armed==='thunder'||p.armed==='bomb'){ spec=p.armed; p.armed=null; q=Math.max(q,.9); }
-    const sp=(big?78:62)*PX_M*(.45+.55*q)*(q>=.8?1.06:q<.6?.88:1)*pPow(p)*({wall:.93,tech:.94,speed:.95}[archOf(p)]||1)*(spec==='thunder'?1.22:spec==='bomb'?1.25:1);   // v14: 78 m/s jump smash / 62 m/s ground off the racket (drag does the rest)
+    const sp=(big?78:62)*PX_M*(.45+.55*q)*(q>=.8?1.06:q<.6?.88:1)*pPow(p)*({wall:.97,speed:.95}[archOf(p)]||1)*(spec==='thunder'?1.22:spec==='bomb'?1.25:1);   // v14: 78 m/s jump smash / 62 m/s ground off the racket (drag does the rest)
     // aim away from the receiver: short if they are deep, deep if they are up at the net
     const oppFrac=Math.abs(opp.x-NET_X)/(NET_X-COURT_L);
     const tfr=q<.6?rand(.3,.9):(p.ai&&DIFF[p.ai.diff].smart&&Math.random()<.35)?clamp(oppFrac+rand(-.06,.04),.25,.95):oppFrac>.55?rand(.3,.5):rand(.72,.95), tx=oppX(p.side,tfr);   // mistimed = poorly placed
@@ -1492,7 +1492,14 @@ function hitShuttle(p,d=0,reach=REACH){
   }
   if(p.armed==='spin'&&(type==='net'||type==='drop'||type==='block')){ spec='spin'; p.armed=null; q=1; if(Math.abs(s.x-NET_X)<150) type='net'; }
   if(p.armed==='drive'&&(type==='clear'||type==='punch'||type==='lift')){ spec='drive'; p.armed=null; q=1; type='punch'; }
+  let netV=null;   // v16.11 richer net play (drop key at the net): direction + contact height pick the shot
+  if(type==='net'&&!spec){ const inp=p.input||{}, tow=p.side===0?inp.right:inp.left, awy=p.side===0?inp.left:inp.right;
+    netV=awy?'lift':tow&&s.y<NET_TOP+10?'spin':'net'; if(p.ai) netV=Math.random()<.25&&s.y<NET_TOP+10?'spin':netV;
+    p.netRep=(p.lastNetV===netV)?(p.netRep||0)+1:0; p.lastNetV=netV; if(p.netRep>0) q*=Math.max(.6,1-.12*p.netRep);   // spam the same net shot and it gets sloppier
+    if(netV==='lift'){ type='lift'; } }
+  else if(type!=='net'&&type!=='drop') p.netRep=0;
   if(type==='net'){
+    if(netV==='spin'&&s.y>NET_TOP-5) q-=.08;   // a spin net from below the tape is riskier
     v=solveNet(s.x,s.y,dir,q);
     if(!v){ v=solveDrop(s.x,s.y,dir,NET_X+dir*30,q); if(v) type='drop'; else type='lift'; }
   }
@@ -1504,7 +1511,7 @@ function hitShuttle(p,d=0,reach=REACH){
     else if(type==='drop' && Math.random()<netFailChance(p,s,q,'drop')) v=intoTape(s,v,dir)||v;
   }
   if(type==='kill'){ game.shake=.15; sfx.smash(); popup(s.x,s.y-30,'Push kill','#ff5f8f',28); for(let i=0;i<10;i++) spark(s.x,s.y,'#ffe066'); }
-  else if(type==='net'){ sfx.hit(.3); for(let i=0;i<4;i++) spark(s.x,s.y,'#fff6a8'); if(!p.ai) popup(s.x,s.y-30,'Net shot','#7aa0d8',24); }
+  else if(type==='net'){ sfx.hit(.3); for(let i=0;i<4;i++) spark(s.x,s.y,'#fff6a8'); if(!p.ai) popup(s.x,s.y-30,netV==='spin'?'Spin net!':(p.netRep>=2?'Net shot (predictable)':'Net shot'),'#7aa0d8',24); }
   else if(type==='smash'){
     // v14: effects scale with quality (timing + contact) and jump vs ground
     fxTier=q>=.8?2:q>=.6?1:0; const col=p.side===0?'#ffc61a':'#ff5f9e', a=Math.atan2(v.vy,v.vx);
@@ -1550,16 +1557,16 @@ function hitShuttle(p,d=0,reach=REACH){
   const rid=spec&&spec!=='wall'&&spec!=='rider'?p.ch.id:p.rider?p.rider:spec==='wall'?p.ch.id:null; const fromRider=!spec&&!!p.rider; p.rider=null; if(fromRider&&!rid.endsWith(':chain')) spec='rider';
   if(rid&&rid.endsWith(':chain')){ const id=rid.split(':')[0]; spRider(opp,id,{...SPX[id].chain}); if(SPX[id].rw) s.spRet0=id; if(!spec) spec='rider'; }
   else if(rid&&SPX[rid]){ if(SPX[rid].w==='ret') s.spRet0=rid; else if(SPX[rid].w==='hit'){ spRider(opp,rid); if(SPX[rid].rw) s.spRet0=rid; } }
-  s.vx=v.vx; s.vy=v.vy; s.netHit=false; s.netCord=false; s.boostT=0; s.gMul=1; s.bK=BOOST_K; s.tumbleT=type==='net'?.7:0; s.fx=(type==='smash'||type==='netkill'||type==='kill'||type==='flat')?(type==='kill'?1:fxTier):-1; s.fxc=p.side===0?'#ffc61a':'#ff5f9e'; s.hitter=p.side;
+  s.vx=v.vx; s.vy=v.vy; s.netHit=false; s.netCord=false; s.boostT=0; s.gMul=1; s.bK=BOOST_K; s.tumbleT=type==='net'?(netV==='spin'?1.1:.7):0; s.netRep=type==='net'?(p.netRep||0):0; s.fx=(type==='smash'||type==='netkill'||type==='kill'||type==='flat')?(type==='kill'?1:fxTier):-1; s.fxc=p.side===0?'#ffc61a':'#ff5f9e'; s.hitter=p.side;
   // v16.2 shot errors: a poor contact, a hard incoming attack, low Control/Defence or being tired can put the shot into the net, out, or up short
   if(v&&!spec&&!weakRet&&!p.perfN&&game.state==='rally'&&!inMine&&(q<.97||tired(p)||ATTACK_T.has(inT))){ const atkIn=ATTACK_T.has(inT), pres=atkIn?clamp((inSp-18)/45,0,1):0, defShot=atkIn&&!ATTACK_T.has(type);
     let risk=Math.max(0,.68-q)*.7+pres*(defShot?.2:.06)*clamp(1-.17*chD(p,6),.62,1.6)-.012*chD(p,3)+(defShot&&!p.ai?Math.max(0,-chD(p,6))*.035*pres*clamp(1+.07*chD(opp,0),.7,1.4):0); if(p.ai) risk*=p.ai.diff==='easy'?1.4:p.ai.diff==='normal'?1.1:.9;   // v16.6: poor contact and low DEF err far more (v16.10: this AI line had been swallowed by the comment)
     if(tired(p)){ const fg=fatigue(p); risk+=(.08+.3*fg)*(ATTACK_T.has(type)?1.2:1)*clamp(1-.04*chD(p,5),.75,1.25)*(q>=.8?.8:1); }   // v16.3: fatigue errors on every shot; Perfect timing only softens them
     { const A=archOf(p), ramp=clamp((game.rally-4)/12,0,1), dash=Math.abs(p.vx)>PSPEED*.85||p.lungeT>0||p.recT>0;   // v16.11 archetypes
-      if(A==='speed') risk+=(.03+.08*ramp)*clamp(1-.1*chD(p,3),.6,1.4)+(dash?.07:0);   // Speed: inconsistent, worse in long rallies and when hitting on the run / in a lunge
+      if(A==='speed') risk+=(.02+.07*ramp)*clamp(1-.1*chD(p,3),.6,1.4)+(dash?.07:0);   // Speed: inconsistent, worse in long rallies and when hitting on the run / in a lunge
       else if(A==='agile') risk+=.025*ramp;
-      else if(A==='tech') risk*=.8;
-      else if(A==='wall'&&defShot) risk*=.75; }
+      else if(A==='wall'&&defShot) risk*=.75;
+      if(defShot&&tired(p)) risk+=.05+.12*fatigue(p); }   // v16.11 tired defence: more errors on blocks / smash returns / lifts
     risk=clamp(risk,0,.6);
     const eRoll=Math.random();
     if(tired(p)&&eRoll>=risk){ const fg=fatigue(p), sp0=Math.hypot(v.vx,v.vy), el=Math.atan2(-v.vy,v.vx*dir)+rand(-1,1)*(.015+.05*fg), c={vx:Math.cos(el)*sp0*dir,vy:-Math.sin(el)*sp0}, sim=simulate(s.x,s.y,c.vx,c.vy,4); if(sim.crossY!==null&&sim.crossY<NET_TOP) v=c; }   // v16.3: tired = looser placement
@@ -1591,10 +1598,11 @@ function hitShuttle(p,d=0,reach=REACH){
   if((game.rally===10||game.rally===20||game.rally===30)&&game.mode!=='demo'&&!NET.fxSkip){ popup(NET_X,170,game.rally>=20?'AMAZING RALLY!':'Great rally!','#ff5f8f',30); crowdCheer(game.rally>=20?3:2); game.cheer=Math.max(game.cheer,1.5); }
   mtHit(p,type,Q,v||{vx:0,vy:0},nkOut);
   p.hitDone=true; p.lastShot=type; game.lastShot=type;
+  if(!inMine&&(ATTACK_T.has(inT)||inSp>25)) staCost(p,archOf(p)==='wall'?3.5:1.5);   // v16.11: defending fast shots costs stamina (Defenders pay most)
   { const atk=type==='smash'||type==='flat'||type==='kill'||type==='netkill'; p.atkN=atk?(p.atkN||0)+1:0; staCost(p,((spec?ST.shot.special:0)||(type==='smash'&&big?ST.shot.jsmash:type==='punch'&&s.jp?ST.shot.jpunch:type==='punch'&&p.req==='clear'?ST.shot.punchJ:ST.shot[type]??3))*(atk?1+.12*Math.min(5,p.atkN-1):1)); }   // v16.10: back-to-back attacks cost +12% each (up to +60%), so nobody attacks for free   // v15.1: every shot costs a little, attacks cost the most
   (game.shotLog=game.shotLog||[]).push({side:p.side,type,big,r:game.rally,q:+q.toFixed(2),x:Math.round(s.x),y:Math.round(s.y)}); if(game.shotLog.length>400) game.shotLog.shift();
   if((type==='drop'||type==='block') && !p.ai) popup(s.x,s.y-30,type==='block'?'Block':'Drop','#7aa0d8',26);
-  if(!p.ai && game.mode!=='demo' && !spec){ const SN={punch:s.jp?'Jump Punch Clear':'Punch clear',clear:'High clear',lift:'Lift',flat:'Flat smash',drive:'Drive',push:'Push',smash:big?'Jump smash':'Smash',netkill:'Net kill',kill:'Kill',net:'Net shot',drop:'Drop',block:'Block'}; const shortJ=(type==='lift'||type==='clear'||type==='punch')&&q<.6; if(SN[type]&&(!['smash','flat','drop','block'].includes(type)||(type==='smash'&&!big))) popup(s.x,s.y-30,shortJ?'Short lift!':SN[type],type==='flat'||type==='smash'||type==='netkill'||type==='kill'?'#e8603a':'#58a0c8',22); }   // v16.2: every shot is named so the player sees which one fired
+  if(!p.ai && game.mode!=='demo' && !spec){ const SN={punch:s.jp?'Jump Punch Clear':'Punch clear',clear:'High clear',lift:netV==='lift'?'Net lift':'Lift',flat:'Flat smash',drive:'Drive',push:'Push',smash:big?'Jump smash':'Smash',netkill:'Net kill',kill:'Kill',net:'Net shot',drop:'Drop',block:'Block'}; const shortJ=(type==='lift'||type==='clear'||type==='punch')&&q<.6; if(SN[type]&&(!['smash','flat','drop','block'].includes(type)||(type==='smash'&&!big))) popup(s.x,s.y-30,shortJ?'Short lift!':SN[type],type==='flat'||type==='smash'||type==='netkill'||type==='kill'?'#e8603a':'#58a0c8',22); }   // v16.2: every shot is named so the player sees which one fired
   if((type==='push'||type==='drive') && !p.ai && game.mode!=='demo') popup(s.x,s.y-30,type==='push'?'Push':'Drive','#7a9ad8',22);
 }
 const SHORT_PX=Math.round(1.98*(COURT_R-COURT_L)/13.4);   // short service line distance from the net
@@ -1678,11 +1686,11 @@ function aiThink(p,dt){
     else tx=base;
   } else if(game.state==='rally'){
     if(game.lastHitter!==p.side){
-      if(a.seen!==game.hitId){ a.seen=game.hitId; a.react=d.react*rand(.7,1.3)+(s.hideT>0?.45:0)+(game.decoy&&game.decoy.side!==p.side?game.decoyDelay||0:0); a.err=rand(-1,1)*d.err*clamp(1-.08*chD(p,3),.5,1.5);
+      if(a.seen!==game.hitId){ a.seen=game.hitId; a.react=d.react*rand(.7,1.3)*(s.type==='net'&&s.netRep>=2?.6:1)+(s.hideT>0?.45:0)+(game.decoy&&game.decoy.side!==p.side?game.decoyDelay||0:0); a.err=rand(-1,1)*d.err*clamp(1-.08*chD(p,3),.5,1.5);
         a.miss=Math.random()<d.mistake; a.jump=Math.random()<d.jump; a.jroll=Math.random()<d.jump; a.runFrom=p.x; a.leave=Math.random()<d.leave;
         if(s.type==='kill'){ a.react=d.sReact*rand(.8,1.2); a.miss=Math.random()<d.sMiss*1.2; a.jump=false; }
         if(s.type==='netkill'){ a.react=d.sReact*rand(.9,1.3); a.miss=Math.random()<Math.min(.95,d.sMiss+.6); a.jump=false; }
-        if(s.type==='smash'){ const sq=s.q===undefined?1:s.q; a.react=d.sReact*rand(.8,1.25)*(.5+.5*sq); const pace=clamp((Math.hypot(s.vx,s.vy)/PX_M-45)/40,0,1.3); a.miss=Math.random()<((s.bigSmash?d.bigMiss:d.sMiss)*(.25+.75*sq)+.14*pace*(sq>=.8?1.5:sq>=.6?1:.5))*clamp(1+.08*chD(players[1-p.side],0)-.16*chD(p,6),.3,2)*(archOf(players[1-p.side])==='power'?(sq>=.8?1.3:.8):archOf(players[1-p.side])==='speed'?.6:1);   /* v16.11: Power needs a Perfect to break through; Speed smashes rarely win outright */ a.jump=false; }   // v16.9: raw pace beats even top levels; DEF decides how often
+        if(s.type==='smash'){ const sq=s.q===undefined?1:s.q; a.react=d.sReact*rand(.8,1.25)*(.5+.5*sq); const pace=clamp((Math.hypot(s.vx,s.vy)/PX_M-45)/40,0,1.3); a.miss=Math.random()<((s.bigSmash?d.bigMiss:d.sMiss)*(.25+.75*sq)+.14*pace*(sq>=.8?1.5:sq>=.6?1:.5))*clamp(1+.08*chD(players[1-p.side],0)-.16*chD(p,6),.3,2)*(archOf(players[1-p.side])==='power'?(sq>=.8?1.15:.75):archOf(players[1-p.side])==='speed'?.75:1);   /* v16.11: Power needs a Perfect to break through; Speed smashes rarely win outright */ a.jump=false; }   // v16.9: raw pace beats even top levels; DEF decides how often
         if(s.type==='flat'){ const sq=s.q===undefined?1:s.q, pace=clamp((Math.hypot(s.vx,s.vy)/PX_M-16)/26,0,1);   // v14.2: fast flat attack: the faster and cleaner, the more often even Hard is beaten for pace
           a.react=d.sReact*rand(.8,1.15)*(.6+.4*sq); a.miss=Math.random()<Math.min(.92,(d.fMiss??.4)*FLAT_MISS/2.4)*pace*sq; a.jump=false; }
         if(s.type==='drop'||s.type==='block'||s.type==='net') a.jump=false;
@@ -2626,8 +2634,8 @@ const perfWin=p=>game.mode==='demo'||game.noStamina||!tired(p)?1:clamp(.52-.32*f
 const fatigue=p=>game.mode==='demo'||game.noStamina?0:clamp((ST.low-p.st)/(ST.low-2),0,1);   // v16.3: 0 at the tired line, 1 when empty
 const stMax=p=>ST.max+3.5*chD(p,5);   // v16.10: Stamina stat compressed (89..110)   // v15.4: stamina stat = bigger tank (79..121) + faster regen
 const pSpd=p=>(p.stunT>0?.3:1)*(p.slowT>0?.6:1)*(1+.055*chD(p,1))*(p.st<ST.vlow&&game.mode!=='demo'?.74:tired(p)?.82:1)*(p.boostT>0?(p.boostK||1.35):1);
-const ARCH={nailoong:'all',berry:'tech',bombloong:'power',spidey:'agile',hulk:'power',ironman:'power',cap:'wall',thor:'power',panther:'tech',flash:'speed',batman:'wall',superman:'power',wonder:'wall',naruto:'endure',goku:'all',pikachu:'speed',doraemon:'tech',xiaoqi:'tech',dalaba:'power',sheep:'tech',luffy:'power',tanjiro:'all',sailor:'wall',sonic:'speed',shinchan:'endure',deadpool:'all',spongebob:'endure',golden:'all'};
-const ARCH_INFO={all:['\u2696\uFE0F All-rounder','#8a7f99','No weak spot, no special edge.'],speed:['\u26A1 Speed','#3a8aff','Fast feet but inconsistent: errors grow in long rallies and when hitting at full run or in a lunge; their smashes rarely win outright, so they keep attacking until the defender pops one up.'],power:['\uD83D\uDCA5 Power','#e8603a','Big smashes that need a Perfect to break through; stamina drains faster as rallies get long; a smaller Perfect window when forced to defend.'],wall:['\uD83D\uDEE1\uFE0F Wall','#2f8a5a','A wide defence window and fewer defensive errors; a weaker smash; wins on consistency and counters.'],tech:['\uD83C\uDFAF Technician','#b03cff','A larger Perfect window and fewer errors, extra-precise drops and net shots; a weaker smash.'],endure:['\uD83D\uDD0B Endurance','#c89a1a','Shots cost less stamina, so they last in long rallies; otherwise modest.'],agile:['\uD83D\uDD77\uFE0F Agile power','#e23b3b','Power-style smashes with a springy leap and extra airborne reach; only a mild long-rally consistency cost.']};
+const ARCH={nailoong:'all',berry:'all',bombloong:'power',spidey:'agile',hulk:'power',ironman:'power',cap:'wall',thor:'power',panther:'all',flash:'speed',batman:'wall',superman:'power',wonder:'wall',naruto:'endure',goku:'all',pikachu:'speed',doraemon:'all',xiaoqi:'all',dalaba:'power',sheep:'all',luffy:'power',tanjiro:'all',sailor:'wall',sonic:'speed',shinchan:'endure',deadpool:'all',spongebob:'endure',golden:'all'};
+const ARCH_INFO={all:['\u2696\uFE0F All-rounder','#8a7f99','Balanced, with control and touch: no weak spot, no extreme edge.'],speed:['\u26A1 Speed','#3a8aff','Fast feet but inconsistent: errors grow in long rallies and when hitting at full run or in a lunge; their smashes rarely win outright, so they keep attacking until the defender pops one up.'],power:['\uD83D\uDCA5 Power','#e8603a','Big smashes that need a Perfect to break through; stamina drains faster as rallies get long; a smaller Perfect window when forced to defend.'],wall:['\uD83D\uDEE1\uFE0F Defender','#2f8a5a','A much wider defence window and fewer defensive errors, but every block or fast-shot return costs stamina; fair power to smash once the opening comes.'],endure:['\uD83D\uDD0B Endurance','#c89a1a','Shots cost less stamina, so they last in long rallies; otherwise modest.'],agile:['\uD83D\uDD77\uFE0F Agile power','#e23b3b','Power-style smashes with a springy leap and extra airborne reach; only a mild long-rally consistency cost.']};
 const archOf=p=>ARCH[(p.ch||p).id]||'all';
 const archTag=ch=>{ const a=ARCH_INFO[ARCH[ch.id]||'all']; return `<span class="atag" style="background:${a[1]}" title="${a[2]}">${a[0]}</span>`; };
 const SPIDER=p=>p.ch&&p.ch.id==='spidey';   // v16.11 Spider reach: Reach 6, a slightly springier leap and +12 px racket stretch while airborne, so jump smashes are easy to reach
@@ -3558,7 +3566,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden && game.mo
    Host = Nailoong (authoritative simulation), guest = Berry (sends inputs, predicts itself, interpolates the host).
    Reliable PeerJS channel: lobby/start/fx/win events. Extra unordered, no-retransmit channel: inputs, snapshots, pings. */
 const QS=new URLSearchParams(location.search);
-const NET_VER=27, ROOM_PREFIX='nailoong-badminton-v13-', CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const NET_VER=28, ROOM_PREFIX='nailoong-badminton-v13-', CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const NET={on:false,role:null,side:0,peer:null,conn:null,ch:null,code:'',closing:false,lost:false,
   rtt:0,rtts:[],off:0,offS:[],lastRecv:0,lastPing:0,epoch:0,
   lag:Math.max(0,+QS.get('netlag')||0), loss:clamp(+QS.get('netloss')||0,0,.9),
