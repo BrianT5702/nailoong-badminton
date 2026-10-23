@@ -1046,7 +1046,7 @@ const CHARS=[
     bio:'Steady, tireless and tidy; no big jumps or smashes.',art:{suit:'#1fa0e0',suit2:'#ffffff',skin:'#1fa0e0',head:'dora',eyes:'dora',whiskers:true,nose:'#d8262b',collar:'#d8262b',bell:'#f5d020',belly:'#ffffff',pocket:true,boots:'#ffffff'}},
   {id:'xiaoqi',name:'Xiao Qi',src:'draw',st:[5,7,7,8,5,5,6],sp:'wind',spName:'Gadget Grabber',col:'#3a8ee8',frame:'#3a8ee8',grip:'#ff9a2e',
     bio:'Nailoong\u2019s best friend: a 14-year-old inventor with a gadget for everything.'},
-  {id:'dalaba',name:'Da Laba',src:'draw',st:[6,5,4,4,6,8,4],sp:'thunder',spName:'Big Horn Blast',col:'#8a5ad8',frame:'#6a3ab8',grip:'#c8a0ff',
+  {id:'dalaba',name:'Da Laba',src:'draw',st:[6,5,6,4,6,8,4],sp:'thunder',spName:'Big Horn Blast',col:'#8a5ad8',frame:'#6a3ab8',grip:'#c8a0ff',
     bio:'Bombloong\u2019s loudest Purple Soldier. Big reach, big lungs.'},
   {id:'sheep',name:'Little Sheep',src:'draw',st:[4,6,5,8,6,7,5],sp:'spin',spName:'Sugar Swirl Net',col:'#ff9ec8',frame:'#ffffff',grip:'#ff9ec8',
     bio:'A fluffy pastry chef who bakes sweet net shots.'},
@@ -1058,7 +1058,7 @@ const CHARS=[
     bio:'A magical guardian with graceful footwork.'},
   {id:'sonic',name:'Sonic',src:'draw',st:[5,9,7,6,5,6,4],sp:'dash',spName:'Spin Dash',col:'#1f5fe0',frame:'#1f5fe0',grip:'#d8262b',
     bio:'Gotta go fast. The quickest feet on the court.'},
-  {id:'shinchan',name:'Shin-chan',src:'draw',st:[4,5,5,6,4,8,4],sp:'perfect',spName:'Butt-Wiggle Feint',col:'#e8303a',frame:'#e8303a',grip:'#f5d020',
+  {id:'shinchan',name:'Shin-chan',src:'draw',st:[4,5,6,6,5,8,4],sp:'perfect',spName:'Butt-Wiggle Feint',col:'#e8303a',frame:'#e8303a',grip:'#f5d020',
     bio:'A cheeky five-year-old who never, ever gets tired.'},
   {id:'deadpool',name:'Deadpool',src:'draw',st:[8,6,6,7,6,5,5],sp:'bomb',spName:'Chimichanga Bomb',col:'#b01a24',frame:'#1a1a1a',grip:'#b01a24',
     bio:'A chatty masked mercenary who smashes and jokes.'},
@@ -1236,12 +1236,13 @@ function netKillOdds(p,s,q,h){
 // v16.9 J by contact position (player and AI alike): low = underhand lift; out in FRONT at 1.4-2.3 m = punch clear (flatter, faster, to the rear court);
 // overhead / above / behind the body = high clear (max height, deep)
 function jType(p,s){ const h=p.y-s.y, fwd=(s.x-p.x)*p.f; if(h<1.4*PX_M) return 'lift'; if(!p.onGround) return 'punch'; /* v16.11: J in the air = jump punch clear */ if(h<=2.3*PX_M&&fwd>=30) return 'punch'; return 'clear'; }
-const FLAT_H=Math.round(1.15*PX_M), DRIVE_H=62;   // v16.2 K bands: >=1.15 m flat smash, 0.74-1.15 m drive/push, below = lift
+const FLAT_H=Math.round(1.15*PX_M), DRIVE_H=62, STAND_SMASH_H=Math.round(1.45*PX_M);   // v16.2 K bands: >=1.15 m flat smash, 0.74-1.15 m drive/push, below = lift
 function kType(p,s){
   if(netKillZone(p,s)!==null) return 'netkill';
   const deep=Math.abs(p.x-NET_X)>.62*(NET_X-COURT_L), behind=(s.x-hitCenter(p).x)*p.f<-12, h=p.y-s.y;
   if(!p.onGround&&canSmash(p,s)) return 'smash';                 // airborne + overhead = jump smash
   if(canSmash(p,s)) return (deep||behind)?'punch':'smash';      // overhead: smash from mid/front, punch clear from deep or when late
+  if(p.onGround&&h>=STAND_SMASH_H&&!behind) return 'smash';     // v16.11: standing overhead (above head height + margin) = a real, slightly slower and flatter ground smash
   if(h>=FLAT_H) return 'flat';                                     // v16.2: shoulder/head height (>=1.15 m) = flat smash
   if(h>=62) return deep?'drive':'push';                            // chest/waist: push (front/mid) or flat drive (deep)
   return 'lift';                                                   // too low to attack: forced lift
@@ -1586,7 +1587,7 @@ function hitShuttle(p,d=0,reach=REACH){
   { const atk=type==='smash'||type==='flat'||type==='kill'||type==='netkill'; p.atkN=atk?(p.atkN||0)+1:0; staCost(p,((spec?ST.shot.special:0)||(type==='smash'&&big?ST.shot.jsmash:type==='punch'&&s.jp?ST.shot.jpunch:type==='punch'&&p.req==='clear'?ST.shot.punchJ:ST.shot[type]??3))*(atk?1+.12*Math.min(5,p.atkN-1):1)); }   // v16.10: back-to-back attacks cost +12% each (up to +60%), so nobody attacks for free   // v15.1: every shot costs a little, attacks cost the most
   (game.shotLog=game.shotLog||[]).push({side:p.side,type,big,r:game.rally,q:+q.toFixed(2),x:Math.round(s.x),y:Math.round(s.y)}); if(game.shotLog.length>400) game.shotLog.shift();
   if((type==='drop'||type==='block') && !p.ai) popup(s.x,s.y-30,type==='block'?'Block':'Drop','#7aa0d8',26);
-  if(!p.ai && game.mode!=='demo' && !spec){ const SN={punch:s.jp?'Jump Punch Clear':'Punch clear',clear:'High clear',lift:'Lift',flat:'Flat smash',drive:'Drive',push:'Push',smash:big?'Jump smash':'Smash',netkill:'Net kill',kill:'Kill',net:'Net shot',drop:'Drop',block:'Block'}; const shortJ=(type==='lift'||type==='clear'||type==='punch')&&q<.6; if(SN[type]&&!['smash','flat','drop','block'].includes(type)) popup(s.x,s.y-30,shortJ?'Short lift!':SN[type],type==='flat'||type==='smash'||type==='netkill'||type==='kill'?'#e8603a':'#58a0c8',22); }   // v16.2: every shot is named so the player sees which one fired
+  if(!p.ai && game.mode!=='demo' && !spec){ const SN={punch:s.jp?'Jump Punch Clear':'Punch clear',clear:'High clear',lift:'Lift',flat:'Flat smash',drive:'Drive',push:'Push',smash:big?'Jump smash':'Smash',netkill:'Net kill',kill:'Kill',net:'Net shot',drop:'Drop',block:'Block'}; const shortJ=(type==='lift'||type==='clear'||type==='punch')&&q<.6; if(SN[type]&&(!['smash','flat','drop','block'].includes(type)||(type==='smash'&&!big))) popup(s.x,s.y-30,shortJ?'Short lift!':SN[type],type==='flat'||type==='smash'||type==='netkill'||type==='kill'?'#e8603a':'#58a0c8',22); }   // v16.2: every shot is named so the player sees which one fired
   if((type==='push'||type==='drive') && !p.ai && game.mode!=='demo') popup(s.x,s.y-30,type==='push'?'Push':'Drive','#7a9ad8',22);
 }
 const SHORT_PX=Math.round(1.98*(COURT_R-COURT_L)/13.4);   // short service line distance from the net
