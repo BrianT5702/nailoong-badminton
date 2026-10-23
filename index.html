@@ -1134,7 +1134,7 @@ function serveClockTick(p,dt){ if(game.mode==='demo'||game.paused||game.replay||
   if(game.sClock>0) return; game.delayW=game.delayW||[0,0];
   if(!game.delayW[p.side]){ game.delayW[p.side]=1; popup(p.x,p.y-170,'Serve clock! Warning \u2013 auto serve','#ff4d4d',22); p.req='drop'; doServe(p); }
   else pointTo(1-p.side,'Delay of play'); }
-function setupServe(side){
+function setupServe(side){ for(const q of players) q.atkN=0;
   game.state='serve'; game.server=side; game.lastHitter=-1; game.rally=0; game.serveTimer=0; game.sClock=SERVE_CLOCK; if(typeof shuttle!=="undefined"&&shuttle) shuttle.special=null; if(typeof shuttle!=="undefined"&&shuttle) shuttle.spRet=null; for(const q of (typeof players!=='undefined'&&players)||[]){ q.rider=null; q.stunT=0; q.kbT=0; q.slowT=0; }
   const P0=players[0],P1=players[1];
   P0.x = side===0?300:340; P1.x = side===1?980:940;
@@ -1574,7 +1574,7 @@ function hitShuttle(p,d=0,reach=REACH){
   if((game.rally===10||game.rally===20||game.rally===30)&&game.mode!=='demo'&&!NET.fxSkip){ popup(NET_X,170,game.rally>=20?'AMAZING RALLY!':'Great rally!','#ff5f8f',30); crowdCheer(game.rally>=20?3:2); game.cheer=Math.max(game.cheer,1.5); }
   mtHit(p,type,Q,v||{vx:0,vy:0},nkOut);
   p.hitDone=true; p.lastShot=type; game.lastShot=type;
-  staCost(p,(spec?ST.shot.special:0)||(type==='smash'&&big?ST.shot.jsmash:type==='punch'&&p.req==='clear'?ST.shot.punchJ:ST.shot[type]??3));   // v15.1: every shot costs a little, attacks cost the most
+  { const atk=type==='smash'||type==='flat'||type==='kill'||type==='netkill'; p.atkN=atk?(p.atkN||0)+1:0; staCost(p,((spec?ST.shot.special:0)||(type==='smash'&&big?ST.shot.jsmash:type==='punch'&&p.req==='clear'?ST.shot.punchJ:ST.shot[type]??3))*(atk?1+.12*Math.min(5,p.atkN-1):1)); }   // v16.10: back-to-back attacks cost +12% each (up to +60%), so nobody attacks for free   // v15.1: every shot costs a little, attacks cost the most
   (game.shotLog=game.shotLog||[]).push({side:p.side,type,big,r:game.rally,q:+q.toFixed(2),x:Math.round(s.x),y:Math.round(s.y)}); if(game.shotLog.length>400) game.shotLog.shift();
   if((type==='drop'||type==='block') && !p.ai) popup(s.x,s.y-30,type==='block'?'Block':'Drop','#7aa0d8',26);
   if(!p.ai && game.mode!=='demo' && !spec){ const SN={punch:'Punch clear',clear:'High clear',lift:'Lift',flat:'Flat smash',drive:'Drive',push:'Push',smash:big?'Jump smash':'Smash',netkill:'Net kill',kill:'Kill',net:'Net shot',drop:'Drop',block:'Block'}; const shortJ=(type==='lift'||type==='clear'||type==='punch')&&q<.6; if(SN[type]&&!['smash','flat','drop','block'].includes(type)) popup(s.x,s.y-30,shortJ?'Short lift!':SN[type],type==='flat'||type==='smash'||type==='netkill'||type==='kill'?'#e8603a':'#58a0c8',22); }   // v16.2: every shot is named so the player sees which one fired
@@ -2606,26 +2606,26 @@ const ST={max:100,run:0,lunge:4,jump:3,runDrain:1.5,regenStand:3,regenMove:3,reg
 const tired=p=>p.st<ST.low;
 const perfWin=p=>game.mode==='demo'||game.noStamina||!tired(p)?1:clamp(.52-.32*fatigue(p),.2,.52);   // v16.6 Perfect window scale
 const fatigue=p=>game.mode==='demo'||game.noStamina?0:clamp((ST.low-p.st)/(ST.low-2),0,1);   // v16.3: 0 at the tired line, 1 when empty
-const stMax=p=>ST.max+7*chD(p,5);   // v15.4: stamina stat = bigger tank (79..121) + faster regen
+const stMax=p=>ST.max+3.5*chD(p,5);   // v16.10: Stamina stat compressed (89..110)   // v15.4: stamina stat = bigger tank (79..121) + faster regen
 const pSpd=p=>(p.stunT>0?.3:1)*(p.slowT>0?.6:1)*(1+.055*chD(p,1))*(p.st<ST.vlow&&game.mode!=='demo'?.74:tired(p)?.82:1)*(p.boostT>0?(p.boostK||1.35):1);
 const pJmp=p=>(1+.05*chD(p,2))*(p.st<ST.vlow&&game.mode!=='demo'?.74:tired(p)?.82:1);
 const pPow=p=>(1+.06*chD(p,0))*(p.st<ST.vlow&&game.mode!=='demo'?.68:tired(p)?.8:1);   // v16.2: Power counts more, tiredness hurts more
 const pCtl=p=>(1+.1*chD(p,3))*(p.st<ST.vlow&&game.mode!=='demo'?.45:tired(p)?.62:1);
-function staCost(p,v){ if(game.mode==='demo'||game.noStamina) return; p.st=Math.max(0,p.st-v*(1-.05*chD(p,5))*(1+(p.rk?p.rk.cost:0))); }
+function staCost(p,v){ if(game.mode==='demo'||game.noStamina) return; p.st=Math.max(0,p.st-v*(1-.025*chD(p,5))*(1+(p.rk?p.rk.cost:0))); }
 const SP_WIN=6, SP_REFUND=25;   // v16.9: an armed special must be used within 6 s of rally time; on expiry it fizzles and 25% of the bar comes back
 function spPending(p){ return !!(p.armed||p.perfN>0||p.cloneN>0); }
 function spExpireTick(p,dt){ if(game.mode==='online'&&NET.role==='guest') return; if(!spPending(p)){ p.armT=0; return; } if(game.state!=='rally'||game.mode==='demo') return; p.armT=(p.armT||SP_WIN)-dt;
   if(p.armT<=0){ p.armed=null; p.perfN=0; p.cloneN=0; p.armT=0; p.meter=Math.max(p.meter,SP_REFUND); game.spFizN=(game.spFizN||0)+1; popup(p.x,p.y-190,'Special fizzled…','#9a8fb0',20); for(let i=0;i<10;i++) spark(p.x,p.y-90,'#c8c0d8'); if(!NET.fxSkip){ tone(420,.25,'triangle',.07,180); } } }
 function staminaTick(p,dt){ spExpireTick(p,dt);
   p.boostT=Math.max(0,(p.boostT||0)-dt); p.stunT=Math.max(0,(p.stunT||0)-dt); p.slowT=Math.max(0,(p.slowT||0)-dt); if(p.kbT>0){ const k=Math.min(dt,p.kbT); p.kbT-=dt; p.x+=p.kbV*k; p.x=p.side===0?clamp(p.x,40,NET_X-30):clamp(p.x,NET_X+30,W-40); } p.spFx=Math.max(0,(p.spFx||0)-dt);
-  const rg=(1+.08*chD(p,5))*dt;
+  const rg=(1+.04*chD(p,5))*dt;
   if(game.mode!=='demo'&&!NET.fxSkip){ if(!p._tw&&tired(p)){ p._tw=1; popup(p.x,p.y-215,p.ai?'Tired!':'Tired! \uD83D\uDE2E\u200D\uD83D\uDCA8','#d0456f',22); }   // v16.3 visible fatigue cues
     if(p._tw===1&&p.st<ST.vlow){ p._tw=2; popup(p.x,p.y-215,'Exhausted!','#c81e3c',24); } if(p._tw&&p.st>ST.low+8) p._tw=0; }
   if(game.state!=='rally'){ p.st=Math.min(stMax(p),p.st+ST.regenBreak*rg); return; }
   const mv=Math.abs(p.vx);
   if(!p.onGround||p.lungeT>0) return;
   if(mv<PSPEED*.55) p.st=Math.min(stMax(p),p.st+ST.regenStand*rg);   // v16.1: standing / walking regen 3/s
-  else if(game.mode!=='demo'&&!game.noStamina) p.st=Math.max(0,p.st-ST.runDrain*(1-.06*chD(p,5))*dt);   // v16.1: running drains (~1.5/s, scaled by stamina stat); AI pays the same
+  else if(game.mode!=='demo'&&!game.noStamina) p.st=Math.max(0,p.st-ST.runDrain*(1-.03*chD(p,5))*dt);   // v16.1: running drains (~1.5/s, scaled by stamina stat); AI pays the same
 }
 const SP_EASY=new Set(['berry','sheep','spidey','sailor','ironman','tanjiro','naruto']);   // v16.10: weaker specials charge ~14% faster
 function gainMeter(p,v){ if(game.mode==='demo'||p.armed||p.perfN>0) return; const was=p.meter; p.meter=Math.min(100,p.meter+v*(SP_EASY.has(p.ch.id)?.97:.85));   // v15.7: stronger specials fill 15% slower
