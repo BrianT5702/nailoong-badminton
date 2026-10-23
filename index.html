@@ -112,7 +112,12 @@
   .chcard{max-width:46em;width:46em;padding:.5em 1em .7em;font-size:.78em;max-height:97%;display:flex;flex-direction:column}
   .chtabs{display:flex;gap:.4em;justify-content:center;margin:.2em 0 .4em}
   .chwrap{display:flex;gap:.6em;min-height:0;flex:1}
-  .chgrid{flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(6.4em,1fr));gap:.35em;overflow:auto;max-height:22em;padding:.2em}
+  .chgrid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:1fr;gap:.35em;overflow:auto;max-height:22em;padding:.2em;align-content:start;max-height:26em}
+.chgrid .chc{min-width:0;justify-content:flex-start}.chgrid .chc .pt{width:3.4em;height:3.4em;flex:none;background-size:cover;background-position:center}
+.chgrid .chc .nm{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.1;min-height:2.2em;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.74em;word-break:normal;overflow-wrap:normal;width:100%}
+.chgrid .chc .pt.rnd{font-size:1em;width:3.4em;height:3.4em;margin:0;line-height:1}
+.chgrid .chc.rndc{grid-column:1/-1;flex-direction:row;justify-content:center;gap:.6em;padding:.2em}.chgrid .chc.rndc .pt{width:2.2em;height:2.2em}.chgrid .chc.rndc .nm{min-height:0}
+.chgrid .chc.lock{opacity:.6}
   button.chc{padding:.25em .2em .3em;border-radius:.8em;background:#fff8e6;box-shadow:0 .12em 0 #e8c25a;font-size:.9em;display:flex;flex-direction:column;align-items:center}
   button.chc.sel{background:#ffd93b;box-shadow:0 .15em 0 #d9a400}
   button.chc:focus-visible{outline:.15em solid #ff7aa2}
@@ -2807,16 +2812,20 @@ const chUnlocked=id=>typeof progUnlocked==='function'?progUnlocked(id):!CH[id].b
 const chUI={open:false,mode:'1p',tab:'p1',from:'title'};
 const PORT={};
 function portURL(ch){ if(PORT[ch.id]) return PORT[ch.id]; const S=charSprites(ch); if(!S) return ''; return PORT[ch.id]=charPortrait(ch,96).toDataURL(); }
+// v16.5 roster order = unlock order: the two starters, then Tournament stage order, Champion Nailoong last
+function CHARS_ORD(){ const o=[...START_UNLOCK,...LADDER.filter(L=>!L.boss).map(L=>L.ch)], seen=new Set(); const out=[]; for(const id of [...o,...CHARS.filter(c=>!c.boss).map(c=>c.id),...CHARS.filter(c=>c.boss).map(c=>c.id)]) if(CH[id]&&!seen.has(id)){ seen.add(id); out.push(CH[id]); } return out; }
 function statBars(st,big){ return `<div class="sbars${big?' big':''}">`+st.map((v,i)=>`<div class="sb" title="${STAT_TIP[i]}"><span>${big?STAT_N[i]:STAT_N[i].slice(0,3)}</span><i><b style="width:${v*10}%;background:${v>=8?'#5cc46a':v<=4?'#ff8f6f':'#ffc61a'}"></b></i>${big?`<em>${v}</em>`:''}</div>`).join('')+'</div>'; }
 function chTabs(){ const m=chUI.mode; return m==='career'?[['p1','You']]:m==='2p'?[['p1','Player 1'],['p2','Player 2']]:m==='online'?[['online','You']]:[['p1','You'],['opp','Opponent']]; }
 function chRender(){
   const tabs=chTabs(); if(!tabs.some(t=>t[0]===chUI.tab)) chUI.tab=tabs[0][0];
   $('chTabs').innerHTML=tabs.map(([k,l])=>{ const id=chPick[k], n=id==='random'?'Random':CH[id].name; return `<button class="${k===chUI.tab?'sel':''}" data-tab="${k}">${l}: <b>${kbEsc(n)}</b></button>`; }).join('');
   const cur=chPick[chUI.tab]; let h='';
-  if(chUI.tab==='opp') h+=`<button class="chc${cur==='random'?' sel':''}" data-ch="random"><div class="pt rnd">?</div><div class="nm">Random</div></button>`;
-  for(const ch of CHARS){ const lock=chUI.mode!=='online'&&!chUnlocked(ch.id); if(ch.boss&&lock&&chUI.tab!=='opp') { h+=`<button class="chc lock" data-ch="${ch.id}" title="Win the Tournament to unlock"><div class="pt rnd">\uD83D\uDD12</div><div class="nm">???</div></button>`; continue; }
-    h+=`<button class="chc${cur===ch.id?' sel':''}${lock&&chUI.tab!=='opp'?' lock':''}" data-ch="${ch.id}"${lock&&chUI.tab!=='opp'?' title="Locked: unlock it in the Shop or the career"':''}><div class="pt${lock&&chUI.tab!=='opp'?' sil':''}" style="background-image:url(${portURL(ch)});border-color:${ch.col}">${lock&&chUI.tab!=='opp'?'<span class="lk">\uD83D\uDD12</span>':''}</div><div class="nm">${kbEsc(ch.name)}</div>${statBars(ch.st)}</button>`; }
+  if(chUI.tab==='opp') h+=`<button class="chc rndc${cur==='random'?' sel':''}" data-ch="random"><div class="pt rnd">?</div><div class="nm">Random</div></button>`;
+  for(const ch of CHARS_ORD()){ const lock=chUI.mode!=='online'&&!chUnlocked(ch.id); if(ch.boss&&lock&&chUI.tab!=='opp') { h+=`<button class="chc lock" data-ch="${ch.id}" title="Win the Tournament to unlock"><div class="pt rnd">\uD83D\uDD12</div><div class="nm">???</div></button>`; continue; }
+    h+=`<button class="chc${cur===ch.id?' sel':''}${lock&&chUI.tab!=='opp'?' lock':''}" data-ch="${ch.id}"${lock&&chUI.tab!=='opp'?' title="Locked: unlock it in the Shop or the career"':''}><div class="pt${lock&&chUI.tab!=='opp'?' sil':''}" style="background-image:url(${portURL(ch)});border-color:${ch.col}">${lock&&chUI.tab!=='opp'?'<span class="lk">\uD83D\uDD12</span>':''}</div><div class="nm">${kbEsc(ch.name)}</div></button>`; }
   $('chGrid').innerHTML=h;
+  // v16.5: shrink any name that would not fit its card (no mid-word breaks, never cut off)
+  requestAnimationFrame(()=>document.querySelectorAll('#chGrid .chc .nm').forEach(el=>{ let f=.74; while(f>.5&&(el.scrollWidth>el.clientWidth+1||el.scrollHeight>el.clientHeight+1)){ f-=.03; el.style.fontSize=f+'em'; } }));
   chInfo(chUI.view&&(CH[chUI.view]||chUI.view==='random')?chUI.view:cur);
   document.querySelectorAll('#chTabs button').forEach(b=>b.onclick=()=>{ chUI.tab=b.dataset.tab; chUI.view=null; chRender(); kbFocus('#chGrid .chc.sel')||kbFocus('#chGrid .chc'); });
   document.querySelectorAll('#chGrid .chc').forEach(b=>{ b.onclick=()=>chChoose(b.dataset.ch); });
@@ -3074,10 +3083,10 @@ function shopRender(){
   const T=[['char','Characters (Tournament)'],['pro','Pro rackets'],['racket','Racket colours'],['music','Music'],['crowd','Crowd'],['trail','Shuttle trails'],['band','Headbands'],['theme','Courts']];
   $('shopTabs').innerHTML=T.map(([k,l])=>`<button data-st="${k}" class="${shopUI.tab===k?'sel':''}">${l}</button>`).join('');
   let h='';
-  if(shopUI.tab==='char'){ for(const ch of CHARS){ const own=progUnlocked(ch.id);
+  if(shopUI.tab==='char'){ for(const ch of CHARS_ORD()){ const own=progUnlocked(ch.id);
     h+=`<div class="item"><div class="pt" style="background-image:url(${ch.boss&&!own?'':portURL(ch)});border-color:${ch.col}">${ch.boss&&!own?'?':''}</div><div class="iname">${ch.boss&&!own?'???':kbEsc(ch.name)}</div>`+
       (own?'<div class="own">\u2714 unlocked</div>':`<div class="own lk">\uD83D\uDD12 ${(i=>i>=0?'Tournament stage '+(i+1):'Win the Tournament')(LADDER.findIndex(l=>l.un.includes(ch.id)))}</div>`)+'</div>'; } }
-  else if(shopUI.tab==='pro'){ const own=CHARS.filter(c=>progUnlocked(c.id)); if(!own.some(c=>c.id===shopUI.rc)) shopUI.rc=own.some(c=>c.id===chPick.p1)?chPick.p1:own[0].id;
+  else if(shopUI.tab==='pro'){ const own=CHARS_ORD().filter(c=>progUnlocked(c.id)); if(!own.some(c=>c.id===shopUI.rc)) shopUI.rc=own.some(c=>c.id===chPick.p1)?chPick.p1:own[0].id;
     const ch=CH[shopUI.rc], E=PROG.rk[ch.id]||{own:[],eq:''};
     h+=`<div class="rkpick">${own.map(c=>`<button data-rc="${c.id}" class="${c.id===ch.id?'sel':''}" title="${kbEsc(c.name)}"><i style="background-image:url(${portURL(c)})"></i></button>`).join('')}</div><div class="rkhead">Rackets for <b style="color:${ch.col}">${kbEsc(ch.name)}</b> (each character has their own)</div>`;
     const card=id=>{ const it=RKT[id], has=!id||E.own.includes(id), eq=(E.eq||'')===id;
@@ -3297,7 +3306,7 @@ function profRender(){ const L=PROF.list(), cur=PROF.id(); let h='';
   if(L.length<PROF.MAX) h+=`<div class="pcard add" data-new="1"><div class="av" style="background:#ffd93b">+</div>New</div>`;
   $('profGrid').innerHTML=h; const c=PROF.cur(); if(c) $('profBtn').innerHTML=`&#128100; ${kbEsc(c.name)} &middot; Switch`; }
 function profForm(edit){ profUI.edit=edit; const p=edit?PROF.list().find(q=>q.id===edit):null; profUI.av=p?p.av:'nailoong'; $('profName').value=p?p.name:`Player ${PROF.list().length+1}`;
-  const avs=CHARS.filter(c=>chUnlocked(c.id)).map(c=>c.id); if(!avs.includes(profUI.av)) avs.unshift(profUI.av);   // avatars = characters unlocked in the current profile
+  const avs=CHARS_ORD().filter(c=>chUnlocked(c.id)).map(c=>c.id); if(!avs.includes(profUI.av)) avs.unshift(profUI.av);   // avatars = characters unlocked in the current profile
   $('profAv').innerHTML=avs.map(id=>`<button data-av="${id}" class="${id===profUI.av?'sel':''}" style="background:${CH[id].col}" title="${kbEsc(CH[id].name)}">${kbEsc(CH[id].name[0])}</button>`).join('');
   $('profForm').classList.remove('hidden'); $('profName').focus(); }
 function openProfiles(){ hideAll(); profRender(); profMsg(''); $('profForm').classList.add('hidden'); $('profScreen').classList.remove('hidden'); }
