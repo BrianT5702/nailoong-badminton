@@ -325,17 +325,17 @@
         <div class="hl alt"><span class="hk" data-kb="alt.left alt.right alt.jump" data-max="1"></span><span class="altH">Also (1P)</span></div>
       </div>
       <div class="hpage hidden" data-hp="shots">
-        <div class="hl"><span class="hk" data-kb="p1.clear" data-max="1"></span><svg class="ill" viewBox="0 0 90 36"><path d="M6 32 Q45 -18 84 30" class="tr"/><circle cx="84" cy="30" r="3"/></svg><span><b>Lift / High clear</b>: always a HIGH shot. Low or waist = rocket <b>lift</b>; chest or overhead = high <b>clear</b> to the back. Perfect timing = highest and deepest</span></div>
+        <div class="hl"><span class="hk" data-kb="p1.clear" data-max="1"></span><svg class="ill" viewBox="0 0 90 36"><path d="M6 32 Q45 -18 84 30" class="tr"/><circle cx="84" cy="30" r="3"/></svg><span><b>Lift / Clear</b>: picked by WHERE you meet the shuttle. Low (below ~1.4 m) = underhand <b>lift</b>; out in FRONT of you at 1.4&ndash;2.3 m = fast, flatter <b>punch clear</b> to the back; overhead, above or behind you = max-height <b>high clear</b>. Perfect/Great reach the back line; a poor contact comes out low and short (killable)</span></div>
         <div class="hl"><span class="hk" data-kb="p1.smash" data-max="1"></span><svg class="ill" viewBox="0 0 90 36"><path d="M8 4 L80 32" class="tr sm"/><circle cx="80" cy="32" r="3"/></svg><span><b>Attack</b>: jump + overhead = <b>jump smash</b>; overhead in mid/front = <b>smash</b>; overhead but deep or late = <b>punch clear</b>; shoulder/head = <b>flat smash</b>; chest/waist = <b>push</b> (drive from the back)</span></div>
         <div class="hl"><span class="hk" data-kb="p1.drop" data-max="1"></span><svg class="ill" viewBox="0 0 90 36"><path d="M6 10 Q40 2 52 30" class="tr"/><rect x="44" y="18" width="2" height="16" class="net"/><circle cx="52" cy="30" r="3"/></svg><span><b>Drop</b> just over the net; at the net = <b>net shot</b></span></div>
         <div class="hl"><span class="hk" data-kb="p1.smash" data-max="1"></span><svg class="ill" viewBox="0 0 90 36"><rect x="44" y="14" width="2" height="20" class="net"/><path d="M38 12 L60 32" class="tr sm"/></svg><span><b>Net kill</b>: smash a loose net shot near the tape</span></div>
         <div class="hl"><span class="hk" data-kb="p1.clear p1.drop" data-max="1"></span><svg class="ill" viewBox="0 0 90 36"><path d="M10 30 Q30 4 84 28" class="tr"/></svg><span><b>Serve</b>: clear = long, drop = short</span></div>
       </div>
       <div class="hpage hidden" data-hp="sp">
-        <div class="hl"><span class="hk" data-kb="p1.special" data-max="1"></span><span><b class="pk">&#9733; Special</b>: fill the pink bar with good shots, then press</span></div>
+        <div class="hl"><span class="hk" data-kb="p1.special" data-max="1"></span><span><b class="pk">&#9733; Special</b>: fill the pink bar with good shots, then press. Once armed you have <b>6 s</b> of rally time to use it (watch the ring); if it runs out it fizzles and you keep 25% of the bar</span></div>
         <div class="hl"><span class="ico">&#9889;</span><span><b class="gd">Stamina</b> (gold bar): moving is free, <b>shots cost</b></span></div>
-        <div class="hl"><span class="ico">&#128165;</span><span>Jump smash 12 &middot; smash 9 &middot; net kill 7 &middot; special 10</span></div>
-        <div class="hl"><span class="ico">&#127811;</span><span>Punch / drive 8 &middot; drop / net / push 7 &middot; clear / lift 4 &middot; lunge 5 &middot; jump 4</span></div>
+        <div class="hl"><span class="ico">&#128165;</span><span>Jump smash 20 &middot; smash 15 &middot; flat smash 17 &middot; net kill 12 &middot; special 16</span></div>
+        <div class="hl"><span class="ico">&#127811;</span><span>Punch / drive 8 &middot; push 7 &middot; punch clear 5 &middot; drop / net 4.5 &middot; clear / lift 2.6 &middot; lunge 4 &middot; jump 3</span></div>
         <div class="hl"><span class="ico">&#128164;</span><span>Stand still to recover; under 30% you are slower and weaker; at 0 no jump smash</span></div>
       </div>
       <div class="hpage hidden" data-hp="tips">
@@ -815,7 +815,7 @@ const BLOCK=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','PageUp','Pa
    Bindings use KeyboardEvent.code (layout-safe). Up to KB_MAX keys per action. Stored in localStorage under KB_STORE.
    In 1-player and online play your player answers to BOTH the P1 and the P2 keys (as before: P1 keys + arrows/numpad). */
 const KB_STORE='nailoong.keybinds.v1', KB_MAX=4;
-const KB_ACT=[['left','Move left'],['right','Move right'],['jump','Jump'],['clear','Lift / High clear'],['smash','Attack (smash/flat/push/punch clear)'],['drop','Drop / net shot'],['lunge','Lunge'],['special','Special move']];
+const KB_ACT=[['left','Move left'],['right','Move right'],['jump','Jump'],['clear','Clear (J: high clear overhead, punch clear in front, lift low)'],['smash','Attack (smash/flat/push/punch clear)'],['drop','Drop / net shot'],['lunge','Lunge'],['special','Special move']];
 const KB_GLB=[['pause','Pause / menu'],['mute','Mute all'],['fullscreen','Fullscreen'],['guide','Landing ring'],['replay','Instant replay']];
 const KB_DEFAULT={
   p1:{left:['KeyA'],right:['KeyD'],jump:['Space'],clear:['KeyJ'],smash:['KeyK'],drop:['KeyL'],lunge:['ShiftLeft','KeyQ'],special:['KeyI']},
@@ -1012,13 +1012,13 @@ const CHARS=[
     bio:'Quick, tidy hands at the net.'},
   {id:'bombloong',name:'Bombloong',src:'bomb',st:[8,6,6,6,7,6,5],sp:'bomb',spName:'Boom Smash',col:'#4fb8e8',frame:'#3a7bd5',grip:'#9fd3f0',
     bio:'Nailoong\'s blue eggshell rival (\u66b4\u66b4\u9f99). Big hitter, big reach, a bit slow.'},
-  {id:'spidey',name:'Spider-Man',src:'draw',st:[8,7,7,7,4,6,5],sp:'spin',spName:'Web Net Trap',col:'#e23b3b',frame:'#1d4fbf',grip:'#e23b3b',
+  {id:'spidey',name:'Spider-Man',src:'draw',st:[9,8,5,5,3,7,3],sp:'spin',spName:'Web Net Trap',col:'#e23b3b',frame:'#1d4fbf',grip:'#e23b3b',
     bio:'Fast, springy and strong, but runs out of breath.',art:{suit:'#d8262b',suit2:'#1f4fbf',head:'mask',mask:'#d8262b',eyes:'lens',web:true,emblem:'spider',boots:'#d8262b'}},
-  {id:'hulk',name:'Hulk',src:'draw',st:[9,4,5,5,8,7,3],sp:'thunder',spName:'Gamma Smash',col:'#5fa83a',frame:'#7b3fa0',grip:'#5fa83a',
+  {id:'hulk',name:'Hulk',src:'draw',st:[8,4,5,5,8,7,3],sp:'thunder',spName:'Gamma Smash',col:'#5fa83a',frame:'#7b3fa0',grip:'#5fa83a',
     bio:'Maximum power and reach. Slow feet, wild control.',art:{skin:'#6fbf44',suit:'#6fbf44',suit2:'#7b3fa0',head:'skin',eyes:'angry',hair:{col:'#23301c',style:'flat'},shorts:true,boots:'#6fbf44',big:1.12}},
   {id:'ironman',name:'Iron Man',src:'draw',st:[8,6,8,6,5,5,6],sp:'drive',spName:'Repulsor Drive',col:'#c8202a',frame:'#b01a24',grip:'#f0c419',
     bio:'Powerful armour with boot-jet jumps; the suit drains energy.',art:{suit:'#c4202a',suit2:'#f0c419',head:'helm',mask:'#c4202a',plate:'#f0c419',eyes:'slit',emblem:'reactor',boots:'#c4202a'}},
-  {id:'cap',name:'Captain America',src:'draw',st:[7,7,5,8,7,6,9],sp:'wall',spName:'Shield Block',col:'#2050b8',frame:'#d8262b',grip:'#ffffff',
+  {id:'cap',name:'Captain America',src:'draw',st:[7,7,5,7,7,6,8],sp:'wall',spName:'Shield Block',col:'#2050b8',frame:'#d8262b',grip:'#ffffff',
     bio:'Solid defender: good reach and control, shield saves a smash.',art:{suit:'#2a55b8',suit2:'#d8262b',head:'cowl',mask:'#2a55b8',skin:'#f6d2b0',eyes:'cute',emblem:'star',stripes:true,boots:'#d8262b',shield:true}},
   {id:'thor',name:'Thor',src:'draw',st:[9,5,6,5,6,6,5],sp:'thunder',spName:'Lightning Smash',col:'#7a8fa8',frame:'#c0c8d8',grip:'#8a5a2b',
     bio:'Thunderous smashes, heavy on his feet.',art:{suit:'#46506a',suit2:'#2b3348',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#f2c94c',style:'long'},cape:'#c8202a',emblem:'discs',boots:'#2b3348'}},
@@ -1046,7 +1046,7 @@ const CHARS=[
     bio:'Bombloong\u2019s loudest Purple Soldier. Big reach, big lungs.'},
   {id:'sheep',name:'Little Sheep',src:'draw',st:[4,6,5,7,6,7,5],sp:'spin',spName:'Sugar Swirl Net',col:'#ff9ec8',frame:'#ffffff',grip:'#ff9ec8',
     bio:'A fluffy pastry chef who bakes sweet net shots.'},
-  {id:'luffy',name:'Luffy',src:'draw',st:[7,7,6,6,8,5,5],sp:'thunder',spName:'Rubber Rocket Smash',col:'#d8262b',frame:'#e8b04a',grip:'#d8262b',
+  {id:'luffy',name:'Luffy',src:'draw',st:[8,7,6,7,8,5,5],sp:'thunder',spName:'Rubber Rocket Smash',col:'#d8262b',frame:'#e8b04a',grip:'#d8262b',
     bio:'A rubber-limbed pirate with endless reach and zero patience.'},
   {id:'tanjiro',name:'Tanjiro',src:'draw',st:[6,6,6,7,6,6,6],sp:'drive',spName:'Water Wheel Drive',col:'#2a9a7a',frame:'#1a1a1a',grip:'#2a9a7a',
     bio:'A kind, balanced swordsman-turned-shuttler.'},
@@ -1229,7 +1229,9 @@ function netKillOdds(p,s,q,h){
 }
 // J = clear: on-time/early contact out in front = fast flat punch clear; late (behind you) or low = high clear / lift
 // v16 key mapping (shared by player and AI):  J = always a HIGH shot,  K = context attack,  L = drop / net
-function jType(p,s){ return s.y>p.y-118?'lift':'clear'; }   // below ~1.4 m: high lift; chest/overhead: high defensive clear
+// v16.9 J by contact position (player and AI alike): low = underhand lift; out in FRONT at 1.4-2.3 m = punch clear (flatter, faster, to the rear court);
+// overhead / above / behind the body = high clear (max height, deep)
+function jType(p,s){ const h=p.y-s.y, fwd=(s.x-p.x)*p.f; if(h<1.4*PX_M) return 'lift'; if(h<=2.3*PX_M&&fwd>=30) return 'punch'; return 'clear'; }
 const FLAT_H=Math.round(1.15*PX_M), DRIVE_H=62;   // v16.2 K bands: >=1.15 m flat smash, 0.74-1.15 m drive/push, below = lift
 function kType(p,s){
   if(netKillZone(p,s)!==null) return 'netkill';
@@ -1242,7 +1244,9 @@ function kType(p,s){
 }
 function clearType(p,s){ return jType(p,s); }
 // the AI decides an intent, then presses the same key a player would: the shot itself comes from the shared mapping
-function aiKey(p,t){ const s=shuttle; if(t==='block'||t==='drop'||t==='net'||t==='kill') return t;
+function aiKey(p,t){ const s=shuttle; if(p.armed==='spin'&&t!=='kill'&&t!=='netkill'&&t!=='smash') t=Math.abs(s.x-NET_X)<200?'net':'drop'; if(p.armed==='drive'&&t!=='kill'&&t!=='netkill'&&t!=='smash') t='clear'; if(p.ai&&p.meter>=100&&!p.armed&&(p.ch.sp==='thunder'||p.ch.sp==='bomb')&&game.state==='rally'&&game.mode!=='demo'&&canSmash(p,s)&&t!=='net'&&t!=='drop'&&t!=='block') trySpecial(p);   // v16.9: AI power specials arm at the smash itself
+ if((p.armed==='thunder'||p.armed==='bomb')&&canSmash(p,s)) return 'smash';   // v16.9: an armed AI plays the shot that fires its special inside the window
+  if(t==='block'||t==='drop'||t==='net'||t==='kill') return t;
   if(t==='lift'||t==='clear') return (shuttle.type==='smash'||shuttle.type==='kill'||shuttle.type==='netkill'||shuttle.type==='flat')?'lift':jType(p,s);
   if(t==='smash'||t==='flat'||t==='punch'||t==='drive'||t==='push'||t==='netkill'){ const k=kType(p,s);
     if(canSmash(p,s)){ if(p.armed==='thunder'||p.armed==='bomb') return 'smash';   // v16.1: an armed power special is always fired as a real smash, never wasted on a punch clear
@@ -1384,7 +1388,7 @@ function contactQuality(p,d,reach){
 function hitShuttle(p,d=0,reach=REACH){
   const s=shuttle, dir=p.side===0?1:-1, opp=players[1-p.side];
   const pop0=popups.length; const Q=contactQuality(p,d,reach); let q=Q.q; const inT=s.type, inSp=Math.hypot(s.vx,s.vy)/PX_M, inMine=game.lastHitter===p.side;
-  if(p.perfN>0){ p.perfN--; q=Math.max(q,.97); Q.label='Perfect!'; }
+  if(p.perfN>0){ p.perfN--; p.armT=SP_WIN; q=Math.max(q,.97); Q.label='Perfect!'; }
   const wallUsed=!!p.wallHit; if(p.wallHit){ p.wallHit=false; q=1; Q.label='Perfect!'; }
   let weakRet=false; if(s.spRet&&game.lastHitter!==p.side){ const id=s.spRet; if(SPX[id].w==='ret'){ spRider(p,id); weakRet=SPX[id].weak||0; } else { weakRet=SPX[id].rw||0; } if(id==='bombloong'||id==='deadpool'){ sfx.boom&&sfx.boom(.7); bombBlast(s.x,s.y,.6); } }   // v15.6: returning a power special costs you (stun, knock-back, weak pop-up)
   s.spRet=null;   // v15.5 Boom Smash: returning it costs you
@@ -1405,7 +1409,7 @@ function hitShuttle(p,d=0,reach=REACH){
       if(sim.crossY===null || sim.crossY>NET_TOP-8 || sim.landX<COURT_L+12 || sim.landX>COURT_R-12) continue;
       const e=Math.abs(sim.landX-tx); if(e<bestErr){ bestErr=e; v=c; }
     }
-    if(!v){ type=p.ai?'clear':'drive'; if(spec==='thunder'||spec==='bomb'){ p.armed=spec; spec=null; } }   // v16.1: no smash line from here -> the armed power special is kept, not wasted on the bail-out
+    if(!v){ type=p.ai?'clear':'drive'; if(spec==='thunder'||spec==='bomb'){ if(p.ai&&p.armT>=SP_WIN-.05){ spec=null; p.armT=0; p.meter=100; const L=game.spLog||[]; if(L.length&&L[L.length-1].side===p.side) L.pop(); } else { p.armed=spec; spec=null; } } }   // v16.9: an AI that armed at this very hit but has no smash line takes the arming back   // v16.1: no smash line from here -> the armed power special is kept, not wasted on the bail-out
     else if(q<.75){ // mis-timed: angle wobbles, can find the net or go long
       const sp2=Math.hypot(v.vx,v.vy), a=Math.atan2(v.vy,v.vx*dir)+rand(-1,1)*(1-q)*0.26;
       v={vx:Math.cos(a)*sp2*dir, vy:Math.sin(a)*sp2};
@@ -1421,9 +1425,9 @@ function hitShuttle(p,d=0,reach=REACH){
     const atCross=(sp,cy)=>{ let lo=-40,hi=35,c=null; for(let i=0;i<22;i++){ const m=(lo+hi)/2, r=m*Math.PI/180, vx=Math.cos(r)*dir*sp, vy=-Math.sin(r)*sp, sim=simulate(s.x,s.y,vx,vy,3);
         if(sim.crossY===null||sim.crossY>cy) lo=m; else { hi=m; c={vx,vy,sim}; } } return c; };   // lowest launch angle whose path crosses the net at height cy
     for(let sp=spMax; sp>=14*PX_M && !v; sp-=1.5*PX_M){ const c=atCross(sp,NET_TOP-margin); if(c && (c.sim.landX-back)*dir<=0 && (c.sim.landX-NET_X)*dir>2.2*PX_M) v={vx:c.vx,vy:c.vy}; }
-    let pNet=tier===2?.22*below:tier===1?.08+.35*below:.4+.3*clamp((.6-q)/.4,0,1)+.15*below;
-    pNet*=clamp(1-.1*chD(p,3),.4,1.6); if(tired(p)) pNet+=p.st<ST.vlow?.25:.12; if(spec==='thunder'||spec==='bomb') pNet*=.3;   // v15.4: tired flat attacks find the tape more
-    if(p.ai) pNet=Math.max(pNet,DIFF[p.ai.diff].smart?.05:.12);   // even Hard nets the odd one: it's a risky shot
+    let pNet=q>=.7?0:tier===1?.03+.08*below:.16+.18*clamp((.6-q)/.4,0,1)+.08*below;   // v16.9: Perfect/Great flat smashes always clear the tape; only Good/Poor contacts (plus fatigue/low Control) find the net
+    pNet*=clamp(1-.1*chD(p,3),.4,1.6); if(tired(p)) pNet+=(p.st<ST.vlow?.18:.08)*(q>=.7?.5:1); if(spec==='thunder'||spec==='bomb') pNet*=.3;   // v15.4: tired flat attacks find the tape more
+    if(p.ai&&q<.7) pNet=Math.max(pNet,DIFF[p.ai.diff].smart?.04:.1);   // even Hard nets the odd one: it's a risky shot
     const roll=Math.random(); let fo=null;
     if(!v) type='drive';
     else if(roll<pNet){ fo='net'; const c=atCross(Math.hypot(v.vx,v.vy),NET_TOP+rand(3,40)); if(c) v={vx:c.vx,vy:c.vy}; }   // into the tape / mesh at full pace
@@ -1477,7 +1481,7 @@ function hitShuttle(p,d=0,reach=REACH){
     if(!v) type='net';
   }
   if(p.armed==='spin'&&(type==='net'||type==='drop'||type==='block')){ spec='spin'; p.armed=null; q=1; if(Math.abs(s.x-NET_X)<150) type='net'; }
-  if(p.armed==='drive'&&(type==='clear'||type==='punch')){ spec='drive'; p.armed=null; q=1; type='punch'; }
+  if(p.armed==='drive'&&(type==='clear'||type==='punch'||type==='lift')){ spec='drive'; p.armed=null; q=1; type='punch'; }
   if(type==='net'){
     v=solveNet(s.x,s.y,dir,q);
     if(!v){ v=solveDrop(s.x,s.y,dir,NET_X+dir*30,q); if(v) type='drop'; else type='lift'; }
@@ -1506,9 +1510,9 @@ function hitShuttle(p,d=0,reach=REACH){
     const base=dir>0?COURT_R:COURT_L; let tx, clr=JUMP_REACH_H+PUNCH_CLR;
     if(q>=.8){ tx=base-dir*rand(22,55); }
     else if(q>=.6){ tx=base-dir*rand(35,85); clr+=rand(25,50); }
-    else { const long=(p.swingT-SW_PEAK>.015)?Math.random()<.65:Math.random()<.3;
+    else { const long=(p.swingT-SW_PEAK>.015)?Math.random()<.3:Math.random()<.12;   // v16.9: a poor punch mostly comes out low & short
       if(long){ tx=base+dir*rand(10,25+(.6-q)*160); clr+=rand(0,30); p.punchMiss='long'; }
-      else { tx=base-dir*rand(40,130); clr=JUMP_REACH_H+PUNCH_CLR-rand(40,100)*(1.2-q); p.punchMiss='low'; } }
+      else { tx=oppX(p.side,rand(.45,.62)); clr=JUMP_REACH_H+PUNCH_CLR-rand(40,100)*(1.2-q); p.punchMiss='low'; } }   // v16.9 poor punch: low and only to mid-court (killable)
     if(p.ai){ const d=DIFF[p.ai.diff]; tx+=rand(-1,1)*d.err*.4*dir; if(Math.random()<d.outChance) tx=base+dir*rand(10,60); }
     v=solvePunch(s.x,s.y,dir,tx,clr,opp.x)||solvePunch(s.x,s.y,dir,tx,clr-60,opp.x);
     if(!v){ v=solveShot(s.x,s.y,oppX(p.side,aimFrac(p,'punch')*(.72+.28*q)),SHOTS.punch.ang); v.noBoost=true; }
@@ -1517,7 +1521,7 @@ function hitShuttle(p,d=0,reach=REACH){
   } else if(type==='drop'||type==='block'){
     sfx.hit(.45); for(let i=0;i<5;i++) spark(s.x,s.y,'#fff6a8');
   } else {
-    const fr=aimFrac(p,type)*(shuttle.type==='smash'&&game.lastHitter!==p.side?clamp(.82+.03*chD(p,6),.7,.95):1)*(type==='clear'||type==='lift'?.72+.28*q:.58+.42*q)*(q<.6?rand(.88,1.04):1);   // v16.6: poor = clearly shorter & scattered; high DEF = deeper defensive lifts   // high clears stay deep even when hit late   // returns of a smash are weaker; poor contact = shorter
+    const fr=aimFrac(p,type)*(shuttle.type==='smash'&&game.lastHitter!==p.side?clamp(.82+.03*chD(p,6),.7,.95):1)*(type==='clear'||type==='lift'?(q<.6?.48+.4*q:.72+.28*q):.58+.42*q)*(q<.6?rand(.88,1.04):1);   // v16.6: poor = clearly shorter & scattered; high DEF = deeper defensive lifts   // high clears stay deep even when hit late   // returns of a smash are weaker; poor contact = shorter
     v=solveShot(s.x,s.y,oppX(p.side,fr),(type==='lift'||type==='clear')?highAng(type,q):SHOTS[type].ang);   // v16: lifts/clears pick the HIGHEST trajectory that still lands deep (same for player and AI); timing caps the height
     sfx.hit((type==='clear'||type==='lift'||type==='punch'?1:.7)*(.55+.45*q));   // v16.6: weak contacts sound duller
     for(let i=0;i<7;i++) spark(s.x,s.y,'#fff6a8');
@@ -1550,7 +1554,7 @@ function hitShuttle(p,d=0,reach=REACH){
       if(!nv){ nv={vx:v.vx*.45,vy:Math.max(v.vy,-120)}; mode='net'; }
       if(nv){ v=nv; if(mode==='short'){ type='lift'; big=false; } p.errN=(p.errN||0)+1; popups.length=Math.min(popups.length,pop0); Q.label=null; if(!p.ai&&game.mode!=='demo') popup(p.x,p.y-205,mode==='net'?'Into the net!':mode==='out'?'Too long!':defShot?'Frame!':'Up short!','#d0456f',18); } }
       else if(defShot&&(type==='lift'||type==='clear'||type==='block'||type==='drive')&&Math.random()<pres*clamp(.27-.045*chD(p,6),.08,.6)*(q>=.8?.8:q<.6?1.3:1)){ const w=solveShot(s.x,s.y,oppX(p.side,rand(.3,.48)),[60,64,68,72,56]); if(w){ v=w; type='lift'; big=false; p.popN=(p.popN||0)+1; if(!p.ai&&game.mode!=='demo') popup(p.x,p.y-205,'Weak pop-up','#ff9a3c',18); } } }   // v16.6 low DEF: soft, killable pop-ups under fire
-  if(p.cloneN&&v&&game.state==='rally'){ p.cloneN--; const real=simulate(s.x,s.y,v.vx,v.vy,6), deep=Math.abs(real.landX-NET_X)/(NET_X-COURT_L)>.5;   // v16.7 Shadow Clone: a decoy on a different path
+  if(p.cloneN&&v&&game.state==='rally'){ p.cloneN--; p.armT=SP_WIN; const real=simulate(s.x,s.y,v.vx,v.vy,6), deep=Math.abs(real.landX-NET_X)/(NET_X-COURT_L)>.5;   // v16.7 Shadow Clone: a decoy on a different path
     const dv=deep?(solveShot(s.x,s.y,oppX(p.side,rand(.18,.3)),[20,26,32,38,44,14])||null):(solveShot(s.x,s.y,oppX(p.side,rand(.85,.95)),[40,46,52,34,58])||null);
     if(dv){ game.decoyId=(game.decoyId||0)+1; game.decoy={id:game.decoyId,x:s.x,y:s.y,vx:dv.vx,vy:dv.vy,t:1.0,side:p.side,tr:[],ctr:[],rot:Math.atan2(dv.vy,dv.vx),type,fx:s.fx,fxc:s.fxc}; game.cloneFx={side:p.side,t:.5,x:p.x-p.f*48};
       const o=players[1-p.side]; game.decoyDelay=0; if(o.ai){ const base={easy:.75,normal:.6,hard:.5}[o.ai.diff]??.55, fool=Math.random()<base*clamp(1-.07*chD(o,3),.6,1.4); game.decoyDelay=fool?.35:.12; game.decoyFool=fool; game.decoyOff=clamp(simulate(s.x,s.y,dv.vx,dv.vy,6).landX-real.landX,-260,260); }
@@ -1569,10 +1573,10 @@ function hitShuttle(p,d=0,reach=REACH){
   if((game.rally===10||game.rally===20||game.rally===30)&&game.mode!=='demo'&&!NET.fxSkip){ popup(NET_X,170,game.rally>=20?'AMAZING RALLY!':'Great rally!','#ff5f8f',30); crowdCheer(game.rally>=20?3:2); game.cheer=Math.max(game.cheer,1.5); }
   mtHit(p,type,Q,v||{vx:0,vy:0},nkOut);
   p.hitDone=true; p.lastShot=type; game.lastShot=type;
-  staCost(p,(spec?ST.shot.special:0)||(type==='smash'&&big?ST.shot.jsmash:ST.shot[type]??3));   // v15.1: every shot costs a little, attacks cost the most
+  staCost(p,(spec?ST.shot.special:0)||(type==='smash'&&big?ST.shot.jsmash:type==='punch'&&p.req==='clear'?ST.shot.punchJ:ST.shot[type]??3));   // v15.1: every shot costs a little, attacks cost the most
   (game.shotLog=game.shotLog||[]).push({side:p.side,type,big,r:game.rally,q:+q.toFixed(2),x:Math.round(s.x),y:Math.round(s.y)}); if(game.shotLog.length>400) game.shotLog.shift();
   if((type==='drop'||type==='block') && !p.ai) popup(s.x,s.y-30,type==='block'?'Block':'Drop','#7aa0d8',26);
-  if(!p.ai && game.mode!=='demo' && !spec){ const SN={punch:'Punch clear',clear:'High clear',lift:'Lift',flat:'Flat smash',drive:'Drive',push:'Push',smash:big?'Jump smash':'Smash',netkill:'Net kill',kill:'Kill',net:'Net shot',drop:'Drop',block:'Block'}; if(SN[type]&&!['smash','flat','drop','block'].includes(type)) popup(s.x,s.y-30,SN[type],type==='flat'||type==='smash'||type==='netkill'||type==='kill'?'#e8603a':'#58a0c8',22); }   // v16.2: every shot is named so the player sees which one fired
+  if(!p.ai && game.mode!=='demo' && !spec){ const SN={punch:'Punch clear',clear:'High clear',lift:'Lift',flat:'Flat smash',drive:'Drive',push:'Push',smash:big?'Jump smash':'Smash',netkill:'Net kill',kill:'Kill',net:'Net shot',drop:'Drop',block:'Block'}; const shortJ=(type==='lift'||type==='clear'||type==='punch')&&q<.6; if(SN[type]&&!['smash','flat','drop','block'].includes(type)) popup(s.x,s.y-30,shortJ?'Short lift!':SN[type],type==='flat'||type==='smash'||type==='netkill'||type==='kill'?'#e8603a':'#58a0c8',22); }   // v16.2: every shot is named so the player sees which one fired
   if((type==='push'||type==='drive') && !p.ai && game.mode!=='demo') popup(s.x,s.y-30,type==='push'?'Push':'Drive','#7a9ad8',22);
 }
 const SHORT_PX=Math.round(1.98*(COURT_R-COURT_L)/13.4);   // short service line distance from the net
@@ -1642,7 +1646,8 @@ function reachOf(p){ return ((p.ai?REACH:REACH+5)+4*chD(p,4)+(ATTACK_T.has(shutt
 function aiThink(p,dt){
   const a=p.ai, d=DIFF[a.diff], s=shuttle, inp={left:false,right:false};
   if(p.meter>=100&&!p.armed&&game.state==='rally'&&game.mode!=='demo'){ const t=p.ch.sp;   // v15: AI specials
-    if(t==='wind'?p.st<45:t==='dash'?(game.lastHitter!==p.side&&Math.abs(p.vx)>PSPEED*.6):true) inp.special=true; }
+    const inc=game.lastHitter!==p.side, hi=s.type==='lift'||s.type==='clear'||s.type==='serve';   // v16.9: arm only when it can be used inside the 6 s window
+    if(t==='wind'?p.st<45:t==='dash'?(inc&&Math.abs(p.vx)>PSPEED*.6):t==='thunder'||t==='bomb'?false:t==='spin'||t==='drive'?inc:t==='wall'?(!inc&&hi):true) inp.special=true; }
   let jump=false, swing=false;
   let base=p.side===0?340:940;
   if(d.smart){ const ls=p.lastShot, off=(ls==='drop'||ls==='net'||ls==='block')?-70:(ls==='clear'||ls==='lift'||ls==='punch')?25:ls==='smash'?-35:0;
@@ -1659,7 +1664,7 @@ function aiThink(p,dt){
         a.miss=Math.random()<d.mistake; a.jump=Math.random()<d.jump; a.jroll=Math.random()<d.jump; a.runFrom=p.x; a.leave=Math.random()<d.leave;
         if(s.type==='kill'){ a.react=d.sReact*rand(.8,1.2); a.miss=Math.random()<d.sMiss*1.2; a.jump=false; }
         if(s.type==='netkill'){ a.react=d.sReact*rand(.9,1.3); a.miss=Math.random()<Math.min(.95,d.sMiss+.6); a.jump=false; }
-        if(s.type==='smash'){ const sq=s.q===undefined?1:s.q; a.react=d.sReact*rand(.8,1.25)*(.5+.5*sq); a.miss=Math.random()<(s.bigSmash?d.bigMiss:d.sMiss)*(.25+.75*sq)*clamp(1+.08*chD(players[1-p.side],0)-.16*chD(p,6),.3,2); a.jump=false; }
+        if(s.type==='smash'){ const sq=s.q===undefined?1:s.q; a.react=d.sReact*rand(.8,1.25)*(.5+.5*sq); const pace=clamp((Math.hypot(s.vx,s.vy)/PX_M-45)/40,0,1.3); a.miss=Math.random()<((s.bigSmash?d.bigMiss:d.sMiss)*(.25+.75*sq)+.14*pace*(sq>=.8?1.5:sq>=.6?1:.5))*clamp(1+.08*chD(players[1-p.side],0)-.16*chD(p,6),.3,2); a.jump=false; }   // v16.9: raw pace beats even top levels; DEF decides how often
         if(s.type==='flat'){ const sq=s.q===undefined?1:s.q, pace=clamp((Math.hypot(s.vx,s.vy)/PX_M-16)/26,0,1);   // v14.2: fast flat attack: the faster and cleaner, the more often even Hard is beaten for pace
           a.react=d.sReact*rand(.8,1.15)*(.6+.4*sq); a.miss=Math.random()<Math.min(.92,(d.fMiss??.4)*FLAT_MISS/2.4)*pace*sq; a.jump=false; }
         if(s.type==='drop'||s.type==='block'||s.type==='net') a.jump=false;
@@ -1784,7 +1789,7 @@ function pointTo(side,reason){
     { const st=shuttle.type, win=game.lastHitter===side&&!shuttle.netHit;   // v15.3 slow-mo + camera punch + auto replay on special points (offline)
       if(game.mode!=='online'&&win&&((st==='smash'&&(shuttle.fx===2||shuttle.bigSmash))||st==='netkill'||shuttle.special)){ game.camP=1; if(SET.slowmo) game.slow=.25; game.pendReplay=true; }
       if(game.mode!=='online'&&game.rally>=15) game.pendReplay=true;
-      game.lastRec=game.rec; game.rec=[]; }
+      game.lastRec=game.rec; game.rec=[]; game.lastEv=game.recEv||[]; game.recEv=[]; }
     const human1p=game.mode==='1p';
     if(human1p&&side===1) sfx.lose(); else sfx.point();
     gainMeter(players[side],6); gainMeter(players[loser],3);
@@ -2556,7 +2561,7 @@ function drawHUD(){
   // first-time hint toast (fades in and out)
   if(hintT>0){ const a=clamp(Math.min(hintT,7-hintT)*1.5,0,1); ctx.globalAlpha=a*.92; pill(cx,H-38,620,34,'rgba(255,255,255,.92)','#ffd0df'); ctx.globalAlpha=a;
     ctx.font=`bold 14px ${UIF}`; ctx.fillStyle='#a35a78'; ctx.textAlign='center';
-    ctx.fillText(isTouch?'Tip: Clear on time = punch, late = high clear \u00b7 Drop/Net at the net = net shot \u00b7 Smash near the net on a loose net shot = Net kill':`Tip: ${kbFirst('p1','clear')} on time = punch, late = high clear \u00b7 ${kbFirst('p1','drop')} at the net = net shot \u00b7 ${kbFirst('p1','smash')} near the net on a loose net shot = Net kill (timing matters)`,cx,H-37); ctx.globalAlpha=1; }
+    ctx.fillText(isTouch?'Tip: Clear in front = punch clear, overhead/behind = high clear, low = lift \u00b7 Drop/Net at the net = net shot \u00b7 Smash near the net on a loose net shot = Net kill':`Tip: ${kbFirst('p1','clear')} in front = punch clear, overhead/behind = high clear, low = lift \u00b7 ${kbFirst('p1','drop')} at the net = net shot \u00b7 ${kbFirst('p1','smash')} near the net on a loose net shot = Net kill (timing matters)`,cx,H-37); ctx.globalAlpha=1; }
 }
 const CAM={x:632,z:.9};
 const toScreen=(x,y)=>[(x-CAM.x)*CAM.z+W/2,(y-H)*CAM.z+H];
@@ -2578,7 +2583,7 @@ function render(){
     if(charSprites(p.ch)) drawSpriteDino(p); else drawDino(p); }
   if(game.cloneFx&&game.cloneFx.x!=null){ const C=game.cloneFx, p=players[C.side]; if(p&&p.ch.id==='naruto'){ const ox=p.x; p.x=C.x; ctx.save(); ctx.globalAlpha=.55*clamp(C.t/.5,0,1); if(charSprites(p.ch)) drawSpriteDino(p); else drawDino(p); ctx.restore(); p.x=ox; } }   // v16.7 shadow clone beside Naruto
   for(const p of players) drawPlayerBars(p);
-  if(game.decoy&&game.state==='rally'){ const D=game.decoy, S={x:shuttle.x,y:shuttle.y,vx:shuttle.vx,vy:shuttle.vy,trail:shuttle.trail,hideT:shuttle.hideT,rot:shuttle.rot,type:shuttle.type,fx:shuttle.fx,fxc:shuttle.fxc}; Object.assign(shuttle,{x:D.x,y:D.y,vx:D.vx,vy:D.vy,trail:D.tr,hideT:0,rot:D.rot,type:D.type,fx:D.fx,fxc:D.fxc}); ctx.save(); ctx.globalAlpha=clamp(D.t/.15,0,1); game.decoyDraw=D; drawShuttle(); game.decoyDraw=0; ctx.restore(); Object.assign(shuttle,S); }   // v16.7 decoy looks identical
+  if(game.decoy&&(game.state==='rally'||game.replay)){ const D=game.decoy, S={x:shuttle.x,y:shuttle.y,vx:shuttle.vx,vy:shuttle.vy,trail:shuttle.trail,hideT:shuttle.hideT,rot:shuttle.rot,type:shuttle.type,fx:shuttle.fx,fxc:shuttle.fxc}; Object.assign(shuttle,{x:D.x,y:D.y,vx:D.vx,vy:D.vy,trail:D.tr,hideT:0,rot:D.rot,type:D.type,fx:D.fx,fxc:D.fxc}); ctx.save(); ctx.globalAlpha=clamp(D.t/.15,0,1); game.decoyDraw=D; drawShuttle(); game.decoyDraw=0; ctx.restore(); Object.assign(shuttle,S); }   // v16.7 decoy looks identical
   drawShuttle();
   drawNet('near');
   drawParticles();
@@ -2595,7 +2600,7 @@ const SET_KEY='nailoong.settings.v1'; const SET={slowmo:true}; try{ Object.assig
 function saveSet(){ try{ LS.setItem(SET_KEY,JSON.stringify(SET)); }catch(e){} }
 function hitFreeze(t){ if(game.mode==='online'||!SET.slowmo) return; game.hitStop=Math.max(game.hitStop||0,t); }
 const ST={max:100,run:0,lunge:4,jump:3,runDrain:1.5,regenStand:3,regenMove:3,regenFast:2,regenBreak:7.5,low:30,vlow:12,
-  shot:{jsmash:20,smash:15,flat:17,netkill:12,kill:12,special:16,punch:8,drive:8,drop:7,block:7,net:7,push:7,clear:4,lift:4,serve:1.5}};   // v15.4: ~1.6-1.8x v15.3
+  shot:{jsmash:20,smash:15,flat:17,netkill:12,kill:12,special:16,punch:8,punchJ:5,drive:8,drop:4.5,block:4.5,net:4.5,push:7,clear:2.6,lift:2.6,serve:1.5}}   // v16.9: L shots and J shots ~35% cheaper; K costs unchanged;   // v15.4: ~1.6-1.8x v15.3
 const tired=p=>p.st<ST.low;
 const perfWin=p=>game.mode==='demo'||game.noStamina||!tired(p)?1:clamp(.52-.32*fatigue(p),.2,.52);   // v16.6 Perfect window scale
 const fatigue=p=>game.mode==='demo'||game.noStamina?0:clamp((ST.low-p.st)/(ST.low-2),0,1);   // v16.3: 0 at the tired line, 1 when empty
@@ -2605,7 +2610,11 @@ const pJmp=p=>(1+.05*chD(p,2))*(p.st<ST.vlow&&game.mode!=='demo'?.74:tired(p)?.8
 const pPow=p=>(1+.06*chD(p,0))*(p.st<ST.vlow&&game.mode!=='demo'?.68:tired(p)?.8:1);   // v16.2: Power counts more, tiredness hurts more
 const pCtl=p=>(1+.1*chD(p,3))*(p.st<ST.vlow&&game.mode!=='demo'?.45:tired(p)?.62:1);
 function staCost(p,v){ if(game.mode==='demo'||game.noStamina) return; p.st=Math.max(0,p.st-v*(1-.05*chD(p,5))*(1+(p.rk?p.rk.cost:0))); }
-function staminaTick(p,dt){
+const SP_WIN=6, SP_REFUND=25;   // v16.9: an armed special must be used within 6 s of rally time; on expiry it fizzles and 25% of the bar comes back
+function spPending(p){ return !!(p.armed||p.perfN>0||p.cloneN>0); }
+function spExpireTick(p,dt){ if(game.mode==='online'&&NET.role==='guest') return; if(!spPending(p)){ p.armT=0; return; } if(game.state!=='rally'||game.mode==='demo') return; p.armT=(p.armT||SP_WIN)-dt;
+  if(p.armT<=0){ p.armed=null; p.perfN=0; p.cloneN=0; p.armT=0; p.meter=Math.max(p.meter,SP_REFUND); game.spFizN=(game.spFizN||0)+1; popup(p.x,p.y-190,'Special fizzled…','#9a8fb0',20); for(let i=0;i<10;i++) spark(p.x,p.y-90,'#c8c0d8'); if(!NET.fxSkip){ tone(420,.25,'triangle',.07,180); } } }
+function staminaTick(p,dt){ spExpireTick(p,dt);
   p.boostT=Math.max(0,(p.boostT||0)-dt); p.stunT=Math.max(0,(p.stunT||0)-dt); p.slowT=Math.max(0,(p.slowT||0)-dt); if(p.kbT>0){ const k=Math.min(dt,p.kbT); p.kbT-=dt; p.x+=p.kbV*k; p.x=p.side===0?clamp(p.x,40,NET_X-30):clamp(p.x,NET_X+30,W-40); } p.spFx=Math.max(0,(p.spFx||0)-dt);
   const rg=(1+.08*chD(p,5))*dt;
   if(game.mode!=='demo'&&!NET.fxSkip){ if(!p._tw&&tired(p)){ p._tw=1; popup(p.x,p.y-215,p.ai?'Tired!':'Tired! \uD83D\uDE2E\u200D\uD83D\uDCA8','#d0456f',22); }   // v16.3 visible fatigue cues
@@ -2666,7 +2675,8 @@ function trySpecial(p){
   else if(t==='wind'){ p.st=stMax(p); p.boostT=3; p.boostK=1.2; }
   else if(t==='clone'){ p.cloneN=2; p.st=stMax(p); game.cloneFx={side:p.side,t:.6}; }   // v16.7 Naruto: the next shot comes with a decoy
   if(SPX[p.ch.id]){ if(SPX[p.ch.id].w==='act'){ spRider(players[1-p.side],p.ch.id); if(SPX[p.ch.id].chain) p.rider=p.ch.id+':chain'; } else if(t==='perfect'||t==='dash'||t==='wind') p.rider=p.ch.id; }   // v15.6: instant specials ride on your next shot
-  if(t==='perfect'||t==='dash'||t==='wind'||t==='clone'); else p.armed=t;   // thunder / spin / wall / drive wait for the right shot
+  if(t==='perfect'||t==='dash'||t==='wind'||t==='clone'); else p.armed=t;
+  p.armT=SP_WIN;   // v16.9 activation window   // thunder / spin / wall / drive wait for the right shot
   for(let i=0;i<10;i++) spark(p.x,p.y-90,p.ch.col);   // v15.1: the big name banner + aura come from the SPFX layer
   if(!NET.fxSkip){ tone(520,.18,'sawtooth',.08,1040); tone(780,.22,'triangle',.12,1560,.06); }
   (game.spLog=game.spLog||[]).push({side:p.side,t});
@@ -2675,6 +2685,10 @@ function trySpecial(p){
 // world-space bars under each player: stamina (green -> red) and the special meter (gold, glows when ready)
 function drawPlayerBars(p){
   if(game.mode==='demo') return;
+  if(spPending(p)&&p.armT>0){ const fr=clamp(p.armT/SP_WIN,0,1), fl=p.armT<2&&Math.sin(performance.now()/70)>0, col=fl?'#ff4d6d':(p.ch.col||'#ffd23a');   // v16.9 activation countdown: glow on the character + ring by the bars
+    ctx.save(); const g=ctx.createRadialGradient(p.x,p.y-80,10,p.x,p.y-80,95); g.addColorStop(0,col+'55'); g.addColorStop(1,col+'00'); ctx.globalAlpha=fl?.9:.6; ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y-80,95,0,7); ctx.fill();
+    const cx=p.x-62, cy=GROUND+30; ctx.globalAlpha=1; ctx.lineWidth=4; ctx.strokeStyle='rgba(0,0,0,.18)'; ctx.beginPath(); ctx.arc(cx,cy,13,0,7); ctx.stroke(); ctx.strokeStyle=col; ctx.beginPath(); ctx.arc(cx,cy,13,-Math.PI/2,-Math.PI/2+fr*6.283); ctx.stroke();
+    ctx.fillStyle=col; ctx.font=`bold 11px ${UIF}`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(Math.ceil(p.armT),cx,cy+1); ctx.restore(); }
   // v15.1: ⚡ stamina = gold (flashes orange/red when tired), ★ special = purple→pink, glowing "★ READY" when full
   const w=84, x=p.x-w/2+8, y=GROUND+18, f=clamp(p.st/stMax(p),0,1), low=tired(p), m=clamp(p.meter/100,0,1), full=m>=1;
   ctx.save();
@@ -3266,19 +3280,29 @@ function chalRender(){ const S=PROG.stats, n=CHAL.filter(c=>PROG.chal[c.id]).len
     ['Longest rally',S.longestRally||0],['Net kills (total)',S.netKills||0],['Specials used',S.specials||0],['Wins per character',pc]].map(([a,b])=>`<tr><td>${a}</td><td><b>${kbEsc(String(b))}</b></td></tr>`).join(''); }
 /* ---- instant replay (offline): the last point, slow motion, skippable ---- */
 const REC_N=480;
-function recFrame(){ if(game.mode==='online'||game.mode==='demo') return; const r=game.rec||(game.rec=[]);
-  r.push({p:players.map(p=>[p.x,p.y,p.vx,p.vy,p.onGround,p.swingT,p.f,p.run,p.squash,p.lungeT,p.recT,p.lungeDir,p.hitT,p.hitPt,p.req,p.mood,p.moodT]),
-    s:[shuttle.x,shuttle.y,shuttle.vx,shuttle.vy,shuttle.rot,shuttle.type,shuttle.fx,shuttle.fxc,shuttle.netHit,shuttle.tumbleT],t:game.time});
-  if(r.length>REC_N) r.shift(); }
-const RP_P=['x','y','vx','vy','onGround','swingT','f','run','squash','lungeT','recT','lungeDir','hitT','hitPt','req','mood','moodT'], RP_S=['x','y','vx','vy','rot','type','fx','fxc','netHit','tumbleT'];
+const RP_P=['x','y','vx','vy','onGround','swingT','f','run','squash','lungeT','recT','lungeDir','hitT','hitPt','req','mood','moodT','stunT','spFx','slowT','armed','armT','boostT','perfN','cloneN','kbT','meter','st'], RP_S=['x','y','vx','vy','rot','type','fx','fxc','netHit','tumbleT','special','hideT','webDip','q','bigSmash'];
+function recFrame(){ if(game.mode==='online'||game.mode==='demo') return; const r=game.rec||(game.rec=[]); const D=game.decoy, C=game.cloneFx;
+  r.push({p:players.map(p=>RP_P.map(k=>p[k])),s:RP_S.map(k=>shuttle[k]),t:game.time,hid:game.hitId,lh:game.lastHitter,
+    g:{sh:game.shake,dc:D?{id:D.id,x:D.x,y:D.y,vx:D.vx,vy:D.vy,t:D.t,side:D.side,type:D.type,fx:D.fx,fxc:D.fxc,rot:D.rot}:null,cf:C?{...C}:null}});   // v16.9 replays also carry special state
+  if(r.length>REC_N) r.shift();
+  const ev=game.recEv||(game.recEv=[]); while(ev.length&&ev[0].t<r[0].t) ev.shift(); }
+// v16.9 replay fx log: every visual effect spawned during a rally is logged with its time and re-fired during the replay
+function recEv(f,a){ if(game.replay||game.mode==='online'||game.mode==='demo'||(game.state!=='rally'&&game.state!=='point')) return; const ev=game.recEv||(game.recEv=[]); ev.push({t:game.time,f,a:a.map(x=>x&&typeof x==='object'?{...x}:x)}); if(ev.length>12000) ev.shift(); }
+const REC_FX={};
+for(const nm of ['spark','dust','popup','fxBurst','spRing','spPart','bombBlast']){ const fn=eval(nm); REC_FX[nm]=fn; }
+spark=function(...a){ recEv('spark',a); return REC_FX.spark(...a); }; dust=function(...a){ recEv('dust',a); return REC_FX.dust(...a); }; popup=function(...a){ recEv('popup',a); return REC_FX.popup(...a); };
+fxBurst=function(...a){ recEv('fxBurst',a); return REC_FX.fxBurst(...a); }; spRing=function(...a){ recEv('spRing',a); return REC_FX.spRing(...a); }; spPart=function(...a){ recEv('spPart',a); return REC_FX.spPart(...a); };
+bombBlast=function(...a){ recEv('bombBlast',a); return REC_FX.bombBlast(...a); };
 function startReplay(){ const fr=game.lastRec; if(!fr||fr.length<20||game.replay) return false;
-  game.replay={fr,i:0,acc:0,save:{p:players.map(p=>RP_P.map(k=>p[k])),s:RP_S.map(k=>shuttle[k]),trail:shuttle.trail,time:game.time}}; shuttle.trail=[]; return true; }
+  game.replay={fr,i:0,acc:0,ev:(game.lastEv||[]).slice(),ei:0,lastT:fr[0].t-1e-6,save:{decoy:game.decoy,cloneFx:game.cloneFx,shake:game.shake,hid:game.hitId,lh:game.lastHitter,p:players.map(p=>RP_P.map(k=>p[k])),s:RP_S.map(k=>shuttle[k]),trail:shuttle.trail,time:game.time}}; shuttle.trail=[]; return true; }
 function replayStep(dt){ const R=game.replay; R.acc+=dt*.5; while(R.acc>=1/60&&R.i<R.fr.length-1){ R.acc-=1/60; R.i++; }   // half speed
   const f=R.fr[R.i]; players.forEach((p,k)=>RP_P.forEach((key,j)=>p[key]=f.p[k][j])); RP_S.forEach((key,j)=>shuttle[key]=f.s[j]); game.time=f.t;
+  if(f.hid!==undefined){ game.hitId=f.hid; game.lastHitter=f.lh; } if(f.g){ game.decoy=f.g.dc?{...f.g.dc,tr:[],ctr:[]}:null; if(game.decoy){ const o=R.dk; if(o&&o.id===game.decoy.id){ game.decoy.tr=o.tr; game.decoy.ctr=o.ctr; } decoyTrail(game.decoy,1/120); R.dk=game.decoy; } game.cloneFx=f.g.cf?{...f.g.cf}:null; game.shake=Math.max(game.shake*.9,(f.g.sh||0)*.5); }   // shake toned down at replay speed
+  while(R.ei<R.ev.length&&R.ev[R.ei].t<=f.t){ const e=R.ev[R.ei++]; if(e.t>R.lastT&&REC_FX[e.f]){ try{ REC_FX[e.f](...e.a.map(x=>x&&typeof x==='object'?{...x}:x)); }catch(_){} } } R.lastT=f.t;
   if(shuttle.y<GROUND-5){ shuttle.trail.push({x:shuttle.x,y:shuttle.y,l:.3,v:Math.hypot(shuttle.vx,shuttle.vy),a:ATTACK_T.has(shuttle.type)?1:0,fx:ATTACK_T.has(shuttle.type)?shuttle.fx:-1,c:shuttle.fxc,h:game.lastHitter}); if(shuttle.trail.length>40) shuttle.trail.shift(); }
   for(const t of shuttle.trail) t.l-=dt*.5; shuttle.trail=shuttle.trail.filter(t=>t.l>0);
   if(R.i>=R.fr.length-1) endReplay(); }
-function endReplay(){ const R=game.replay; if(!R) return; players.forEach((p,k)=>RP_P.forEach((key,j)=>p[key]=R.save.p[k][j])); RP_S.forEach((key,j)=>shuttle[key]=R.save.s[j]); shuttle.trail=R.save.trail; game.time=R.save.time; game.replay=null; }
+function endReplay(){ const R=game.replay; if(!R) return; players.forEach((p,k)=>RP_P.forEach((key,j)=>p[key]=R.save.p[k][j])); RP_S.forEach((key,j)=>shuttle[key]=R.save.s[j]); shuttle.trail=R.save.trail; game.time=R.save.time; game.decoy=null; game.cloneFx=null; game.shake=0; game.hitId=R.save.hid; game.lastHitter=R.save.lh; game.replay=null; }
 function drawReplayBadge(){ if(!game.replay) return; const a=.75+.25*Math.sin(performance.now()/200);
   ctx.save(); ctx.globalAlpha=a; pill(110,78,150,30,'rgba(220,40,80,.9)'); ctx.fillStyle='#fff'; ctx.font=`bold 15px ${UIF}`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('\u25CF REPLAY',110,79);
   ctx.globalAlpha=.85; ctx.fillStyle='#fff'; ctx.font=`bold 12px ${UIF}`; ctx.fillText(isTouch?'tap to skip':'any key to skip',110,104); ctx.restore(); }
@@ -3490,7 +3514,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden && game.mo
    Host = Nailoong (authoritative simulation), guest = Berry (sends inputs, predicts itself, interpolates the host).
    Reliable PeerJS channel: lobby/start/fx/win events. Extra unordered, no-retransmit channel: inputs, snapshots, pings. */
 const QS=new URLSearchParams(location.search);
-const NET_VER=22, ROOM_PREFIX='nailoong-badminton-v13-', CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const NET_VER=23, ROOM_PREFIX='nailoong-badminton-v13-', CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const NET={on:false,role:null,side:0,peer:null,conn:null,ch:null,code:'',closing:false,lost:false,
   rtt:0,rtts:[],off:0,offS:[],lastRecv:0,lastPing:0,epoch:0,
   lag:Math.max(0,+QS.get('netlag')||0), loss:clamp(+QS.get('netloss')||0,0,.9),
@@ -3679,7 +3703,7 @@ function netHostAfter(dt){
   if(NET.fxq.length){ sendEv({t:'fx',e:NET.epoch,l:NET.fxq}); NET.fxq=[]; }
   const now=performance.now(); if(now-NET.lastSnapT<14) return; NET.lastSnapT=now;
   const s=shuttle, r=v=>Math.round(v*10)/10, f3=v=>Math.round((v||0)*1000)/1000;
-  const P=p=>[r(p.x),r(p.y),r(p.vx),r(p.vy),p.onGround?1:0,f3(p.swingT),f3(p.lungeT),f3(p.recT),p.lungeDir||0,f3(p.lungeCD),p.mood||0,f3(p.moodT),p.req||'clear',p.hitDone?1:0,f3(p.squash),p.f,Math.round(p.st*10)/10,Math.round(p.meter),p.armed||0,f3(p.boostT),p.perfN||0,p.spN||0,f3(p.stunT)];
+  const P=p=>[r(p.x),r(p.y),r(p.vx),r(p.vy),p.onGround?1:0,f3(p.swingT),f3(p.lungeT),f3(p.recT),p.lungeDir||0,f3(p.lungeCD),p.mood||0,f3(p.moodT),p.req||'clear',p.hitDone?1:0,f3(p.squash),p.f,Math.round(p.st*10)/10,Math.round(p.meter),p.armed||0,f3(p.boostT),p.perfN||0,p.spN||0,f3(p.stunT),f3(p.armT||0),p.cloneN||0];
   sendSt({t:'s',e:NET.epoch,ht:now,ack:NET.gSeq,st:game.state,sc:game.score,sv:game.server,sk:+(game.sClock||0).toFixed(2),lh:game.lastHitter,hid:game.hitId,ra:game.rally,
     p:[P(players[0]),P(players[1])],
     s:[r(s.x),r(s.y),r(s.vx),r(s.vy),f3(s.rot),f3(s.boostT),s.gMul||1,s.bK||BOOST_K,f3(s.tumbleT),s.netHit?1:0,s.type||0,s.landT?1:0,s.fx||0,s.fxc||0,s.special||0,s.webDip||0,f3(s.hideT)],hs:game.hitStop>0?1:0,
@@ -3691,7 +3715,7 @@ function netHostAfter(dt){
 function setPState(p,a){
   p.x=a[0]; p.y=a[1]; p.vx=a[2]; p.vy=a[3]; p.onGround=!!a[4]; p.swingT=a[5]; p.lungeT=a[6]; p.recT=a[7]; p.lungeDir=a[8]; p.lungeCD=a[9];
   p.mood=a[10]||null; p.moodT=a[11]; p.req=a[12]; p.hitDone=!!a[13]; p.squash=a[14];
-  if(a.length>16){ p.st=a[16]; p.meter=a[17]; p.armed=a[18]||null; p.boostT=a[19]; p.perfN=a[20]; if(a.length>21) p.spN=a[21]; if(a.length>22) p.stunT=a[22]; }
+  if(a.length>16){ p.st=a[16]; p.meter=a[17]; p.armed=a[18]||null; p.boostT=a[19]; p.perfN=a[20]; if(a.length>21) p.spN=a[21]; if(a.length>22) p.stunT=a[22]; if(a.length>23){ p.armT=a[23]; p.cloneN=a[24]; } }
 }
 function simPlayer(p,dt){ const n=Math.max(1,Math.ceil(dt/(1/120)-1e-6)), h=dt/n; for(let k=0;k<n;k++) updatePlayer(p,h); }
 function guestSnap(m){
