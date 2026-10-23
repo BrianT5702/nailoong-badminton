@@ -1362,7 +1362,7 @@ function contactQuality(p,d,reach){
 }
 function hitShuttle(p,d=0,reach=REACH){
   const s=shuttle, dir=p.side===0?1:-1, opp=players[1-p.side];
-  const Q=contactQuality(p,d,reach); let q=Q.q; const inT=s.type, inSp=Math.hypot(s.vx,s.vy)/PX_M, inMine=game.lastHitter===p.side;
+  const pop0=popups.length; const Q=contactQuality(p,d,reach); let q=Q.q; const inT=s.type, inSp=Math.hypot(s.vx,s.vy)/PX_M, inMine=game.lastHitter===p.side;
   if(p.perfN>0){ p.perfN--; q=Math.max(q,.97); Q.label='Perfect!'; }
   const wallUsed=!!p.wallHit; if(p.wallHit){ p.wallHit=false; q=1; Q.label='Perfect!'; }
   let weakRet=false; if(s.spRet&&game.lastHitter!==p.side){ const id=s.spRet; if(SPX[id].w==='ret'){ spRider(p,id); weakRet=SPX[id].weak||0; } else { weakRet=SPX[id].rw||0; } if(id==='bombloong'||id==='deadpool'){ sfx.boom&&sfx.boom(.7); bombBlast(s.x,s.y,.6); } }   // v15.6: returning a power special costs you (stun, knock-back, weak pop-up)
@@ -1527,7 +1527,7 @@ function hitShuttle(p,d=0,reach=REACH){
       else { const w=solveShot(s.x,s.y,oppX(p.side,rand(.22,.4)),[64,68,72,60,76]); if(w) nv=w; }
       if(!nv&&mode!=='short'){ const w=solveShot(s.x,s.y,oppX(p.side,rand(.22,.4)),[64,68,72,60,76,80,56]); if(w){ nv=w; mode='short'; } }   // v16.3: an error that cannot find the net/line pops up short instead of silently vanishing
       if(!nv){ nv={vx:v.vx*.45,vy:Math.max(v.vy,-120)}; mode='net'; }
-      if(nv){ v=nv; if(mode==='short'){ type='lift'; big=false; } p.errN=(p.errN||0)+1; if(!p.ai&&game.mode!=='demo') popup(p.x,p.y-205,mode==='net'?'Into the net!':mode==='out'?'Too long!':'Up short!','#d0456f',18); } } }
+      if(nv){ v=nv; if(mode==='short'){ type='lift'; big=false; } p.errN=(p.errN||0)+1; popups.length=Math.min(popups.length,pop0); Q.label=null; if(!p.ai&&game.mode!=='demo') popup(p.x,p.y-205,mode==='net'?'Into the net!':mode==='out'?'Too long!':'Up short!','#d0456f',18); } } }
   s.type=type; s.bigSmash=big; s.q=q; s.special=spec; s.spRet=s.spRet0||null; s.spRet0=null; s.webDip=s.webDip0||0; s.webDip0=0; if(spec==='wall'&&p.ch.id==='batman'||rid==='batman') s.hideT=.45; if(spec==='bomb'){ const r=Math.hypot(s.vx,s.vy), a=Math.atan2(s.vy,s.vx), d=Math.sign(s.vx)||1, a2=a+d*.07, nv={vx:Math.cos(a2)*r,vy:Math.sin(a2)*r}, sim=simulate(s.x,s.y,nv.vx,nv.vy,3); if(sim.crossY!==null&&sim.crossY<NET_TOP-4&&(sim.landX-NET_X)*d>1.5*PX_M){ s.vx=nv.vx; s.vy=nv.vy; } s.fx=2; game.shake=.45; hitFreeze(.1); sfx.boom&&sfx.boom(.6); game.camP=1; }   // steeper by ~4 deg when it still clears the tape
   if(spec&&spec!=='thunder'&&spec!=='bomb'){ hitFreeze(.07); game.camP=Math.max(game.camP||0,.5); }
   if(spec){ const col=p.ch.col; popup(s.x,s.y-58,'\u2605 '+p.ch.spName,col,30); for(let i=0;i<14;i++) spark(s.x,s.y,col);
@@ -1545,7 +1545,7 @@ function hitShuttle(p,d=0,reach=REACH){
   staCost(p,(spec?ST.shot.special:0)||(type==='smash'&&big?ST.shot.jsmash:ST.shot[type]??3));   // v15.1: every shot costs a little, attacks cost the most
   (game.shotLog=game.shotLog||[]).push({side:p.side,type,big,r:game.rally,q:+q.toFixed(2),x:Math.round(s.x),y:Math.round(s.y)}); if(game.shotLog.length>400) game.shotLog.shift();
   if((type==='drop'||type==='block') && !p.ai) popup(s.x,s.y-30,type==='block'?'Block':'Drop','#7aa0d8',26);
-  if(!p.ai && game.mode!=='demo' && !spec){ const SN={punch:'Punch clear',clear:'High clear',lift:'Lift',flat:'Flat smash',drive:'Drive',push:'Push',smash:big?'Jump smash':'Smash',netkill:'Net kill',kill:'Kill',net:'Net shot',drop:'Drop',block:'Block'}; if(SN[type]) popup(s.x,s.y-30,SN[type],type==='flat'||type==='smash'||type==='netkill'||type==='kill'?'#e8603a':'#58a0c8',22); }   // v16.2: every shot is named so the player sees which one fired
+  if(!p.ai && game.mode!=='demo' && !spec){ const SN={punch:'Punch clear',clear:'High clear',lift:'Lift',flat:'Flat smash',drive:'Drive',push:'Push',smash:big?'Jump smash':'Smash',netkill:'Net kill',kill:'Kill',net:'Net shot',drop:'Drop',block:'Block'}; if(SN[type]&&!['smash','flat','drop','block'].includes(type)) popup(s.x,s.y-30,SN[type],type==='flat'||type==='smash'||type==='netkill'||type==='kill'?'#e8603a':'#58a0c8',22); }   // v16.2: every shot is named so the player sees which one fired
   if((type==='push'||type==='drive') && !p.ai && game.mode!=='demo') popup(s.x,s.y-30,type==='push'?'Push':'Drive','#7a9ad8',22);
 }
 const SHORT_PX=Math.round(1.98*(COURT_R-COURT_L)/13.4);   // short service line distance from the net
@@ -1711,7 +1711,10 @@ function dust(x,y,n){ for(let i=0;i<n;i++) particles.push({t:'dust',x:x+rand(-14
 function hearts(x,y,n,c){ for(let i=0;i<n;i++) particles.push({t:'heart',x,y,vx:rand(-200,200),vy:rand(-380,-120),life:rand(.9,1.5),max:1.5,c:c||(Math.random()<.5?'#ff7aa2':'#ffb3c8'),s:rand(9,16),r:rand(-.5,.5),g:300}); }
 function confetti(){ particles.push({t:Math.random()<.6?'heart':'conf',x:rand(0,W),y:-20,vx:rand(-40,40),vy:rand(60,160),life:6,max:6,
   c:['#ff7aa2','#ffd93b','#ff9ec0','#9be3dc','#ffb3c8','#fff3a0'][Math.floor(rand(0,6))],s:rand(8,15),r:rand(0,6),vr:rand(-4,4),g:30}); }
-function popup(x,y,text,c,size){ popups.push({x,y,text,c,size:size||36,life:1.1,max:1.1}); }
+function popup(x,y,text,c,size){ size=size||36;   // v16.4: one label per text, and simultaneous popups stack instead of overlapping
+  if(popups.some(q=>q.text===text&&q.life>q.max-.25&&Math.abs(q.x-x)<160)) return;
+  for(let k=0;k<8;k++){ const hit=popups.find(q=>q.life>q.max-.6&&Math.abs(q.x-x)<(String(q.text).length*q.size*.3+String(text).length*size*.3)&&Math.abs(q.y-y)<(q.size+size)*.55); if(!hit) break; y=hit.y-(hit.size+size)*.6; }
+  popups.push({x,y,text,c,size,life:1.1,max:1.1}); }
 // v14 impact effects: 'burst' radial lines, 'flash' contact flash, 'ring' floor shockwave, 'speed' speed lines (a = direction), 'puff' small dust puff
 function fxBurst(k,x,y,c,a,sz){ sz=sz||1;
   if(k==='burst'){ particles.push({t:'burst',x,y,vx:0,vy:0,life:.32,max:.32,c,s:sz,r:rand(0,6),g:0}); particles.push({t:'flash',x,y,vx:0,vy:0,life:.12,max:.12,c:'#fff',s:26*sz,g:0}); for(let i=0;i<Math.round(14*sz);i++) particles.push({t:'star',x,y,vx:rand(-420,420)*sz,vy:rand(-420,300)*sz,life:rand(.3,.6),max:.6,c:i%2?c:'#fff6a8',s:rand(4,8),r:rand(0,6)}); }
@@ -2402,6 +2405,7 @@ function drawShuttleGround(){
     ctx.beginPath(); ctx.ellipse(sim.landX,GROUND+1,17*pul,5.5*pul,0,0,7); ctx.stroke();
     ctx.setLineDash([]); ctx.strokeStyle='rgba(255,111,159,.9)'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.ellipse(sim.landX,GROUND+1,4,1.5,0,0,7); ctx.stroke(); ctx.restore(); }
 }
+const SHUTTLE_VIS={night:'dark',flood:'dark',space:'dark',neon:'dark',snow:'light',sakura:'light',candy:'light',pink:'light'};   // v16.4: courts that need help
 function drawShuttle(){
   const s=shuttle; if(s.hideT>0&&s.hideT<.52&&game.state==='rally') return;   // v15.8 Batman smoke: shuttle invisible
   // motion streak: dark underlay + white core, stronger when fast
@@ -2418,11 +2422,12 @@ function drawShuttle(){
   drawTrailFx(tr);
   // ~1.5x v8 (still well under v5's oversized shuttle); cork leads
   ctx.save(); ctx.translate(s.x,s.y); ctx.rotate(s.rot); { const z=game.fun==='giant'?1.25:.6; ctx.scale(z,z); }
-  // v16.2 visibility: a dark rim + bright yellow ring around the shuttle so it reads on every court/sky
-  ctx.save(); ctx.rotate(-s.rot); ctx.lineWidth=4; ctx.strokeStyle='rgba(20,15,45,.55)'; ctx.beginPath(); ctx.arc(-6,0,24,0,7); ctx.stroke(); ctx.lineWidth=2.2; ctx.strokeStyle='rgba(255,226,60,.9)'; ctx.beginPath(); ctx.arc(-6,0,24,0,7); ctx.stroke(); ctx.restore();
   // soft dark halo so the white skirt pops on clouds / sky / banners / lines
-  ctx.shadowColor='rgba(20,15,45,.75)'; ctx.shadowBlur=4*scale*dpr;
-  ctx.fillStyle='#ffffff'; ctx.strokeStyle='#2f2a45'; ctx.lineWidth=2.2;
+  { const sv=SHUTTLE_VIS[(typeof PROG!=='undefined'&&PROG.equip.theme)||'classic'];   // v16.4: no marker ring; a soft natural halo only on courts where the white shuttle is hard to see
+    if(sv==='dark'){ ctx.shadowColor='rgba(255,250,225,.95)'; ctx.shadowBlur=11*scale*dpr; }   // dark scenes: soft moonlight glow
+    else if(sv==='light'){ ctx.shadowColor='rgba(20,15,45,.9)'; ctx.shadowBlur=6*scale*dpr; }   // pale scenes: a slightly deeper shadow
+    else { ctx.shadowColor='rgba(20,15,45,.75)'; ctx.shadowBlur=4*scale*dpr; } }
+  ctx.fillStyle='#ffffff'; ctx.strokeStyle='#2f2a45'; ctx.lineWidth=SHUTTLE_VIS[(typeof PROG!=='undefined'&&PROG.equip.theme)||'classic']==='light'?2.8:2.2;
   ctx.beginPath(); ctx.moveTo(-3,-5.5); ctx.lineTo(-25,-13); ctx.quadraticCurveTo(-28,0,-25,13); ctx.lineTo(-3,5.5); ctx.closePath(); ctx.fill(); ctx.stroke();
   ctx.shadowBlur=0; ctx.shadowColor='transparent';
   ctx.strokeStyle='rgba(90,80,120,.75)'; ctx.lineWidth=1.1; ctx.beginPath(); for(let k=-2;k<=2;k++){ ctx.moveTo(-4,k*2.2); ctx.lineTo(-24,k*5.4); } ctx.stroke();
