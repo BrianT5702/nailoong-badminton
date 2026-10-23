@@ -1552,7 +1552,7 @@ function hitShuttle(p,d=0,reach=REACH){
       else if(defShot&&(type==='lift'||type==='clear'||type==='block'||type==='drive')&&Math.random()<pres*clamp(.27-.045*chD(p,6),.08,.6)*(q>=.8?.8:q<.6?1.3:1)){ const w=solveShot(s.x,s.y,oppX(p.side,rand(.3,.48)),[60,64,68,72,56]); if(w){ v=w; type='lift'; big=false; p.popN=(p.popN||0)+1; if(!p.ai&&game.mode!=='demo') popup(p.x,p.y-205,'Weak pop-up','#ff9a3c',18); } } }   // v16.6 low DEF: soft, killable pop-ups under fire
   if(p.cloneN&&v&&game.state==='rally'){ p.cloneN--; const real=simulate(s.x,s.y,v.vx,v.vy,6), deep=Math.abs(real.landX-NET_X)/(NET_X-COURT_L)>.5;   // v16.7 Shadow Clone: a decoy on a different path
     const dv=deep?(solveShot(s.x,s.y,oppX(p.side,rand(.18,.3)),[20,26,32,38,44,14])||null):(solveShot(s.x,s.y,oppX(p.side,rand(.85,.95)),[40,46,52,34,58])||null);
-    if(dv){ game.decoy={x:s.x,y:s.y,vx:dv.vx,vy:dv.vy,t:1.0,side:p.side,tr:[],rot:0,landT:0}; game.cloneFx={side:p.side,t:.5,x:p.x-p.f*48};
+    if(dv){ game.decoyId=(game.decoyId||0)+1; game.decoy={id:game.decoyId,x:s.x,y:s.y,vx:dv.vx,vy:dv.vy,t:1.0,side:p.side,tr:[],ctr:[],rot:Math.atan2(dv.vy,dv.vx),type,fx:s.fx,fxc:s.fxc}; game.cloneFx={side:p.side,t:.5,x:p.x-p.f*48};
       const o=players[1-p.side]; game.decoyDelay=0; if(o.ai){ const base={easy:.75,normal:.6,hard:.5}[o.ai.diff]??.55, fool=Math.random()<base*clamp(1-.07*chD(o,3),.6,1.4); game.decoyDelay=fool?.35:.12; game.decoyFool=fool; game.decoyOff=clamp(simulate(s.x,s.y,dv.vx,dv.vy,6).landX-real.landX,-260,260); }
       popup(p.x,p.y-175,'SHADOW CLONE!','#f28c28',22); } }
   s.type=type; s.bigSmash=big; s.q=q; s.special=spec; s.spRet=s.spRet0||null; s.spRet0=null; s.webDip=s.webDip0||0; s.webDip0=0; if(spec==='wall'&&p.ch.id==='batman'||rid==='batman') s.hideT=.45; if(spec==='bomb'){ const r=Math.hypot(s.vx,s.vy), a=Math.atan2(s.vy,s.vx), d=Math.sign(s.vx)||1, a2=a+d*.07, nv={vx:Math.cos(a2)*r,vy:Math.sin(a2)*r}, sim=simulate(s.x,s.y,nv.vx,nv.vy,3); if(sim.crossY!==null&&sim.crossY<NET_TOP-4&&(sim.landX-NET_X)*d>1.5*PX_M){ s.vx=nv.vx; s.vy=nv.vy; } s.fx=2; game.shake=.45; hitFreeze(.1); sfx.boom&&sfx.boom(.6); game.camP=1; }   // steeper by ~4 deg when it still clears the tape
@@ -1840,7 +1840,7 @@ function step(dt){
   } else if(game.state==='rally'){
     const px=s.x, py=s.y;
     if(!s.landT) stepS(s,dt);
-    if(game.decoy){ const D=game.decoy; D.t-=dt; stepS(D,dt); if(D.t<=0||D.y>GROUND-30||game.lastHitter!==D.side) game.decoy=null; }   // v16.7 the decoy vanishes after ~1 s, before it lands, or once the real one is returned
+    if(game.decoy){ const D=game.decoy; D.t-=dt; stepS(D,dt); decoyTrail(D,dt); if(D.t<=0||D.y>GROUND-30||game.lastHitter!==D.side) game.decoy=null; }   // v16.7 the decoy vanishes after ~1 s, before it lands, or once the real one is returned
     if(s.webDip&&!s.landT&&(s.x-NET_X)*s.webDip>15){ s.vy+=16*PX_M*dt; }   // v15.8 Spider-Man web pull (extra downward tug past the tape)
     if(s.hideT>0) s.hideT=Math.max(0,s.hideT-dt);
     if(!s.netHit && (px-NET_X)*(s.x-NET_X)<0){
@@ -2449,7 +2449,7 @@ function drawShuttle(){
       ctx.strokeStyle=`rgba(35,30,60,${al*.45*(b.fx===0?.6:1)})`; ctx.lineWidth=(1.6+3.4*f*al)*(b.fx===0?.55:1); ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
       ctx.strokeStyle=`rgba(255,255,255,${al})`; ctx.lineWidth=.8+1.8*f*al; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
     ctx.restore(); }
-  drawTrailFx(tr);
+  if(game.decoyDraw) drawTrailFx(game.decoyDraw.ctr,game.decoyDraw); else drawTrailFx();
   // ~1.5x v8 (still well under v5's oversized shuttle); cork leads
   ctx.save(); ctx.translate(s.x,s.y); ctx.rotate(s.rot); { const z=game.fun==='giant'?1.25:.6; ctx.scale(z,z); }
   // soft dark halo so the white skirt pops on clouds / sky / banners / lines
@@ -2578,7 +2578,7 @@ function render(){
     if(charSprites(p.ch)) drawSpriteDino(p); else drawDino(p); }
   if(game.cloneFx&&game.cloneFx.x!=null){ const C=game.cloneFx, p=players[C.side]; if(p&&p.ch.id==='naruto'){ const ox=p.x; p.x=C.x; ctx.save(); ctx.globalAlpha=.55*clamp(C.t/.5,0,1); if(charSprites(p.ch)) drawSpriteDino(p); else drawDino(p); ctx.restore(); p.x=ox; } }   // v16.7 shadow clone beside Naruto
   for(const p of players) drawPlayerBars(p);
-  if(game.decoy&&game.state==='rally'){ const D=game.decoy, S={x:shuttle.x,y:shuttle.y,vx:shuttle.vx,vy:shuttle.vy,trail:shuttle.trail,hideT:shuttle.hideT}; Object.assign(shuttle,{x:D.x,y:D.y,vx:D.vx,vy:D.vy,trail:[],hideT:0}); ctx.save(); ctx.globalAlpha=clamp(D.t/.15,0,1); game.decoyDraw=1; drawShuttle(); game.decoyDraw=0; ctx.restore(); Object.assign(shuttle,S); }   // v16.7 decoy looks identical
+  if(game.decoy&&game.state==='rally'){ const D=game.decoy, S={x:shuttle.x,y:shuttle.y,vx:shuttle.vx,vy:shuttle.vy,trail:shuttle.trail,hideT:shuttle.hideT,rot:shuttle.rot,type:shuttle.type,fx:shuttle.fx,fxc:shuttle.fxc}; Object.assign(shuttle,{x:D.x,y:D.y,vx:D.vx,vy:D.vy,trail:D.tr,hideT:0,rot:D.rot,type:D.type,fx:D.fx,fxc:D.fxc}); ctx.save(); ctx.globalAlpha=clamp(D.t/.15,0,1); game.decoyDraw=D; drawShuttle(); game.decoyDraw=0; ctx.restore(); Object.assign(shuttle,S); }   // v16.7 decoy looks identical
   drawShuttle();
   drawNet('near');
   drawParticles();
@@ -3007,13 +3007,21 @@ function trailBurst(c,id,B,now,z){ const T=TRAILS[id], u=(now-B.t)/.32; if(u>=1)
     else if(id==='ice'){ c.strokeStyle='#e8fbff'; c.lineWidth=1.6*z; c.beginPath(); c.moveTo(x-Math.cos(an)*r*2,y-Math.sin(an)*r*2); c.lineTo(x+Math.cos(an)*r*2,y+Math.sin(an)*r*2); c.stroke(); }
     else { c.beginPath(); c.arc(x,y+(id==='milk'?u*u*20*z:0),r,0,7); c.fill(); } }
   c.globalAlpha=(1-u)*.5; c.strokeStyle=T.cols[0]; c.lineWidth=3*z*(1-u); c.beginPath(); c.arc(B.x,B.y,(10+40*u)*z,0,7); c.stroke(); c.restore(); return true; }
-function drawTrailFx(){ if(game.decoyDraw) return; const id=(typeof PROG!=='undefined'&&PROG.equip.trail)||'none'; if(id==='none'||!TRAILS[id]||game.mode==='demo'){ CTR.length=0; return; }
-  const now=performance.now()/1000, s=shuttle, live=(game.state==='rally'||game.replay)&&s.y<GROUND-4, last=CTR[CTR.length-1];
-  if(live){ if(last&&Math.hypot(s.x-last.x,s.y-last.y)>220) CTR.length=0; const pf=s.type==='smash'&&s.fx===2; if(pf&&TB_ID!==game.hitId){ TB_ID=game.hitId; TBURST.push({x:s.x,y:s.y,t:now}); }
-    if(!last||Math.hypot(s.x-last.x,s.y-last.y)>1.5) CTR.push({x:s.x,y:s.y,t:now,k:++CTR_T,p:pf?1:0}); }
-  while(CTR.length&&(now-CTR[0].t>TRAIL_LIFE*(CTR[0].p?1.45:1)||CTR.length>TRAIL_N)) CTR.shift();
-  TBURST=TBURST.filter(B=>trailBurst(ctx,id,B,now,1));
-  if(CTR.length>1) drawTrailPath(ctx,live?CTR:CTR,id,now,1); }
+// v16.8 the decoy keeps its own feather streak + heading exactly like the real shuttle (host and guest alike)
+function decoyTrail(D,dt){ const atk=ATTACK_T.has(D.type); D.tr.push({x:D.x,y:D.y,l:atk?(D.fx===2?.34:.26):.14,v:Math.hypot(D.vx,D.vy),a:atk?1:0,fx:atk?D.fx:-1,c:D.fxc,h:D.side}); if(D.tr.length>70) D.tr.shift();
+  for(const t of D.tr) t.l-=dt; D.tr=D.tr.filter(t=>t.l>0); if(Math.hypot(D.vx,D.vy)>30){ let d=Math.atan2(D.vy,D.vx)-D.rot; while(d>Math.PI) d-=2*Math.PI; while(d<-Math.PI) d+=2*Math.PI; D.rot+=d*Math.min(1,dt*16); } }
+function guestDecoy(L,hn,dt){ const dc=L.dc, el=clamp((hn-L.ht)/1000,0,.25);
+  if(!dc){ game.decoy=null; } else { let D=game.decoy; if(!D||D.id!==dc[0]) D=game.decoy={id:dc[0],tr:[],ctr:[],rot:Math.atan2(dc[4],dc[3])};
+    const T={x:dc[1],y:dc[2],vx:dc[3],vy:dc[4]}; for(let k=0,n=Math.ceil(el*120);k<n;k++) stepS(T,el/n);
+    Object.assign(D,{x:T.x,y:T.y,vx:T.vx,vy:T.vy,t:dc[5]-el,side:dc[6],type:dc[7]||'clear',fx:dc[8]||0,fxc:dc[9]||0}); decoyTrail(D,dt); if(D.t<=0) game.decoy=null; }
+  game.cloneFx=L.cf?{side:L.cf[0],t:L.cf[1]-el,x:L.cf[2]}:null; if(game.cloneFx&&game.cloneFx.t<=0) game.cloneFx=null; }
+function drawTrailFx(buf,src){ buf=buf||CTR; src=src||shuttle;  const id=(typeof PROG!=='undefined'&&PROG.equip.trail)||'none'; if(id==='none'||!TRAILS[id]||game.mode==='demo'){ buf.length=0; return; }
+  const now=performance.now()/1000, s=src, live=(game.state==='rally'||game.replay)&&s.y<GROUND-4, last=buf[buf.length-1];
+  if(live){ if(last&&Math.hypot(s.x-last.x,s.y-last.y)>220) buf.length=0; const pf=s.type==='smash'&&s.fx===2; if(pf&&src===shuttle&&TB_ID!==game.hitId){ TB_ID=game.hitId; TBURST.push({x:s.x,y:s.y,t:now}); }
+    if(!last||Math.hypot(s.x-last.x,s.y-last.y)>1.5) buf.push({x:s.x,y:s.y,t:now,k:++CTR_T,p:pf?1:0}); }
+  while(buf.length&&(now-buf[0].t>TRAIL_LIFE*(buf[0].p?1.45:1)||buf.length>TRAIL_N)) buf.shift();
+  if(src===shuttle&&!game.decoyDraw) TBURST=TBURST.filter(B=>trailBurst(ctx,id,B,now,1));
+  if(buf.length>1) drawTrailPath(ctx,buf,id,now,1); }
 // shop preview: a long sample arc in the given style
 function trailPreview(cv,id){ const c=cv.getContext('2d'), W=cv.width, H=cv.height, now=performance.now()/1000, pts=[]; c.clearRect(0,0,W,H);
   for(let i=0;i<=60;i++){ const u=i/60; pts.push({x:8+u*(W-26),y:H*.78-Math.sin(u*Math.PI*.9)*H*.55,t:now-(1-u)*TRAIL_LIFE*.95,k:i+1}); }
@@ -3482,7 +3490,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden && game.mo
    Host = Nailoong (authoritative simulation), guest = Berry (sends inputs, predicts itself, interpolates the host).
    Reliable PeerJS channel: lobby/start/fx/win events. Extra unordered, no-retransmit channel: inputs, snapshots, pings. */
 const QS=new URLSearchParams(location.search);
-const NET_VER=21, ROOM_PREFIX='nailoong-badminton-v13-', CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const NET_VER=22, ROOM_PREFIX='nailoong-badminton-v13-', CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const NET={on:false,role:null,side:0,peer:null,conn:null,ch:null,code:'',closing:false,lost:false,
   rtt:0,rtts:[],off:0,offS:[],lastRecv:0,lastPing:0,epoch:0,
   lag:Math.max(0,+QS.get('netlag')||0), loss:clamp(+QS.get('netloss')||0,0,.9),
@@ -3675,7 +3683,8 @@ function netHostAfter(dt){
   sendSt({t:'s',e:NET.epoch,ht:now,ack:NET.gSeq,st:game.state,sc:game.score,sv:game.server,sk:+(game.sClock||0).toFixed(2),lh:game.lastHitter,hid:game.hitId,ra:game.rally,
     p:[P(players[0]),P(players[1])],
     s:[r(s.x),r(s.y),r(s.vx),r(s.vy),f3(s.rot),f3(s.boostT),s.gMul||1,s.bK||BOOST_K,f3(s.tumbleT),s.netHit?1:0,s.type||0,s.landT?1:0,s.fx||0,s.fxc||0,s.special||0,s.webDip||0,f3(s.hideT)],hs:game.hitStop>0?1:0,
-    ns:f3(game.netShake),ch:f3(game.cheer),sh:f3(game.shake),w:game.winner,tm:f3(game.timer)});
+    ns:f3(game.netShake),ch:f3(game.cheer),sh:f3(game.shake),w:game.winner,tm:f3(game.timer),
+    dc:game.decoy?[game.decoy.id,r(game.decoy.x),r(game.decoy.y),r(game.decoy.vx),r(game.decoy.vy),f3(game.decoy.t),game.decoy.side,game.decoy.type||0,game.decoy.fx||0,game.decoy.fxc||0]:0,cf:game.cloneFx&&game.cloneFx.x!=null?[game.cloneFx.side,f3(game.cloneFx.t),r(game.cloneFx.x)]:0});   // v16.8 Shadow Clone decoy + clone visual for the guest
 }
 
 /* ---- guest side ---- */
@@ -3752,6 +3761,7 @@ function guestUpdate(dt){
   // smooth small jumps of the displayed shuttle, snap big ones (new hit, serve)
   // (no positional smoothing: extrapolation is continuous between snapshots, and smoothing would add visible lag)
   s.x=tgt.x; s.y=tgt.y; s.vx=tgt.vx; s.vy=tgt.vy;
+  guestDecoy(L,hn,dt);
   if(game.state==='rally'){ const atk=ATTACK_T.has(s.type); s.trail.push({x:s.x,y:s.y,l:atk?(s.fx===2?.34:.26):.14,v:Math.hypot(s.vx,s.vy),a:atk?1:0,fx:atk?s.fx:-1,c:s.fxc,h:game.lastHitter}); if(s.trail.length>70) s.trail.shift(); } else if(game.state==='serve') s.trail=[];
   const sp=Math.hypot(s.vx,s.vy);
   const target=game.state==='rally'&&sp>30?Math.atan2(s.vy,s.vx):(game.state==='serve'?Math.PI/2:0.35);
