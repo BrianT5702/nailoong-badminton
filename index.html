@@ -1235,7 +1235,7 @@ function netKillOdds(p,s,q,h){
 // v16 key mapping (shared by player and AI):  J = always a HIGH shot,  K = context attack,  L = drop / net
 // v16.9 J by contact position (player and AI alike): low = underhand lift; out in FRONT at 1.4-2.3 m = punch clear (flatter, faster, to the rear court);
 // overhead / above / behind the body = high clear (max height, deep)
-function jType(p,s){ const h=p.y-s.y, fwd=(s.x-p.x)*p.f; if(h<1.4*PX_M) return 'lift'; if(h<=2.3*PX_M&&fwd>=30) return 'punch'; return 'clear'; }
+function jType(p,s){ const h=p.y-s.y, fwd=(s.x-p.x)*p.f; if(h<1.4*PX_M) return 'lift'; if(!p.onGround) return 'punch'; /* v16.11: J in the air = jump punch clear */ if(h<=2.3*PX_M&&fwd>=30) return 'punch'; return 'clear'; }
 const FLAT_H=Math.round(1.15*PX_M), DRIVE_H=62;   // v16.2 K bands: >=1.15 m flat smash, 0.74-1.15 m drive/push, below = lift
 function kType(p,s){
   if(netKillZone(p,s)!==null) return 'netkill';
@@ -1303,12 +1303,13 @@ function aimFrac(p,type){
 }
 // v12 attacking punch clear: fastest trajectory that lands at tx and passes the opponent's mid/front court at least
 // minClear px above the floor (just over a jumping opponent's reach), with a low-drag launch window.
-const JUMP_REACH_H=Math.round(100+JUMP_V*JUMP_V/(2*PG)+REACH*.95);   // ~285 px: highest contact of a jumping player
-function solvePunch(x0,y0,dir,tx,minClear,ox){
+const JUMP_REACH_H=Math.round(100+JUMP_V*JUMP_V/(2*PG)+REACH*.95);
+const STAND_REACH_H=Math.round(75+REACH*.95), JPUNCH_MAXSP=92*PX_M;   // v16.11 jump punch: must clear a standing opponent's racket   // ~285 px: highest contact of a jumping player
+function solvePunch(x0,y0,dir,tx,minClear,ox,maxSp=PUNCH_MAXSP){
   // clearance is needed where the opponent actually stands (front/mid court), not over the whole court
   const oc=clamp((ox-NET_X)*dir,40,(tx-NET_X)*dir-110), z0=NET_X+dir*(oc-45), z1=NET_X+dir*(oc+45); let best=null;
   for(let ang=2; ang<=46; ang+=2){ const r=ang*Math.PI/180, c=Math.cos(r)*dir, sn=-Math.sin(r);
-    let lo=600,hi=PUNCH_MAXSP;
+    let lo=600,hi=maxSp;
     for(let i=0;i<16;i++){ const m=(lo+hi)/2, sim=simulate(x0,y0,c*m,sn*m,4); if((sim.landX-x0)*dir<(tx-x0)*dir) lo=m; else hi=m; }
     const sp=(lo+hi)/2, q={x:x0,y:y0,vx:c*sp,vy:sn*sp}; let t=0, minH=1e9, cross=null, px;
     while(t<4){ px=q.x; stepS(q,1/120); t+=1/120;
@@ -1511,16 +1512,19 @@ function hitShuttle(p,d=0,reach=REACH){
       popup(s.x,s.y-30,big?'Jump smash!':'Smash!','#ff7f9f',30); }
     else { sfx.thwack(); fxBurst('puff',s.x,s.y); }
   } else if(type==='punch'){
+    const jp=!p.onGround&&p.req==='clear'&&!spec;   // v16.11 jump punch clear: J at airborne contact = a flat, near-smash-speed clear to the back line
+    p._jp=jp;
     // perfect = fastest + deep; good = a touch slower/higher; mistimed = too low (interceptable) or too long (out)
     if(!p.ai){ const tp=clamp(1-Math.abs(p.swingT-SW_PEAK-.01)/.04,0,1); q*=.55+.45*tp; }   // punch timing window is tight
-    const base=dir>0?COURT_R:COURT_L; let tx, clr=JUMP_REACH_H+PUNCH_CLR;
+    const base=dir>0?COURT_R:COURT_L; let tx, clr=jp?STAND_REACH_H+25:JUMP_REACH_H+PUNCH_CLR;
     if(q>=.8){ tx=base-dir*rand(22,55); }
     else if(q>=.6){ tx=base-dir*rand(35,85); clr+=rand(25,50); }
     else { const long=(p.swingT-SW_PEAK>.015)?Math.random()<.3:Math.random()<.12;   // v16.9: a poor punch mostly comes out low & short
       if(long){ tx=base+dir*rand(10,25+(.6-q)*160); clr+=rand(0,30); p.punchMiss='long'; }
       else { tx=oppX(p.side,rand(.45,.62)); clr=JUMP_REACH_H+PUNCH_CLR-rand(40,100)*(1.2-q); p.punchMiss='low'; } }   // v16.9 poor punch: low and only to mid-court (killable)
     if(p.ai){ const d=DIFF[p.ai.diff]; tx+=rand(-1,1)*d.err*.4*dir; if(Math.random()<d.outChance) tx=base+dir*rand(10,60); }
-    v=solvePunch(s.x,s.y,dir,tx,clr,opp.x)||solvePunch(s.x,s.y,dir,tx,clr-60,opp.x);
+    v=jp?(solvePunch(s.x,s.y,dir,tx,clr,opp.x,JPUNCH_MAXSP)||solvePunch(s.x,s.y,dir,tx,clr-30,opp.x,JPUNCH_MAXSP)):null;
+    v=v||solvePunch(s.x,s.y,dir,tx,clr,opp.x)||solvePunch(s.x,s.y,dir,tx,clr-60,opp.x);
     if(!v){ v=solveShot(s.x,s.y,oppX(p.side,aimFrac(p,'punch')*(.72+.28*q)),SHOTS.punch.ang); v.noBoost=true; }
     sfx.hit(1); for(let i=0;i<9;i++) spark(s.x,s.y,'#fff6a8'); if(q>=.8) game.shake=Math.max(game.shake,.12);
   } else if(type==='netkill'||type==='flat'){ /* handled above */
@@ -1565,7 +1569,7 @@ function hitShuttle(p,d=0,reach=REACH){
     if(dv){ game.decoyId=(game.decoyId||0)+1; game.decoy={id:game.decoyId,x:s.x,y:s.y,vx:dv.vx,vy:dv.vy,t:1.0,side:p.side,tr:[],ctr:[],rot:Math.atan2(dv.vy,dv.vx),type,fx:s.fx,fxc:s.fxc}; game.cloneFx={side:p.side,t:.5,x:p.x-p.f*48};
       const o=players[1-p.side]; game.decoyDelay=0; if(o.ai){ const base={easy:.75,normal:.6,hard:.5}[o.ai.diff]??.55, fool=Math.random()<base*clamp(1-.07*chD(o,3),.6,1.4); game.decoyDelay=fool?.35:.12; game.decoyFool=fool; game.decoyOff=clamp(simulate(s.x,s.y,dv.vx,dv.vy,6).landX-real.landX,-260,260); }
       popup(p.x,p.y-175,'SHADOW CLONE!','#f28c28',22); } }
-  s.type=type; s.bigSmash=big; s.q=q; s.special=spec; s.spRet=s.spRet0||null; s.spRet0=null; s.webDip=s.webDip0||0; s.webDip0=0; if(spec==='wall'&&p.ch.id==='batman'||rid==='batman') s.hideT=.45; if(spec==='bomb'){ const r=Math.hypot(s.vx,s.vy), a=Math.atan2(s.vy,s.vx), d=Math.sign(s.vx)||1, a2=a+d*.07, nv={vx:Math.cos(a2)*r,vy:Math.sin(a2)*r}, sim=simulate(s.x,s.y,nv.vx,nv.vy,3); if(sim.crossY!==null&&sim.crossY<NET_TOP-4&&(sim.landX-NET_X)*d>1.5*PX_M){ s.vx=nv.vx; s.vy=nv.vy; } s.fx=2; game.shake=.45; hitFreeze(.1); sfx.boom&&sfx.boom(.6); game.camP=1; }   // steeper by ~4 deg when it still clears the tape
+  s.type=type; s.jp=type==='punch'&&p._jp?1:0; p._jp=false; s.bigSmash=big; s.q=q; s.special=spec; s.spRet=s.spRet0||null; s.spRet0=null; s.webDip=s.webDip0||0; s.webDip0=0; if(spec==='wall'&&p.ch.id==='batman'||rid==='batman') s.hideT=.45; if(spec==='bomb'){ const r=Math.hypot(s.vx,s.vy), a=Math.atan2(s.vy,s.vx), d=Math.sign(s.vx)||1, a2=a+d*.07, nv={vx:Math.cos(a2)*r,vy:Math.sin(a2)*r}, sim=simulate(s.x,s.y,nv.vx,nv.vy,3); if(sim.crossY!==null&&sim.crossY<NET_TOP-4&&(sim.landX-NET_X)*d>1.5*PX_M){ s.vx=nv.vx; s.vy=nv.vy; } s.fx=2; game.shake=.45; hitFreeze(.1); sfx.boom&&sfx.boom(.6); game.camP=1; }   // steeper by ~4 deg when it still clears the tape
   if(spec&&spec!=='thunder'&&spec!=='bomb'){ hitFreeze(.07); game.camP=Math.max(game.camP||0,.5); }
   if(spec){ const col=p.ch.col; popup(s.x,s.y-58,'\u2605 '+p.ch.spName,col,30); for(let i=0;i<14;i++) spark(s.x,s.y,col);
     if(spec==='thunder'){ s.fx=2; game.shake=.5; hitFreeze(.11); sfx.smashBig(1); fxBurst('burst',s.x,s.y,col,0,1.3); fxBurst('speed',s.x,s.y,col,Math.atan2(v.vy,v.vx)); game.camP=1; }
@@ -1579,10 +1583,10 @@ function hitShuttle(p,d=0,reach=REACH){
   if((game.rally===10||game.rally===20||game.rally===30)&&game.mode!=='demo'&&!NET.fxSkip){ popup(NET_X,170,game.rally>=20?'AMAZING RALLY!':'Great rally!','#ff5f8f',30); crowdCheer(game.rally>=20?3:2); game.cheer=Math.max(game.cheer,1.5); }
   mtHit(p,type,Q,v||{vx:0,vy:0},nkOut);
   p.hitDone=true; p.lastShot=type; game.lastShot=type;
-  { const atk=type==='smash'||type==='flat'||type==='kill'||type==='netkill'; p.atkN=atk?(p.atkN||0)+1:0; staCost(p,((spec?ST.shot.special:0)||(type==='smash'&&big?ST.shot.jsmash:type==='punch'&&p.req==='clear'?ST.shot.punchJ:ST.shot[type]??3))*(atk?1+.12*Math.min(5,p.atkN-1):1)); }   // v16.10: back-to-back attacks cost +12% each (up to +60%), so nobody attacks for free   // v15.1: every shot costs a little, attacks cost the most
+  { const atk=type==='smash'||type==='flat'||type==='kill'||type==='netkill'; p.atkN=atk?(p.atkN||0)+1:0; staCost(p,((spec?ST.shot.special:0)||(type==='smash'&&big?ST.shot.jsmash:type==='punch'&&s.jp?ST.shot.jpunch:type==='punch'&&p.req==='clear'?ST.shot.punchJ:ST.shot[type]??3))*(atk?1+.12*Math.min(5,p.atkN-1):1)); }   // v16.10: back-to-back attacks cost +12% each (up to +60%), so nobody attacks for free   // v15.1: every shot costs a little, attacks cost the most
   (game.shotLog=game.shotLog||[]).push({side:p.side,type,big,r:game.rally,q:+q.toFixed(2),x:Math.round(s.x),y:Math.round(s.y)}); if(game.shotLog.length>400) game.shotLog.shift();
   if((type==='drop'||type==='block') && !p.ai) popup(s.x,s.y-30,type==='block'?'Block':'Drop','#7aa0d8',26);
-  if(!p.ai && game.mode!=='demo' && !spec){ const SN={punch:'Punch clear',clear:'High clear',lift:'Lift',flat:'Flat smash',drive:'Drive',push:'Push',smash:big?'Jump smash':'Smash',netkill:'Net kill',kill:'Kill',net:'Net shot',drop:'Drop',block:'Block'}; const shortJ=(type==='lift'||type==='clear'||type==='punch')&&q<.6; if(SN[type]&&!['smash','flat','drop','block'].includes(type)) popup(s.x,s.y-30,shortJ?'Short lift!':SN[type],type==='flat'||type==='smash'||type==='netkill'||type==='kill'?'#e8603a':'#58a0c8',22); }   // v16.2: every shot is named so the player sees which one fired
+  if(!p.ai && game.mode!=='demo' && !spec){ const SN={punch:s.jp?'Jump Punch Clear':'Punch clear',clear:'High clear',lift:'Lift',flat:'Flat smash',drive:'Drive',push:'Push',smash:big?'Jump smash':'Smash',netkill:'Net kill',kill:'Kill',net:'Net shot',drop:'Drop',block:'Block'}; const shortJ=(type==='lift'||type==='clear'||type==='punch')&&q<.6; if(SN[type]&&!['smash','flat','drop','block'].includes(type)) popup(s.x,s.y-30,shortJ?'Short lift!':SN[type],type==='flat'||type==='smash'||type==='netkill'||type==='kill'?'#e8603a':'#58a0c8',22); }   // v16.2: every shot is named so the player sees which one fired
   if((type==='push'||type==='drive') && !p.ai && game.mode!=='demo') popup(s.x,s.y-30,type==='push'?'Push':'Drive','#7a9ad8',22);
 }
 const SHORT_PX=Math.round(1.98*(COURT_R-COURT_L)/13.4);   // short service line distance from the net
@@ -2608,7 +2612,7 @@ const SET_KEY='nailoong.settings.v1'; const SET={slowmo:true}; try{ Object.assig
 function saveSet(){ try{ LS.setItem(SET_KEY,JSON.stringify(SET)); }catch(e){} }
 function hitFreeze(t){ if(game.mode==='online'||!SET.slowmo) return; game.hitStop=Math.max(game.hitStop||0,t); }
 const ST={max:100,run:0,lunge:4,jump:3,runDrain:1.5,regenStand:3,regenMove:3,regenFast:2,regenBreak:7.5,low:30,vlow:12,
-  shot:{jsmash:20,smash:15,flat:17,netkill:12,kill:12,special:16,punch:8,punchJ:5,drive:8,drop:4.5,block:4.5,net:4.5,push:7,clear:2.6,lift:2.6,serve:1.5}}   // v16.9: L shots and J shots ~35% cheaper; K costs unchanged;   // v15.4: ~1.6-1.8x v15.3
+  shot:{jsmash:20,smash:15,flat:17,netkill:12,kill:12,special:16,punch:8,punchJ:5,jpunch:5.5,drive:8,drop:4.5,block:4.5,net:4.5,push:7,clear:2.6,lift:2.6,serve:1.5}}   // v16.9: L shots and J shots ~35% cheaper; K costs unchanged;   // v15.4: ~1.6-1.8x v15.3
 const tired=p=>p.st<ST.low;
 const perfWin=p=>game.mode==='demo'||game.noStamina||!tired(p)?1:clamp(.52-.32*fatigue(p),.2,.52);   // v16.6 Perfect window scale
 const fatigue=p=>game.mode==='demo'||game.noStamina?0:clamp((ST.low-p.st)/(ST.low-2),0,1);   // v16.3: 0 at the tired line, 1 when empty
@@ -2644,7 +2648,7 @@ const SPX={
   nailoong:{w:'hit',rw:2,stun:1.8,kb:.6,slow:2,txt:'SLIPPERY MILK!'},
   berry:{w:'hit',stun:.8,slow:.8,txt:'STICKY SYRUP!'},
   bombloong:{w:'ret',stun:1.4,kb:1.2,weak:2,txt:'KNOCKED BACK!'},
-  spidey:{w:'hit',stun:1.0,slow:1,txt:'WEBBED!'},
+  spidey:{w:'hit',stun:1.5,kb:.9,slow:2.2,txt:'WEBBED!'},   // v16.11: the web pins longer and yanks the opponent back from the net
   hulk:{w:'ret',stun:.3,kb:2.0,slow:1,weak:1,txt:'SMASHED BACK!'},
   ironman:{w:'hit',rw:2,stun:1.6,slow:.8,txt:'REPULSOR FLASH!'},
   cap:{w:'hit',rw:2,stun:2.0,kb:.6,slow:1.5,txt:'SHIELD RICOCHET!'},
@@ -2909,7 +2913,7 @@ const DESC={
   nailoong:{fl:'A round, sunny little dragon who runs on milk and giggles. Small? Yes. Fearless? Also yes! \uD83E\uDD5B',best:'Everything a little bit. No weak spot to exploit',weak:'No stand-out weapon, so you must out-think the CPU',tip:'Mix clears and drops to move the opponent, then fire Milk Power for three guaranteed Perfect shots.',sig:'The milk splash makes the floor slippery for the opponent.'},
   berry:{fl:'Nailoong\u2019s sweet, pink best friend. Bubbly and quick, and very sneaky at the net. \uD83C\uDF53',best:'Net play, fast feet, tidy control',weak:'Gentle smashes and short reach',tip:'Win the front court: tight net shots, then lift deep when they rush in. Save Sweet Spin Net for a rally at the tape.',sig:'The spin net tumbles over the tape and is almost impossible to kill.'},
   bombloong:{fl:'A bouncy blue dragon with a short fuse. When he smashes, things go BOOM. \uD83D\uDCA3',best:'Huge smashes and long reach',weak:'Slow to recover and only average speed',tip:'Lift deep to make him move, but punish every short lift with a smash. Boom Smash leaves the returner dazed.',sig:'Returning the bomb stuns you, knocks you back and makes your return pop up very short.'},
-  spidey:{fl:'Your friendly neighbourhood shuttler. Quips, flips and webs everywhere. \uD83D\uDD78\uFE0F',best:'Power, speed, jump, control: the full package',weak:'Short reach and low stamina, so he tires fast',tip:'Play fast, short rallies and finish early. Rest during long clears so you don\u2019t run dry.',sig:'Web shot: the shuttle is pulled down hard past the net and dips about 0.5 m shorter than it looks.'},
+  spidey:{fl:'Your friendly neighbourhood shuttler. Quips, flips and webs everywhere. \uD83D\uDD78\uFE0F',best:'Power, speed, jump, control: the full package',weak:'Short reach and low stamina, so he tires fast',tip:'Play fast, short rallies and finish early. Rest during long clears so you don\u2019t run dry.',sig:'Web shot: the opponent is webbed (pinned 1.5 s, yanked back from the net, slowed 2.2 s) and the shuttle is pulled down hard past the net, dipping about 0.5 m shorter than it looks.'},
   hulk:{fl:'Big. Green. Not a fan of losing. HULK SMASH (shuttles). \uD83D\uDCAA',best:'Monster smashes, giant reach, huge stamina',weak:'Slow feet and loose timing',tip:'Stay in the middle and let your reach do the running. Attack anything above the net.',sig:'Gamma Smash: whoever returns it is shoved 2 m back and their return pops up short.'},
   ironman:{fl:'Genius, billionaire, badminton enthusiast. Suit tuned for jump smashes. \uD83E\uDD16',best:'Power and big jumps',weak:'Low stamina and short reach',tip:'Jump smash from mid court and use the Repulsor Drive to push the opponent to the back line.',sig:'Repulsor Drive leaves the racket about 22% faster with a beam trail, and flashes the opponent.'},
   cap:{fl:'The steady captain. Never panics, never gives up a point easily. \uD83D\uDEE1\uFE0F',best:'Defence, reach and control',weak:'Plain power and an average jump',tip:'Absorb the attack and wait for the short reply. Shield Block turns their best smash against them.',sig:'Shield ricochet: the blocked smash comes straight back as a fast flat drive, and Cap gets +5 stamina.'},
@@ -3307,7 +3311,7 @@ function chalRender(){ const S=PROG.stats, n=CHAL.filter(c=>PROG.chal[c.id]).len
     ['Longest rally',S.longestRally||0],['Net kills (total)',S.netKills||0],['Specials used',S.specials||0],['Wins per character',pc]].map(([a,b])=>`<tr><td>${a}</td><td><b>${kbEsc(String(b))}</b></td></tr>`).join(''); }
 /* ---- instant replay (offline): the last point, slow motion, skippable ---- */
 const REC_N=480;
-const RP_P=['x','y','vx','vy','onGround','swingT','f','run','squash','lungeT','recT','lungeDir','hitT','hitPt','req','mood','moodT','stunT','spFx','slowT','armed','armT','boostT','perfN','cloneN','kbT','meter','st'], RP_S=['x','y','vx','vy','rot','type','fx','fxc','netHit','tumbleT','special','hideT','webDip','q','bigSmash'];
+const RP_P=['x','y','vx','vy','onGround','swingT','f','run','squash','lungeT','recT','lungeDir','hitT','hitPt','req','mood','moodT','stunT','spFx','slowT','armed','armT','boostT','perfN','cloneN','kbT','meter','st'], RP_S=['x','y','vx','vy','rot','type','jp','fx','fxc','netHit','tumbleT','special','hideT','webDip','q','bigSmash'];
 function recFrame(){ if(game.mode==='online'||game.mode==='demo') return; const r=game.rec||(game.rec=[]); const D=game.decoy, C=game.cloneFx;
   r.push({p:players.map(p=>RP_P.map(k=>p[k])),s:RP_S.map(k=>shuttle[k]),t:game.time,hid:game.hitId,lh:game.lastHitter,
     g:{sh:game.shake,dc:D?{id:D.id,x:D.x,y:D.y,vx:D.vx,vy:D.vy,t:D.t,side:D.side,type:D.type,fx:D.fx,fxc:D.fxc,rot:D.rot}:null,cf:C?{...C}:null}});   // v16.9 replays also carry special state
