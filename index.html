@@ -1553,10 +1553,11 @@ function hitShuttle(p,d=0,reach=REACH){
   if(v&&!spec&&!weakRet&&!p.perfN&&game.state==='rally'&&!inMine&&(q<.97||tired(p)||ATTACK_T.has(inT))){ const atkIn=ATTACK_T.has(inT), pres=atkIn?clamp((inSp-18)/45,0,1):0, defShot=atkIn&&!ATTACK_T.has(type);
     let risk=Math.max(0,.68-q)*.7+pres*(defShot?.2:.06)*clamp(1-.17*chD(p,6),.62,1.6)-.012*chD(p,3)+(defShot&&!p.ai?Math.max(0,-chD(p,6))*.035*pres*clamp(1+.07*chD(opp,0),.7,1.4):0); if(p.ai) risk*=p.ai.diff==='easy'?1.4:p.ai.diff==='normal'?1.1:.9;   // v16.6: poor contact and low DEF err far more (v16.10: this AI line had been swallowed by the comment)
     if(tired(p)){ const fg=fatigue(p); risk+=(.08+.3*fg)*(ATTACK_T.has(type)?1.2:1)*clamp(1-.04*chD(p,5),.75,1.25)*(q>=.8?.8:1); }   // v16.3: fatigue errors on every shot; Perfect timing only softens them
+    risk+=Math.max(0,chD(p,1))*clamp(1-.1*chD(p,3),.6,1.4)*clamp((game.rally-4)/12,0,1)*.025;   // v16.11 speed types: fast but less consistent as the rally drags on (Speed x low Control x rally length)
     risk=clamp(risk,0,.6);
     const eRoll=Math.random();
     if(tired(p)&&eRoll>=risk){ const fg=fatigue(p), sp0=Math.hypot(v.vx,v.vy), el=Math.atan2(-v.vy,v.vx*dir)+rand(-1,1)*(.015+.05*fg), c={vx:Math.cos(el)*sp0*dir,vy:-Math.sin(el)*sp0}, sim=simulate(s.x,s.y,c.vx,c.vy,4); if(sim.crossY!==null&&sim.crossY<NET_TOP) v=c; }   // v16.3: tired = looser placement
-    else if(eRoll<risk){ const r=Math.random(), soft=type==='net'||type==='drop'||type==='block', high=type==='lift'||type==='clear'||type==='punch'; let mode=high?(r<.5?'short':r<.8?'out':'net'):soft?(r<.65?'net':'short'):(r<.5?'net':r<.75?'out':'short');
+    else if(eRoll<risk){ if(game.errLog) game.errLog.push([p.side,game.rally]); const r=Math.random(), soft=type==='net'||type==='drop'||type==='block', high=type==='lift'||type==='clear'||type==='punch'; let mode=high?(r<.5?'short':r<.8?'out':'net'):soft?(r<.65?'net':'short'):(r<.5?'net':r<.75?'out':'short');
       const sp0=Math.hypot(v.vx,v.vy), el0=Math.atan2(-v.vy,v.vx*dir); let nv=null;
       if(mode==='net'){ for(let k=1;k<=14&&!nv;k++){ const el=el0-k*.035, sp=sp0*(.92-.01*k), c={vx:Math.cos(el)*sp*dir,vy:-Math.sin(el)*sp}, sim=simulate(s.x,s.y,c.vx,c.vy,3); if(sim.crossY===null||sim.crossY>NET_TOP+2) nv=c; } }
       else if(mode==='out'){ for(let k=1;k<=10&&!nv;k++){ const sp=sp0*(1+.08*k), el=el0+.02*k, c={vx:Math.cos(el)*sp*dir,vy:-Math.sin(el)*sp}, sim=simulate(s.x,s.y,c.vx,c.vy,6); if(sim.crossY!==null&&sim.crossY<NET_TOP&&(sim.landX>COURT_R+4||sim.landX<COURT_L-4)) nv=c; } }
