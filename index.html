@@ -234,6 +234,7 @@
 .tarr.l{left:-.3em}.tarr.r{right:-.3em}.tabwrap.fl .tarr.l,.tabwrap.fr .tarr.r{display:block}
   .ctrl table.pk2 td,.ctrl table.pk2 th{padding:.15em .5em}
   .kbsec{font-size:.78em;color:#a08060;font-weight:normal;margin-left:.5em;letter-spacing:0;text-transform:none}
+.atag{display:inline-block;color:#fff;font-size:11px;font-weight:700;border-radius:9px;padding:1px 7px;margin:2px 0;white-space:nowrap}.chc .atag{font-size:9px;padding:0 5px}
 </style>
 </head>
 <body>
@@ -1028,7 +1029,7 @@ const CHARS=[
     bio:'Thunderous smashes, heavy on his feet.',art:{suit:'#46506a',suit2:'#2b3348',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#f2c94c',style:'long'},cape:'#c8202a',emblem:'discs',boots:'#2b3348'}},
   {id:'panther',name:'Black Panther',src:'draw',st:[4,8,6,8,5,5,7],sp:'dash',spName:'Panther Pounce',col:'#5b3fa8',frame:'#9b7be0',grip:'#2a2433',
     bio:'Quick and precise; light on power.',art:{suit:'#26222e',suit2:'#3a3446',head:'mask',mask:'#26222e',eyes:'lensW',ears:'cat',necklace:'#c0c0d8',trim:'#9b7be0',boots:'#26222e'}},
-  {id:'flash',name:'Flash',src:'draw',st:[3,10,6,6,5,6,5],sp:'dash',spName:'Speed Force',col:'#d8262b',frame:'#ffe600',grip:'#e8302a',
+  {id:'flash',name:'Flash',src:'draw',st:[3,10,6,5,5,6,5],sp:'dash',spName:'Speed Force',col:'#d8262b',frame:'#ffe600',grip:'#e8302a',
     bio:'The fastest feet in the game, the softest hits.',art:{suit:'#d8262b',suit2:'#d8262b',head:'cowl',mask:'#d8262b',skin:'#f6d2b0',eyes:'cute',emblem:'bolt',wings:'#f5d020',boots:'#f5d020'}},
   {id:'batman',name:'Batman',src:'draw',st:[5,6,5,9,7,6,8],sp:'wall',spName:'Bat Guard',col:'#3a3f4a',frame:'#5a606c',grip:'#f0c419',
     bio:'Master tactician: best control and great reach, low jump.',art:{suit:'#5a6070',suit2:'#2a2d36',head:'cowl',mask:'#2a2d36',skin:'#f6d2b0',eyes:'lensW',ears:'bat',cape:'#22252c',emblem:'bat',belt:'#f0c419',boots:'#2a2d36'}},
@@ -1056,7 +1057,7 @@ const CHARS=[
     bio:'A kind, balanced swordsman-turned-shuttler.'},
   {id:'sailor',name:'Sailor Moon',src:'draw',st:[5,7,7,6,5,5,7],sp:'wall',spName:'Moon Tiara Guard',col:'#ff6fb5',frame:'#ffd23a',grip:'#ff6fb5',
     bio:'A magical guardian with graceful footwork.'},
-  {id:'sonic',name:'Sonic',src:'draw',st:[5,9,7,6,5,6,4],sp:'dash',spName:'Spin Dash',col:'#1f5fe0',frame:'#1f5fe0',grip:'#d8262b',
+  {id:'sonic',name:'Sonic',src:'draw',st:[5,9,7,5,5,6,4],sp:'dash',spName:'Spin Dash',col:'#1f5fe0',frame:'#1f5fe0',grip:'#d8262b',
     bio:'Gotta go fast. The quickest feet on the court.'},
   {id:'shinchan',name:'Shin-chan',src:'draw',st:[4,5,6,6,5,8,4],sp:'perfect',spName:'Butt-Wiggle Feint',col:'#e8303a',frame:'#e8303a',grip:'#f5d020',
     bio:'A cheeky five-year-old who never, ever gets tired.'},
@@ -1378,15 +1379,16 @@ function solveNet(x0,y0,dir,q=1){
   return cands[k];
 }
 const SW_START=.03, SW_PEAK=.11, SW_END=.22;
+function archWin(p,inAtk){ const A=archOf(p); return A==='tech'?1.25:A==='power'&&inAtk?.7:A==='wall'&&inAtk?1.25:1; }   // v16.11 archetype Perfect-window scale
 function contactQuality(p,d,reach){
   const inAtk=ATTACK_T.has(shuttle.type)&&game.lastHitter!==p.side&&!shuttle.special, pw=perfWin(p);
   if(p.ai){ const r=DIFF[p.ai.diff].q, late=p.ai.lateId===game.hitId; let q=clamp(rand(r[0],r[1])+.035*chD(p,3)+(inAtk?.05*chD(p,6):0),0,1)*(late?.65:1);
-    if(q>=.8&&Math.random()>pw) q=rand(.66,.79);   // v16.6: a tired AI lands Perfect only inside the same shrunken window
+    if(q>=.8&&Math.random()>pw*archWin(p,inAtk)) q=rand(.66,.79);   // v16.11: the AI's Perfect odds follow the same archetype window   // v16.6: a tired AI lands Perfect only inside the same shrunken window
     if(q<.8) q=clamp(q-(p.st<ST.vlow?.16:tired(p)?.1:0),0,1); return {q,label:null}; }
   const atkr=players[1-p.side], pf=inAtk?clamp((Math.hypot(shuttle.vx,shuttle.vy)/PX_M-35)/50,0,1.3)*clamp(1+.07*chD(atkr,0),.7,1.4):0, dv=chD(p,6), dW=inAtk?clamp(1+.07*dv+.09*dv*pf,.55,1.45):1;   // v16.10: DEF scales the human's defence by incoming pace x attacker Power
   const e=p.swingT-SW_PEAK, win=.1*pCtl(p)*dW, tq=clamp(1-Math.abs(e)/win,0,1);   // v16.6 DEF: a wider timing window against attacks
   const cq=clamp(1-(d-reach*.35)/(reach*.65),0,1);
-  const perf=Math.abs(e)<=.028*(1+.1*chD(p,3))*dW*pw&&cq>=.5;   // v16.6: Perfect = a timing window that shrinks hard with fatigue (fresh 100% / tired ~50% / exhausted ~20%)
+  const AW=archWin(p,inAtk); const perf=Math.abs(e)<=.028*(1+.1*chD(p,3))*dW*pw*AW&&cq>=.5;   // v16.6: Perfect = a timing window that shrinks hard with fatigue (fresh 100% / tired ~50% / exhausted ~20%)
   let q=clamp(tq*.55+cq*.45+(inAtk?.05*dv+.05*dv*pf:0)-(tired(p)?.08+.14*fatigue(p):0),0,1);   // v16.3: tired contacts are worse   // v16.2/16.6 Defence: cleaner returns against attacks
   q=perf?Math.max(q,.8+.2*tq):Math.min(q,.79);
   let label= q>=.8?'Perfect!': q>=.7?'Great!': q>=.6?'Good': q<.4?'Weak': (1-tq)*.55>(1-cq)*.45 ? (e<0?'Late':'Early') : 'Off-centre';
@@ -1405,7 +1407,7 @@ function hitShuttle(p,d=0,reach=REACH){
   if(type==='smash'){
     big=!p.onGround; if(big&&p.st<=0&&game.mode!=='demo'){ big=false; popup(p.x,p.y-160,'too tired to jump-smash','#d0456f',16); }
     if(p.armed==='thunder'||p.armed==='bomb'){ spec=p.armed; p.armed=null; q=Math.max(q,.9); }
-    const sp=(big?78:62)*PX_M*(.45+.55*q)*(q>=.8?1.06:q<.6?.88:1)*pPow(p)*(spec==='thunder'?1.22:spec==='bomb'?1.25:1);   // v14: 78 m/s jump smash / 62 m/s ground off the racket (drag does the rest)
+    const sp=(big?78:62)*PX_M*(.45+.55*q)*(q>=.8?1.06:q<.6?.88:1)*pPow(p)*({wall:.93,tech:.94,speed:.95}[archOf(p)]||1)*(spec==='thunder'?1.22:spec==='bomb'?1.25:1);   // v14: 78 m/s jump smash / 62 m/s ground off the racket (drag does the rest)
     // aim away from the receiver: short if they are deep, deep if they are up at the net
     const oppFrac=Math.abs(opp.x-NET_X)/(NET_X-COURT_L);
     const tfr=q<.6?rand(.3,.9):(p.ai&&DIFF[p.ai.diff].smart&&Math.random()<.35)?clamp(oppFrac+rand(-.06,.04),.25,.95):oppFrac>.55?rand(.3,.5):rand(.72,.95), tx=oppX(p.side,tfr);   // mistimed = poorly placed
@@ -1553,7 +1555,11 @@ function hitShuttle(p,d=0,reach=REACH){
   if(v&&!spec&&!weakRet&&!p.perfN&&game.state==='rally'&&!inMine&&(q<.97||tired(p)||ATTACK_T.has(inT))){ const atkIn=ATTACK_T.has(inT), pres=atkIn?clamp((inSp-18)/45,0,1):0, defShot=atkIn&&!ATTACK_T.has(type);
     let risk=Math.max(0,.68-q)*.7+pres*(defShot?.2:.06)*clamp(1-.17*chD(p,6),.62,1.6)-.012*chD(p,3)+(defShot&&!p.ai?Math.max(0,-chD(p,6))*.035*pres*clamp(1+.07*chD(opp,0),.7,1.4):0); if(p.ai) risk*=p.ai.diff==='easy'?1.4:p.ai.diff==='normal'?1.1:.9;   // v16.6: poor contact and low DEF err far more (v16.10: this AI line had been swallowed by the comment)
     if(tired(p)){ const fg=fatigue(p); risk+=(.08+.3*fg)*(ATTACK_T.has(type)?1.2:1)*clamp(1-.04*chD(p,5),.75,1.25)*(q>=.8?.8:1); }   // v16.3: fatigue errors on every shot; Perfect timing only softens them
-    risk+=Math.max(0,chD(p,1))*clamp(1-.1*chD(p,3),.6,1.4)*clamp((game.rally-4)/12,0,1)*.025;   // v16.11 speed types: fast but less consistent as the rally drags on (Speed x low Control x rally length)
+    { const A=archOf(p), ramp=clamp((game.rally-4)/12,0,1), dash=Math.abs(p.vx)>PSPEED*.85||p.lungeT>0||p.recT>0;   // v16.11 archetypes
+      if(A==='speed') risk+=(.03+.08*ramp)*clamp(1-.1*chD(p,3),.6,1.4)+(dash?.07:0);   // Speed: inconsistent, worse in long rallies and when hitting on the run / in a lunge
+      else if(A==='agile') risk+=.025*ramp;
+      else if(A==='tech') risk*=.8;
+      else if(A==='wall'&&defShot) risk*=.75; }
     risk=clamp(risk,0,.6);
     const eRoll=Math.random();
     if(tired(p)&&eRoll>=risk){ const fg=fatigue(p), sp0=Math.hypot(v.vx,v.vy), el=Math.atan2(-v.vy,v.vx*dir)+rand(-1,1)*(.015+.05*fg), c={vx:Math.cos(el)*sp0*dir,vy:-Math.sin(el)*sp0}, sim=simulate(s.x,s.y,c.vx,c.vy,4); if(sim.crossY!==null&&sim.crossY<NET_TOP) v=c; }   // v16.3: tired = looser placement
@@ -1676,7 +1682,7 @@ function aiThink(p,dt){
         a.miss=Math.random()<d.mistake; a.jump=Math.random()<d.jump; a.jroll=Math.random()<d.jump; a.runFrom=p.x; a.leave=Math.random()<d.leave;
         if(s.type==='kill'){ a.react=d.sReact*rand(.8,1.2); a.miss=Math.random()<d.sMiss*1.2; a.jump=false; }
         if(s.type==='netkill'){ a.react=d.sReact*rand(.9,1.3); a.miss=Math.random()<Math.min(.95,d.sMiss+.6); a.jump=false; }
-        if(s.type==='smash'){ const sq=s.q===undefined?1:s.q; a.react=d.sReact*rand(.8,1.25)*(.5+.5*sq); const pace=clamp((Math.hypot(s.vx,s.vy)/PX_M-45)/40,0,1.3); a.miss=Math.random()<((s.bigSmash?d.bigMiss:d.sMiss)*(.25+.75*sq)+.14*pace*(sq>=.8?1.5:sq>=.6?1:.5))*clamp(1+.08*chD(players[1-p.side],0)-.16*chD(p,6),.3,2); a.jump=false; }   // v16.9: raw pace beats even top levels; DEF decides how often
+        if(s.type==='smash'){ const sq=s.q===undefined?1:s.q; a.react=d.sReact*rand(.8,1.25)*(.5+.5*sq); const pace=clamp((Math.hypot(s.vx,s.vy)/PX_M-45)/40,0,1.3); a.miss=Math.random()<((s.bigSmash?d.bigMiss:d.sMiss)*(.25+.75*sq)+.14*pace*(sq>=.8?1.5:sq>=.6?1:.5))*clamp(1+.08*chD(players[1-p.side],0)-.16*chD(p,6),.3,2)*(archOf(players[1-p.side])==='power'?(sq>=.8?1.3:.8):archOf(players[1-p.side])==='speed'?.6:1);   /* v16.11: Power needs a Perfect to break through; Speed smashes rarely win outright */ a.jump=false; }   // v16.9: raw pace beats even top levels; DEF decides how often
         if(s.type==='flat'){ const sq=s.q===undefined?1:s.q, pace=clamp((Math.hypot(s.vx,s.vy)/PX_M-16)/26,0,1);   // v14.2: fast flat attack: the faster and cleaner, the more often even Hard is beaten for pace
           a.react=d.sReact*rand(.8,1.15)*(.6+.4*sq); a.miss=Math.random()<Math.min(.92,(d.fMiss??.4)*FLAT_MISS/2.4)*pace*sq; a.jump=false; }
         if(s.type==='drop'||s.type==='block'||s.type==='net') a.jump=false;
@@ -1875,8 +1881,8 @@ function step(dt){
       }
     }
     for(const p of players){
-      if(p.armed==='wall'&&ATTACK_T.has(s.type)&&game.lastHitter!==p.side&&!s.netHit&&(p.side===0?s.x<=NET_X+1:s.x>=NET_X-1)){   // v15 shield: auto-perfect return
-        const hc=hitCenter(p); if(Math.hypot(s.x-hc.x,s.y-hc.y)<reachOf(p)*(p.ch.id==='cap'?1.7:p.ch.id==='batman'?1.4:1.7)){ p.armed=null; p.wallHit=true; if(p.ch.id==='cap') p.st=Math.min(stMax(p),p.st+5); p.swingT=SW_PEAK; p.hitDone=false; p.req='clear';
+      if(p.armed==='wall'&&(ATTACK_T.has(s.type)||Math.hypot(s.vx,s.vy)>22*PX_M||s.type==='drive'||s.type==='push'||s.type==='punch'||p.armT<2.5)&&game.lastHitter!==p.side&&!s.netHit&&(p.side===0?s.x<=NET_X+1:s.x>=NET_X-1)){   // v16.11: triggers on the next attack or fast shot (any shot in the last 2.5 s of the window)   // v15 shield: auto-perfect return
+        const hc=hitCenter(p); if(Math.hypot(s.x-hc.x,s.y-hc.y)<reachOf(p)*1.8){ p.armed=null; p.wallHit=true; if(p.ch.id==='cap') p.st=Math.min(stMax(p),p.st+5); p.swingT=SW_PEAK; p.hitDone=false; p.req=s.y<p.y-1.45*PX_M?'smash':'drop';   // v16.11 counter: overhead = a smash, low = a tight drop/net counter, onto a stunned opponent
           popup(p.x,p.y-170,'\u2605 '+p.ch.spName+'!',p.ch.col,26); fxBurst('flash',s.x,s.y,p.ch.col,0,1.2); hitShuttle(p,0,reachOf(p)); break; } }
       if(p.swingT>=SW_START && p.swingT<SW_END && !p.hitDone && game.lastHitter!==p.side && !s.netHit){
         // online guest: judge the swing against where the shuttle was when they saw it (rewind ~half the ping)
@@ -2620,11 +2626,16 @@ const perfWin=p=>game.mode==='demo'||game.noStamina||!tired(p)?1:clamp(.52-.32*f
 const fatigue=p=>game.mode==='demo'||game.noStamina?0:clamp((ST.low-p.st)/(ST.low-2),0,1);   // v16.3: 0 at the tired line, 1 when empty
 const stMax=p=>ST.max+3.5*chD(p,5);   // v16.10: Stamina stat compressed (89..110)   // v15.4: stamina stat = bigger tank (79..121) + faster regen
 const pSpd=p=>(p.stunT>0?.3:1)*(p.slowT>0?.6:1)*(1+.055*chD(p,1))*(p.st<ST.vlow&&game.mode!=='demo'?.74:tired(p)?.82:1)*(p.boostT>0?(p.boostK||1.35):1);
+const ARCH={nailoong:'all',berry:'tech',bombloong:'power',spidey:'agile',hulk:'power',ironman:'power',cap:'wall',thor:'power',panther:'tech',flash:'speed',batman:'wall',superman:'power',wonder:'wall',naruto:'endure',goku:'all',pikachu:'speed',doraemon:'tech',xiaoqi:'tech',dalaba:'power',sheep:'tech',luffy:'power',tanjiro:'all',sailor:'wall',sonic:'speed',shinchan:'endure',deadpool:'all',spongebob:'endure',golden:'all'};
+const ARCH_INFO={all:['\u2696\uFE0F All-rounder','#8a7f99','No weak spot, no special edge.'],speed:['\u26A1 Speed','#3a8aff','Fast feet but inconsistent: errors grow in long rallies and when hitting at full run or in a lunge; their smashes rarely win outright, so they keep attacking until the defender pops one up.'],power:['\uD83D\uDCA5 Power','#e8603a','Big smashes that need a Perfect to break through; stamina drains faster as rallies get long; a smaller Perfect window when forced to defend.'],wall:['\uD83D\uDEE1\uFE0F Wall','#2f8a5a','A wide defence window and fewer defensive errors; a weaker smash; wins on consistency and counters.'],tech:['\uD83C\uDFAF Technician','#b03cff','A larger Perfect window and fewer errors, extra-precise drops and net shots; a weaker smash.'],endure:['\uD83D\uDD0B Endurance','#c89a1a','Shots cost less stamina, so they last in long rallies; otherwise modest.'],agile:['\uD83D\uDD77\uFE0F Agile power','#e23b3b','Power-style smashes with a springy leap and extra airborne reach; only a mild long-rally consistency cost.']};
+const archOf=p=>ARCH[(p.ch||p).id]||'all';
+const archTag=ch=>{ const a=ARCH_INFO[ARCH[ch.id]||'all']; return `<span class="atag" style="background:${a[1]}" title="${a[2]}">${a[0]}</span>`; };
 const SPIDER=p=>p.ch&&p.ch.id==='spidey';   // v16.11 Spider reach: Reach 6, a slightly springier leap and +12 px racket stretch while airborne, so jump smashes are easy to reach
 const pJmp=p=>(1+.05*chD(p,2))*(SPIDER(p)?1.05:1)*(p.st<ST.vlow&&game.mode!=='demo'?.74:tired(p)?.82:1);
 const pPow=p=>(1+.06*chD(p,0))*(p.st<ST.vlow&&game.mode!=='demo'?.68:tired(p)?.8:1);   // v16.2: Power counts more, tiredness hurts more
 const pCtl=p=>(1+.1*chD(p,3))*(p.st<ST.vlow&&game.mode!=='demo'?.45:tired(p)?.62:1);
-function staCost(p,v){ if(game.mode==='demo'||game.noStamina) return; p.st=Math.max(0,p.st-v*(1-.025*chD(p,5))*(1+(p.rk?p.rk.cost:0))); }
+function staCost(p,v){ if(game.mode==='demo'||game.noStamina) return; const A=archOf(p); v*=A==='power'?1+clamp((game.rally-6)/10,0,1)*.45:A==='endure'?.85:1;   // v16.11: Power tires in long rallies (up to +45%), Endurance pays 15% less
+  p.st=Math.max(0,p.st-v*(1-.025*chD(p,5))*(1+(p.rk?p.rk.cost:0))); }
 const SP_WIN=6, SP_REFUND=25;   // v16.9: an armed special must be used within 6 s of rally time; on expiry it fizzles and 25% of the bar comes back
 function spPending(p){ return !!(p.armed||p.perfN>0||p.cloneN>0); }
 function spExpireTick(p,dt){ if(game.mode==='online'&&NET.role==='guest') return; if(!spPending(p)){ p.armT=0; return; } if(game.state!=='rally'||game.mode==='demo') return; p.armT=(p.armT||SP_WIN)-dt;
@@ -2657,9 +2668,9 @@ const SPX={
   thor:{w:'ret',stun:1.0,slow:1,weak:1,txt:'LIGHTNING STUN!'},
   panther:{w:'hit',rw:2,stun:1.6,kb:1.6,txt:'KINETIC PULSE!'},
   flash:{w:'hit',rw:2,stun:2.3,kb:.8,slow:1.5,txt:'AFTERIMAGE FEINT!'},
-  batman:{w:'hit',stun:0,txt:'SMOKE BOMB!'},
+  batman:{w:'hit',stun:1.1,slow:1.2,txt:'SMOKE BOMB!'},
   superman:{w:'ret',stun:.2,sta:20,slow:.5,weak:0,txt:'HEAT DRAIN!'},
-  wonder:{w:'hit',stun:.2,kb:.6,txt:'LASSO PULL!'},
+  wonder:{w:'hit',stun:1.4,kb:.8,txt:'LASSO PULL!'},
   goku:{w:'ret',stun:.5,kb:1.3,slow:.8,weak:0,txt:'KAME BLAST!'},
   pikachu:{w:'act',rw:2,stun:3.0,chain:{stun:3.0,kb:.8,slow:1.5,txt:'CHAIN SHOCK!'},txt:'SHOCKED!'},
   doraemon:{w:'hit',rw:1,stun:.6,kb:1.0,slow:2,txt:'AIR CANNON!'},
@@ -2668,7 +2679,7 @@ const SPX={
   sheep:{w:'hit',stun:.8,slow:1.2,txt:'SUGAR RUSH!'},
   luffy:{w:'hit',rw:2,stun:.6,kb:2.4,txt:'RUBBER ROCKET!'},
   tanjiro:{w:'hit',rw:2,stun:1.6,kb:.5,slow:1.2,txt:'WATER WHEEL!'},
-  sailor:{w:'hit',rw:1,stun:.75,txt:'MOON TIARA!'},
+  sailor:{w:'hit',rw:1,stun:1.4,slow:1,txt:'MOON TIARA!'},
   sonic:{w:'hit',rw:2,stun:2.4,kb:1.0,slow:1.5,txt:'SPIN DASHED!'},
   shinchan:{w:'hit',rw:2,stun:2.6,kb:.8,slow:2,txt:'GIGGLE FIT!'},
   deadpool:{w:'hit',rw:0,stun:1.0,kb:.9,txt:'CHIMICHANGA BOOM!'},
@@ -2897,7 +2908,7 @@ function chRender(){
   const cur=chPick[chUI.tab]; let h='';
   if(chUI.tab==='opp') h+=`<button class="chc rndc${cur==='random'?' sel':''}" data-ch="random"><div class="pt rnd">?</div><div class="nm">Random</div></button>`;
   for(const ch of CHARS_ORD()){ const lock=chUI.mode!=='online'&&!chUnlocked(ch.id); if(ch.boss&&lock&&chUI.tab!=='opp') { h+=`<button class="chc lock" data-ch="${ch.id}" title="Win the Tournament to unlock"><div class="pt rnd">\uD83D\uDD12</div><div class="nm">???</div></button>`; continue; }
-    h+=`<button class="chc${cur===ch.id?' sel':''}${lock&&chUI.tab!=='opp'?' lock':''}" data-ch="${ch.id}"${lock&&chUI.tab!=='opp'?' title="Locked: unlock it in the Shop or the career"':''}><div class="pt${lock&&chUI.tab!=='opp'?' sil':''}" style="background-image:url(${portURL(ch)});border-color:${ch.col}">${lock&&chUI.tab!=='opp'?'<span class="lk">\uD83D\uDD12</span>':''}</div><div class="nm">${kbEsc(ch.name)}</div></button>`; }
+    h+=`<button class="chc${cur===ch.id?' sel':''}${lock&&chUI.tab!=='opp'?' lock':''}" data-ch="${ch.id}"${lock&&chUI.tab!=='opp'?' title="Locked: unlock it in the Shop or the career"':''}><div class="pt${lock&&chUI.tab!=='opp'?' sil':''}" style="background-image:url(${portURL(ch)});border-color:${ch.col}">${lock&&chUI.tab!=='opp'?'<span class="lk">\uD83D\uDD12</span>':''}</div><div class="nm">${kbEsc(ch.name)}</div>${archTag(ch)}</button>`; }
   $('chGrid').innerHTML=h;
   // v16.5: shrink any name that would not fit its card (no mid-word breaks, never cut off)
   requestAnimationFrame(()=>document.querySelectorAll('#chGrid .chc .nm').forEach(el=>{ let f=.74; while(f>.5&&(el.scrollWidth>el.clientWidth+1||el.scrollHeight>el.clientHeight+1)){ f-=.03; el.style.fontSize=f+'em'; } }));
@@ -2947,12 +2958,12 @@ function chInfo(id,tab){ const e=$('chInfo'); chUI.view=id; if(tab) chUI.itab=ta
   if(id==='random'){ e.innerHTML='<h3>\u2753 Random</h3><p class="fl">A surprise opponent every match. Who will it be?</p>'; return; }
   const ch=CH[id]; if(!ch) return; const lock=chUI.mode!=='online'&&!chUnlocked(id)&&chUI.tab!=='opp', D=DESC[id]||{}, hide=lock&&ch.boss;
   const tabs=`<div class="itabs">${[['ov','Overview'],['sp','\u2605 Special'],['st','Stats']].map(([k,l])=>`<button data-it="${k}" class="${k===T?'sel':''}">${l}</button>`).join('')}</div>`;
-  const head=`<div class="ihead"><div class="pt bigp${lock?' sil':''}" style="background-image:url(${portURL(ch)});border-color:${ch.col}"></div><div><h3 style="color:${ch.col}">${hide?'???':kbEsc(ch.name)}</h3>${lock?'<div class="lockmsg">\uD83D\uDD12 '+unlockText(id)+'</div>':''}</div></div>`;
+  const head=`<div class="ihead"><div class="pt bigp${lock?' sil':''}" style="background-image:url(${portURL(ch)});border-color:${ch.col}"></div><div><h3 style="color:${ch.col}">${hide?'???':kbEsc(ch.name)}</h3>${hide?'':archTag(ch)}${lock?'<div class="lockmsg">\uD83D\uDD12 '+unlockText(id)+'</div>':''}</div></div>`;
   let body='';
   if(hide) body=`<p class="fl">${DESC_TEASE.golden}</p>`;
   else if(T==='ov') body=`<p class="fl">${D.fl||kbEsc(ch.bio)}</p>${lock?`<p class="tease">${DESC_TEASE._}</p>`:''}<div class="ib"><b>\uD83D\uDC4D Best at:</b> ${D.best||''}</div><div class="ib"><b>\uD83D\uDC4E Weak at:</b> ${D.weak||''}</div>${lock?'':`<div class="ib tip"><b>\uD83D\uDCA1 Tip:</b> ${D.tip||''}</div>`}`;
   else if(T==='sp') body=`<div class="sp"><b>\u2605 ${kbEsc(ch.spName)}</b><br>${SPECIALS[ch.sp]}${spxText(ch.id)}${D.sig?`<br><b>Signature:</b> ${D.sig}`:''}</div>`;
-  else body=`${statBars(ch.st,true)}${statFxHTML(ch)}<div class="sxp"><b>Control</b> = timing window + accuracy (fewer net/out errors) · <b>Reach</b> = racket reach + lunge distance · <b>Defence</b> = cleaner blocks/lifts vs smashes</div><div class="rk"><img alt="" src="${racketURL(ch,rkEq(id))}"><span><b>${rkName(rkEq(id))}</b><br>${rkMods(rkEq(id))}</span></div>`;
+  else body=`<div class="ib">${archTag(ch)} ${ARCH_INFO[ARCH[ch.id]||'all'][2]}</div>${statBars(ch.st,true)}${statFxHTML(ch)}<div class="sxp"><b>Control</b> = timing window + accuracy (fewer net/out errors) · <b>Reach</b> = racket reach + lunge distance · <b>Defence</b> = cleaner blocks/lifts vs smashes</div><div class="rk"><img alt="" src="${racketURL(ch,rkEq(id))}"><span><b>${rkName(rkEq(id))}</b><br>${rkMods(rkEq(id))}</span></div>`;
   e.innerHTML=head+(hide?'':tabs)+`<div class="ibody">${body}</div>`+(ch.src==='draw'&&!hide?'<div class="fan">Fan-made chibi art; character belongs to its owner.</div>':'');
   e.querySelectorAll('.itabs button').forEach(b=>b.onclick=()=>chInfo(id,b.dataset.it)); }
 function chChoose(id){
@@ -3547,7 +3558,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden && game.mo
    Host = Nailoong (authoritative simulation), guest = Berry (sends inputs, predicts itself, interpolates the host).
    Reliable PeerJS channel: lobby/start/fx/win events. Extra unordered, no-retransmit channel: inputs, snapshots, pings. */
 const QS=new URLSearchParams(location.search);
-const NET_VER=26, ROOM_PREFIX='nailoong-badminton-v13-', CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const NET_VER=27, ROOM_PREFIX='nailoong-badminton-v13-', CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const NET={on:false,role:null,side:0,peer:null,conn:null,ch:null,code:'',closing:false,lost:false,
   rtt:0,rtts:[],off:0,offS:[],lastRecv:0,lastPing:0,epoch:0,
   lag:Math.max(0,+QS.get('netlag')||0), loss:clamp(+QS.get('netloss')||0,0,.9),
