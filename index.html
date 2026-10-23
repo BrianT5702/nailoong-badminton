@@ -1353,10 +1353,10 @@ function solveNet(x0,y0,dir,q=1){
 }
 const SW_START=.03, SW_PEAK=.11, SW_END=.22;
 function contactQuality(p,d,reach){
-  if(p.ai){ const r=DIFF[p.ai.diff].q, late=p.ai.lateId===game.hitId; const inAtk=ATTACK_T.has(shuttle.type)&&game.lastHitter!==p.side; return {q:clamp(rand(r[0],r[1])+.035*chD(p,3)+(inAtk?.03*chD(p,6):0)-(p.st<ST.vlow?.16:tired(p)?.1:0),0,1)*(late?.65:1),label:null}; }
+  if(p.ai){ const r=DIFF[p.ai.diff].q, late=p.ai.lateId===game.hitId; const inAtk=ATTACK_T.has(shuttle.type)&&game.lastHitter!==p.side&&!shuttle.special; return {q:clamp(rand(r[0],r[1])+.035*chD(p,3)+(inAtk?.03*chD(p,6):0)-(p.st<ST.vlow?.16:tired(p)?.1:0),0,1)*(late?.65:1),label:null}; }
   const e=p.swingT-SW_PEAK, tq=clamp(1-Math.abs(e)/(.1*pCtl(p)),0,1);
   const cq=clamp(1-(d-reach*.35)/(reach*.65),0,1);
-  const inAtk=ATTACK_T.has(shuttle.type)&&game.lastHitter!==p.side, q=clamp(tq*.55+cq*.45+(inAtk?.03*chD(p,6):0),0,1);   // v16.2 Defence: cleaner returns against attacks
+  const inAtk=ATTACK_T.has(shuttle.type)&&game.lastHitter!==p.side&&!shuttle.special, q=clamp(tq*.55+cq*.45+(inAtk?.03*chD(p,6):0),0,1);   // v16.2 Defence: cleaner returns against attacks
   let label= q>=.8?'Perfect!': q>=.6?'Good': (1-tq)*.55>(1-cq)*.45 ? (e<0?'Late':'Early') : 'Off-centre';
   return {q,label};
 }
@@ -2578,7 +2578,7 @@ const SPX={
   spidey:{w:'hit',stun:1.0,slow:1,txt:'WEBBED!'},
   hulk:{w:'ret',stun:.3,kb:2.0,slow:1,weak:1,txt:'SMASHED BACK!'},
   ironman:{w:'hit',rw:2,stun:1.6,slow:.8,txt:'REPULSOR FLASH!'},
-  cap:{w:'hit',rw:2,stun:1.4,slow:1,txt:'SHIELD RICOCHET!'},
+  cap:{w:'hit',rw:2,stun:2.0,kb:.6,slow:1.5,txt:'SHIELD RICOCHET!'},
   thor:{w:'ret',stun:1.0,slow:1,weak:1,txt:'LIGHTNING STUN!'},
   panther:{w:'hit',rw:2,stun:1.6,kb:1.6,txt:'KINETIC PULSE!'},
   flash:{w:'hit',rw:2,stun:2.3,kb:.8,slow:1.5,txt:'AFTERIMAGE FEINT!'},
@@ -2587,7 +2587,7 @@ const SPX={
   wonder:{w:'hit',stun:.2,kb:.6,txt:'LASSO PULL!'},
   naruto:{w:'hit',rw:1,stun:.8,slow:1,txt:'SHADOW CLONES!'},
   goku:{w:'ret',stun:.65,kb:1.6,slow:1,weak:1,txt:'KAME BLAST!'},
-  pikachu:{w:'act',rw:2,stun:2.6,chain:{stun:2.2,slow:1.5,txt:'CHAIN SHOCK!'},txt:'SHOCKED!'},
+  pikachu:{w:'act',rw:2,stun:2.8,chain:{stun:2.6,kb:.6,slow:1.5,txt:'CHAIN SHOCK!'},txt:'SHOCKED!'},
   doraemon:{w:'hit',rw:1,stun:.6,kb:1.0,slow:2,txt:'AIR CANNON!'},
   xiaoqi:{w:'hit',rw:1,stun:.6,kb:-1.0,slow:1,txt:'GRABBED!'},
   dalaba:{w:'ret',stun:.7,sta:15,slow:1.2,weak:1,txt:'HORN BLAST!'},
