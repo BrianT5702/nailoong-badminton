@@ -704,28 +704,32 @@ function crowdCheer0(level,force){
   if(CP.chant) for(let i=0;i<3;i++) for(let v=0;v<4;v++){ const o=actx.createOscillator(), g=actx.createGain(), bp=actx.createBiquadFilter(), tt=t0+.3+i*.32+rand(0,.02); o.type='sawtooth'; o.frequency.value=rand(180,240); bp.type='bandpass'; bp.frequency.value=900; bp.Q.value=2; g.gain.setValueAtTime(.0001,tt); g.gain.exponentialRampToValueAtTime(.03,tt+.03); g.gain.exponentialRampToValueAtTime(.0001,tt+.18); o.connect(bp); bp.connect(g); g.connect(busCrowd); o.start(tt); o.stop(tt+.2); }   // 'HEY! HEY! HEY!'
   if(CP.gong&&level>=2){ const o=actx.createOscillator(), g=actx.createGain(); o.frequency.value=98; g.gain.setValueAtTime(.12,t0); g.gain.exponentialRampToValueAtTime(.0001,t0+2.5); o.connect(g); g.connect(busCrowd); o.start(t0); o.stop(t0+2.6); }
   if(CP.crackers) for(let i=0;i<6+level*5;i++) noise(.03,.08,rand(2000,5000),.2+Math.random()*1.4,busCrowd,.8);
-  const L=clamp(level,1,4), dur=.9+L*.55, n=Math.round((30+L*28)*(CP.claps||1));
-  for(let i=0;i<n;i++){ const tt=Math.pow(Math.random(),1.4)*dur; noise(.035,(.05+.03*Math.random())*1.9,rand(1200,2600),tt,busCrowd,2.2); }   // claps (v16.2: louder)
-  noise(dur*.9,(.06+.025*L)*(CP.roar||1)*1.6,CP.roar?520:900,0,busCrowd,.5);                                                    // roar bed
-  if(L>=2) for(let k=0;k<(3+L)*(CP.wooN||1);k++){ const o=actx.createOscillator(), g=actx.createGain(), bp=actx.createBiquadFilter(), t=actx.currentTime+rand(0,.25);   // 'woo!'
-    o.type='sawtooth'; const f=rand(230,420)*(CP.woo||1); o.frequency.setValueAtTime(f,t); o.frequency.exponentialRampToValueAtTime(f*1.6,t+.35); o.frequency.exponentialRampToValueAtTime(f*1.2,t+.8);
-    bp.type='bandpass'; bp.frequency.value=650; bp.Q.value=3; g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.022,t+.08); g.gain.exponentialRampToValueAtTime(.0001,t+.85);
-    o.connect(bp); bp.connect(g); g.connect(busCrowd); o.start(t); o.stop(t+.9); }
+  const L=clamp(level,1,5), dur=1.1+L*.6, n=Math.round((26+L*26)*(CP.claps||1));   // v16.10 realistic crowd: claps + voiced cheer, no oscillators
+  for(let i=0;i<n;i++){ const tt=.05+Math.pow(Math.random(),1.3)*dur; crowdClap(tt,(.05+.035*Math.random())*(.8+.1*L)); }
+  crowdVoices(Math.round((6+L*4)*(CP.wooN||1)),'ah',dur*.95,(.022+.008*L)*(CP.roar||1),L>=3?1.35:1.15,0);   // 'yeah!' swell
+  if(L>=3) crowdVoices(4+L,'oo',1.1,.018,1.5*(CP.woo||1),.15);   // a few 'woo!'s on big points
 }
-function crowdOoh(){
-  if(!actx||muted||game.mode==='demo') return;
-  for(let k=0;k<7;k++){ const o=actx.createOscillator(), g=actx.createGain(), b1=actx.createBiquadFilter(), t=actx.currentTime+rand(0,.08), f=rand(150,260);
-    o.type='sawtooth'; o.frequency.setValueAtTime(f,t); o.frequency.exponentialRampToValueAtTime(f*1.25,t+.25); o.frequency.exponentialRampToValueAtTime(f*.8,t+.9);
-    b1.type='bandpass'; b1.frequency.setValueAtTime(420,t); b1.frequency.linearRampToValueAtTime(330,t+.9); b1.Q.value=4;
-    g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.03,t+.12); g.gain.exponentialRampToValueAtTime(.0001,t+.95);
-    o.connect(b1); b1.connect(g); g.connect(busCrowd); o.start(t); o.stop(t+1); }
+let crowdNB=null;
+function crowdNoiseBuf(){ if(!crowdNB){ const len=actx.sampleRate*3; crowdNB=actx.createBuffer(1,len,actx.sampleRate); const d=crowdNB.getChannelData(0); let b0=0,b1=0,b2=0; for(let i=0;i<len;i++){ const w=Math.random()*2-1; b0=.99765*b0+w*.099; b1=.963*b1+w*.2965; b2=.57*b2+w*1.0526; d[i]=(b0+b1+b2+w*.1848)*.2; } } return crowdNB; }   // pink-ish noise: soft, never buzzy
+function crowdClap(delay,vol){ if(!actx||muted) return; const t=actx.currentTime+delay, s=actx.createBufferSource(), f=actx.createBiquadFilter(), g=actx.createGain();
+  s.buffer=crowdNoiseBuf(); f.type='bandpass'; f.frequency.value=rand(1100,2400); f.Q.value=1.1; g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(vol,t+.002); g.gain.exponentialRampToValueAtTime(.0001,t+rand(.04,.07));
+  s.connect(f); f.connect(g); g.connect(busCrowd); s.start(t,Math.random()*2.5); s.stop(t+.09); }
+const CROWD_VW={ah:[[720,1240],[650,1100]],oo:[[320,800],[380,950]],oh:[[500,880],[450,820]]};
+function crowdVoices(n,vw,dur,vol,rise,delay){ if(!actx||muted) return; const V=CROWD_VW[vw]||CROWD_VW.ah;   // each voice = shaped noise through two formant filters (a breathy human 'aah'/'ooh')
+  for(let k=0;k<n;k++){ const t=actx.currentTime+delay+rand(0,.22), d=dur*rand(.75,1.1), fm=V[k%2], sh=rand(.88,1.15), s=actx.createBufferSource(), g=actx.createGain();
+    s.buffer=crowdNoiseBuf(); g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(vol*rand(.7,1.1),t+.12+Math.random()*.12); g.gain.setTargetAtTime(.0001,t+d*.55,d*.22);
+    for(const [ff,qq,w] of [[fm[0]*sh,7,1],[fm[1]*sh,9,.6]]){ const f=actx.createBiquadFilter(), gg=actx.createGain(); f.type='bandpass'; f.Q.value=qq; f.frequency.setValueAtTime(ff,t); f.frequency.linearRampToValueAtTime(ff*rise,t+d*.35); f.frequency.linearRampToValueAtTime(ff*(rise>1?1+(rise-1)*.4:rise),t+d); gg.gain.value=w*4; s.connect(f); f.connect(gg); gg.connect(g); }
+    g.connect(busCrowd); s.start(t,Math.random()*2); s.stop(t+d*1.6); } }
+function crowdOoh(big=false){   // v16.10: a breathy group 'oooh' that falls in pitch, no synth buzz
+  if(!actx||muted||game.mode==='demo') return; crowdVoices(big?16:11,'oo',1.2,big?.034:.026,.82,0); crowdVoices(5,'oh',1.0,.016,.85,.05);
 }
-function startMurmur(){   // quiet looping crowd bed (filtered noise with a slow swell)
-  const len=actx.sampleRate*4, buf=actx.createBuffer(1,len,actx.sampleRate), d=buf.getChannelData(0); let b=0;
-  for(let i=0;i<len;i++){ b=b*.97+(Math.random()*2-1)*.03; d[i]=b*3; }
-  const src=actx.createBufferSource(), bp=actx.createBiquadFilter(), g=actx.createGain(), lfo=actx.createOscillator(), lg=actx.createGain();
-  src.buffer=buf; src.loop=true; bp.type='bandpass'; bp.frequency.value=450; bp.Q.value=.7; g.gain.value=.05; lfo.frequency.value=.13; lg.gain.value=.02;
-  lfo.connect(lg); lg.connect(g.gain); src.connect(bp); bp.connect(g); g.connect(busCrowd); src.start(); lfo.start();
+function crowdLightClap(n=8){ if(!actx||muted||game.mode==='demo') return; for(let i=0;i<n;i++) crowdClap(i*.13+rand(0,.08),.035+.02*Math.random()); }
+function startMurmur(){   // v16.10: layered murmur bed: three bands of soft noise, each with its own slow swell, plus random swells
+  const layers=[[260,.8,.05,.07],[520,1.1,.042,.11],[1050,1.4,.02,.17]], bed=actx.createGain(); bed.gain.value=1; bed.connect(busCrowd);
+  for(const [fq,Q,lv,rt] of layers){ const src=actx.createBufferSource(), bp=actx.createBiquadFilter(), g=actx.createGain(), lfo=actx.createOscillator(), lg=actx.createGain();
+    src.buffer=crowdNoiseBuf(); src.loop=true; bp.type='bandpass'; bp.frequency.value=fq; bp.Q.value=Q; g.gain.value=lv; lfo.frequency.value=rt; lg.gain.value=lv*.45;
+    lfo.connect(lg); lg.connect(g.gain); src.connect(bp); bp.connect(g); g.connect(bed); src.start(0,Math.random()*2.5); lfo.start(); }
+  const swell=()=>{ if(!actx) return; const t=actx.currentTime, a=rand(1.15,1.5); bed.gain.cancelScheduledValues(t); bed.gain.setTargetAtTime(a,t,1.2); bed.gain.setTargetAtTime(1,t+rand(2.5,4),1.6); setTimeout(swell,rand(6000,13000)); }; setTimeout(swell,5000);
 }
 /* ---- BGM: procedural, seamless 8-bar loop (C - Am - F - G), soft plucks + bass + shaker ---- */
 const MUS={bpm:100,step:0,next:0,timer:null};
@@ -1134,7 +1138,7 @@ function serveClockTick(p,dt){ if(game.mode==='demo'||game.paused||game.replay||
   if(game.sClock>0) return; game.delayW=game.delayW||[0,0];
   if(!game.delayW[p.side]){ game.delayW[p.side]=1; popup(p.x,p.y-170,'Serve clock! Warning \u2013 auto serve','#ff4d4d',22); p.req='drop'; doServe(p); }
   else pointTo(1-p.side,'Delay of play'); }
-function setupServe(side){ for(const q of players) q.atkN=0;
+function setupServe(side){ for(const q of players) q.atkN=0; game.rallySp=false; if(game.mode!=='demo'&&Math.random()<.35) crowdLightClap(5+Math.floor(Math.random()*6));
   game.state='serve'; game.server=side; game.lastHitter=-1; game.rally=0; game.serveTimer=0; game.sClock=SERVE_CLOCK; if(typeof shuttle!=="undefined"&&shuttle) shuttle.special=null; if(typeof shuttle!=="undefined"&&shuttle) shuttle.spRet=null; for(const q of (typeof players!=='undefined'&&players)||[]){ q.rider=null; q.stunT=0; q.kbT=0; q.slowT=0; }
   const P0=players[0],P1=players[1];
   P0.x = side===0?300:340; P1.x = side===1?980:940;
@@ -1800,7 +1804,8 @@ function pointTo(side,reason){
     showBanner(side,reason||'');
     // crowd + voices: bigger for long rallies, smashes / net kills, match point
     const st=shuttle.type, sc=game.score[side], gp=sc>=game.target-1&&sc>game.score[loser];
-    sfx.cheer(1+(game.rally>=8?1:0)+((st==='smash'||st==='netkill')&&!shuttle.netHit&&game.lastHitter===side?1:0)+(gp?1:0));
+    sfx.cheer(1+(game.rally>=8?1:0)+(game.rally>=16?1:0)+((st==='smash'||st==='netkill'||st==='flat'||st==='kill')&&!shuttle.netHit&&game.lastHitter===side?1:0)+(game.rallySp?1:0)+(gp?1:0));   // v16.10: long rallies, smashes and specials get bigger cheers
+    if(shuttle.netHit&&!NET.fxSkip) crowdOoh(game.rally>=8);
     sfx.voice(side,Math.random()<.5?'giggle':'cheer'); sfx.voice(loser,'aww');
   }
   game.state='point'; game.timer=game.mode==='demo'?.9:1.5; game.pointWinner=side;
@@ -2682,7 +2687,7 @@ function trySpecial(p){
   p.armT=SP_WIN;   // v16.9 activation window   // thunder / spin / wall / drive wait for the right shot
   for(let i=0;i<10;i++) spark(p.x,p.y-90,p.ch.col);   // v15.1: the big name banner + aura come from the SPFX layer
   if(!NET.fxSkip){ tone(520,.18,'sawtooth',.08,1040); tone(780,.22,'triangle',.12,1560,.06); }
-  (game.spLog=game.spLog||[]).push({side:p.side,t});
+  (game.spLog=game.spLog||[]).push({side:p.side,t}); game.rallySp=true;
   return true;
 }
 // world-space bars under each player: stamina (green -> red) and the special meter (gold, glows when ready)
