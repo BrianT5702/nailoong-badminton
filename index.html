@@ -1028,7 +1028,7 @@ const CHARS=[
     bio:'The fastest feet in the game, the softest hits.',art:{suit:'#d8262b',suit2:'#d8262b',head:'cowl',mask:'#d8262b',skin:'#f6d2b0',eyes:'cute',emblem:'bolt',wings:'#f5d020',boots:'#f5d020'}},
   {id:'batman',name:'Batman',src:'draw',st:[5,6,5,9,7,6,8],sp:'wall',spName:'Bat Guard',col:'#3a3f4a',frame:'#5a606c',grip:'#f0c419',
     bio:'Master tactician: best control and great reach, low jump.',art:{suit:'#5a6070',suit2:'#2a2d36',head:'cowl',mask:'#2a2d36',skin:'#f6d2b0',eyes:'lensW',ears:'bat',cape:'#22252c',emblem:'bat',belt:'#f0c419',boots:'#2a2d36'}},
-  {id:'superman',name:'Superman',src:'draw',st:[8,7,7,5,5,5,7],sp:'thunder',spName:'Heat Smash',col:'#1f5fd0',frame:'#d8262b',grip:'#1f5fd0',
+  {id:'superman',name:'Superman',src:'draw',st:[8,7,7,6,5,5,7],sp:'thunder',spName:'Heat Smash',col:'#1f5fd0',frame:'#d8262b',grip:'#1f5fd0',
     bio:'Strong and fast, but slow to get his breath back.',art:{suit:'#1f5fd0',suit2:'#d8262b',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#1a1a22',style:'curl'},cape:'#d8262b',emblem:'diamond',belt:'#f5d020',boots:'#d8262b'}},
   {id:'wonder',name:'Wonder Woman',src:'draw',st:[7,6,6,7,6,5,9],sp:'wall',spName:'Bracelet Block',col:'#c8202a',frame:'#d8dce6',grip:'#c8202a',
     bio:'A strong all-rounder who deflects smashes.',art:{suit:'#c8202a',suit2:'#1f4fbf',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#1a1a22',style:'long'},tiara:'#f0c419',emblem:'W',belt:'#f0c419',cuffs:'#d0d4dc',boots:'#c8202a'}},
@@ -2583,6 +2583,7 @@ function render(){
     if(charSprites(p.ch)) drawSpriteDino(p); else drawDino(p); }
   if(game.cloneFx&&game.cloneFx.x!=null){ const C=game.cloneFx, p=players[C.side]; if(p&&p.ch.id==='naruto'){ const ox=p.x; p.x=C.x; ctx.save(); ctx.globalAlpha=.55*clamp(C.t/.5,0,1); if(charSprites(p.ch)) drawSpriteDino(p); else drawDino(p); ctx.restore(); p.x=ox; } }   // v16.7 shadow clone beside Naruto
   for(const p of players) drawPlayerBars(p);
+  if(!game.replay&&game.mode!=='demo') for(const p of players) if(!p.ai&&(game.mode!=='online'||p.side===NET.side)) drawPerfDot(p);   // v16.10 local player only
   if(game.decoy&&(game.state==='rally'||game.replay)){ const D=game.decoy, S={x:shuttle.x,y:shuttle.y,vx:shuttle.vx,vy:shuttle.vy,trail:shuttle.trail,hideT:shuttle.hideT,rot:shuttle.rot,type:shuttle.type,fx:shuttle.fx,fxc:shuttle.fxc}; Object.assign(shuttle,{x:D.x,y:D.y,vx:D.vx,vy:D.vy,trail:D.tr,hideT:0,rot:D.rot,type:D.type,fx:D.fx,fxc:D.fxc}); ctx.save(); ctx.globalAlpha=clamp(D.t/.15,0,1); game.decoyDraw=D; drawShuttle(); game.decoyDraw=0; ctx.restore(); Object.assign(shuttle,S); }   // v16.7 decoy looks identical
   drawShuttle();
   drawNet('near');
@@ -2684,6 +2685,17 @@ function trySpecial(p){
   return true;
 }
 // world-space bars under each player: stamina (green -> red) and the special meter (gold, glows when ready)
+function perfJS(p){   // v16.10: would a swing pressed right now land a Perfect jump smash? (same rules as contactQuality / the hit check)
+  const s=shuttle; if(p.onGround||game.state!=='rally'||game.lastHitter===p.side||s.netHit||(p.swingT>=0&&p.swingT<=.3)||p.stunT>0) return false;
+  const pw=perfWin(p), inAtk=ATTACK_T.has(s.type)&&!s.special, w=.028*(1+.1*chD(p,3))*(inAtk?clamp(1+.07*chD(p,6),.75,1.3):1)*pw; if(w<1/120) return false;   // tired: the window can shrink below one frame
+  const f={x:s.x,y:s.y,vx:s.vx,vy:s.vy,boostT:s.boostT,gMul:s.gMul,bK:s.bK}, q={...p}, h=1/120, reach=reachOf(p); let t=0;
+  for(;t<SW_PEAK-1e-6;t+=h){ stepS(f,h); q.x+=q.vx*h; q.vy+=PG*PHYS.pg*h; q.y+=q.vy*h; if(q.y>=GROUND) return false;
+  }
+  const c=hitCenter(q), d=Math.hypot(f.x-c.x,f.y-c.y), mine=p.side===0?f.x<=NET_X+1:f.x>=NET_X-1;
+  return mine&&d<=reach*.675&&canSmash(q,f); }
+function drawPerfDot(p){ if(!p||p.ai||shuttle.hideT>0||!perfJS(p)) return; const r=4+1.2*Math.sin(performance.now()/90);
+  ctx.save(); ctx.globalAlpha=.9; ctx.fillStyle='rgba(20,20,40,.55)'; ctx.beginPath(); ctx.arc(shuttle.x,shuttle.y-22,r+2.5,0,7); ctx.fill();
+  ctx.fillStyle='#ffe14d'; ctx.beginPath(); ctx.arc(shuttle.x,shuttle.y-22,r,0,7); ctx.fill(); ctx.restore(); }
 function drawPlayerBars(p){
   if(game.mode==='demo') return;
   if(spPending(p)&&p.armT>0){ const fr=clamp(p.armT/SP_WIN,0,1), fl=p.armT<2&&Math.sin(performance.now()/70)>0, col=fl?'#ff4d6d':(p.ch.col||'#ffd23a');   // v16.9 activation countdown: glow on the character + ring by the bars
@@ -3829,7 +3841,7 @@ function frame(now){
 newMatch('demo','normal',11);
 requestAnimationFrame(frame);
 // test/debug hook
-window.__nb={SPFX,SET,HERO_ART,NET,guestUpdate,netGuestInput,buildTouch,solvePunch,JUMP_REACH_H,netKillZone,netKillOdds,hitCenter,reachOf,toScreen,proj,clouds,netPlay,solveNet,update,pointTo,setupServe,contactQuality,SHOTS,solveShot,solveDrop,canSmash,hitShuttle,SMASH_Y,NET_TOP,proj,SPR,spritesReady,drawDino,ctx,render,game,PROG:()=>PROG,CHAL,applyFun,PHYS,startReplay,endReplay,afterMatch,chalOpen,progLoad,addCoins,careerFight,careerOpen,shopOpen,LADDER,THEMES,matchReward,players:()=>players,shuttle,newMatch,startFromMenu:()=>menuSel.mode==='online'?startFromMenu():startMatchNow(),chOpen,chPick,CHARS,CH,trySpecial,ST,charSprites,solveShot,simulate,oppX,SHOTS,DIFF};
+window.__nb={perfJS,SPFX,SET,HERO_ART,NET,guestUpdate,netGuestInput,buildTouch,solvePunch,JUMP_REACH_H,netKillZone,netKillOdds,hitCenter,reachOf,toScreen,proj,clouds,netPlay,solveNet,update,pointTo,setupServe,contactQuality,SHOTS,solveShot,solveDrop,canSmash,hitShuttle,SMASH_Y,NET_TOP,proj,SPR,spritesReady,drawDino,ctx,render,game,PROG:()=>PROG,CHAL,applyFun,PHYS,startReplay,endReplay,afterMatch,chalOpen,progLoad,addCoins,careerFight,careerOpen,shopOpen,LADDER,THEMES,matchReward,players:()=>players,shuttle,newMatch,startFromMenu:()=>menuSel.mode==='online'?startFromMenu():startMatchNow(),chOpen,chPick,CHARS,CH,trySpecial,ST,charSprites,solveShot,simulate,oppX,SHOTS,DIFF};
 </script>
 </body>
 </html>
