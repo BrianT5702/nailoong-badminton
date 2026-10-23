@@ -998,15 +998,15 @@ const HIMG={}; for(const k in HERO_ART){ const im=new Image(); im.src=HERO_ART[k
 const CHARS=[
   {id:'nailoong',name:'Nailoong',src:'nai',st:[6,6,6,6,6,6,6],sp:'perfect',spName:'Milk Power',col:'#ffc61a',frame:'#FF6F9F',grip:'#FF9EC0',
     bio:'The reference all-rounder: every stat medium, no weakness.'},
-  {id:'berry',name:'Berry',src:'berry',st:[5,7,6,7,5,6,6],sp:'spin',spName:'Sweet Spin Net',col:'#ff7aa2',frame:'#5CC8C0',grip:'#ff7aa2',
+  {id:'berry',name:'Berry',src:'berry',st:[5,7,6,6,5,6,6],sp:'spin',spName:'Sweet Spin Net',col:'#ff7aa2',frame:'#5CC8C0',grip:'#ff7aa2',
     bio:'Quick, tidy hands at the net.'},
   {id:'bombloong',name:'Bombloong',src:'bomb',st:[8,6,6,6,7,6,5],sp:'bomb',spName:'Boom Smash',col:'#4fb8e8',frame:'#3a7bd5',grip:'#9fd3f0',
     bio:'Nailoong\'s blue eggshell rival (\u66b4\u66b4\u9f99). Big hitter, big reach, a bit slow.'},
-  {id:'spidey',name:'Spider-Man',src:'draw',st:[9,8,8,8,4,3,4],sp:'spin',spName:'Web Net Trap',col:'#e23b3b',frame:'#1d4fbf',grip:'#e23b3b',
+  {id:'spidey',name:'Spider-Man',src:'draw',st:[8,7,7,7,4,6,5],sp:'spin',spName:'Web Net Trap',col:'#e23b3b',frame:'#1d4fbf',grip:'#e23b3b',
     bio:'Fast, springy and strong, but runs out of breath.',art:{suit:'#d8262b',suit2:'#1f4fbf',head:'mask',mask:'#d8262b',eyes:'lens',web:true,emblem:'spider',boots:'#d8262b'}},
   {id:'hulk',name:'Hulk',src:'draw',st:[9,4,5,5,8,7,3],sp:'thunder',spName:'Gamma Smash',col:'#5fa83a',frame:'#7b3fa0',grip:'#5fa83a',
     bio:'Maximum power and reach. Slow feet, wild control.',art:{skin:'#6fbf44',suit:'#6fbf44',suit2:'#7b3fa0',head:'skin',eyes:'angry',hair:{col:'#23301c',style:'flat'},shorts:true,boots:'#6fbf44',big:1.12}},
-  {id:'ironman',name:'Iron Man',src:'draw',st:[8,6,8,6,5,4,5],sp:'drive',spName:'Repulsor Drive',col:'#c8202a',frame:'#b01a24',grip:'#f0c419',
+  {id:'ironman',name:'Iron Man',src:'draw',st:[8,6,8,6,5,5,6],sp:'drive',spName:'Repulsor Drive',col:'#c8202a',frame:'#b01a24',grip:'#f0c419',
     bio:'Powerful armour with boot-jet jumps; the suit drains energy.',art:{suit:'#c4202a',suit2:'#f0c419',head:'helm',mask:'#c4202a',plate:'#f0c419',eyes:'slit',emblem:'reactor',boots:'#c4202a'}},
   {id:'cap',name:'Captain America',src:'draw',st:[7,7,5,8,7,6,9],sp:'wall',spName:'Shield Block',col:'#2050b8',frame:'#d8262b',grip:'#ffffff',
     bio:'Solid defender: good reach and control, shield saves a smash.',art:{suit:'#2a55b8',suit2:'#d8262b',head:'cowl',mask:'#2a55b8',skin:'#f6d2b0',eyes:'cute',emblem:'star',stripes:true,boots:'#d8262b',shield:true}},
@@ -1022,13 +1022,13 @@ const CHARS=[
     bio:'Strong and fast, but slow to get his breath back.',art:{suit:'#1f5fd0',suit2:'#d8262b',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#1a1a22',style:'curl'},cape:'#d8262b',emblem:'diamond',belt:'#f5d020',boots:'#d8262b'}},
   {id:'wonder',name:'Wonder Woman',src:'draw',st:[7,6,6,7,6,5,9],sp:'wall',spName:'Bracelet Block',col:'#c8202a',frame:'#d8dce6',grip:'#c8202a',
     bio:'A strong all-rounder who deflects smashes.',art:{suit:'#c8202a',suit2:'#1f4fbf',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#1a1a22',style:'long'},tiara:'#f0c419',emblem:'W',belt:'#f0c419',cuffs:'#d0d4dc',boots:'#c8202a'}},
-  {id:'naruto',name:'Naruto',src:'draw',st:[5,5,5,4,5,9,4],sp:'wind',spName:'Ramen Second Wind',col:'#f28c28',frame:'#f28c28',grip:'#1a1a1a',
+  {id:'naruto',name:'Naruto',src:'draw',st:[5,5,5,4,5,8,4],sp:'wind',spName:'Ramen Second Wind',col:'#f28c28',frame:'#f28c28',grip:'#1a1a1a',
     bio:'Never runs out of energy; a bit wild with the racket.',art:{suit:'#f28c28',suit2:'#1f3f8f',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#f5d020',style:'spiky'},headband:'#1f3f8f',whiskers:true,boots:'#1f3f8f',collar:'#1f3f8f'}},
-  {id:'goku',name:'Goku',src:'draw',st:[7,7,7,6,5,5,6],sp:'thunder',spName:'Kame Smash',col:'#f28c28',frame:'#ff8c1a',grip:'#2a50b0',
+  {id:'goku',name:'Goku',src:'draw',st:[7,7,7,7,5,5,6],sp:'thunder',spName:'Kame Smash',col:'#f28c28',frame:'#ff8c1a',grip:'#2a50b0',
     bio:'Explosive power and jumps, short arms.',art:{suit:'#f28c28',suit2:'#2a50b0',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#1a1a22',style:'goku'},belt:'#2a50b0',undershirt:'#2a50b0',boots:'#2a50b0'}},
-  {id:'pikachu',name:'Pikachu',src:'draw',st:[4,8,7,6,3,7,4],sp:'dash',spName:'Quick Attack',col:'#f5d020',frame:'#f5d020',grip:'#8a5a2b',
+  {id:'pikachu',name:'Pikachu',src:'draw',st:[4,7,7,6,3,7,4],sp:'dash',spName:'Quick Attack',col:'#f5d020',frame:'#f5d020',grip:'#8a5a2b',
     bio:'Tiny and electric-quick; very short reach.',art:{suit:'#f7d531',suit2:'#f7d531',skin:'#f7d531',head:'skin',eyes:'dot',ears:'pika',cheeks:'#e8433a',stripes2:'#8a5a12',tail:'bolt',boots:'#f7d531',small:.9}},
-  {id:'doraemon',name:'Doraemon',src:'draw',st:[4,5,4,7,6,8,6],sp:'wind',spName:'Dorayaki Break',col:'#1fa0e0',frame:'#1fa0e0',grip:'#ffd23a',
+  {id:'doraemon',name:'Doraemon',src:'draw',st:[4,5,4,7,6,7,6],sp:'wind',spName:'Dorayaki Break',col:'#1fa0e0',frame:'#1fa0e0',grip:'#ffd23a',
     bio:'Steady, tireless and tidy; no big jumps or smashes.',art:{suit:'#1fa0e0',suit2:'#ffffff',skin:'#1fa0e0',head:'dora',eyes:'dora',whiskers:true,nose:'#d8262b',collar:'#d8262b',bell:'#f5d020',belly:'#ffffff',pocket:true,boots:'#ffffff'}},
   {id:'xiaoqi',name:'Xiao Qi',src:'draw',st:[5,7,6,8,5,5,6],sp:'wind',spName:'Gadget Grabber',col:'#3a8ee8',frame:'#3a8ee8',grip:'#ff9a2e',
     bio:'Nailoong\u2019s best friend: a 14-year-old inventor with a gadget for everything.'},
@@ -1038,17 +1038,17 @@ const CHARS=[
     bio:'A fluffy pastry chef who bakes sweet net shots.'},
   {id:'luffy',name:'Luffy',src:'draw',st:[7,7,6,6,8,5,5],sp:'thunder',spName:'Rubber Rocket Smash',col:'#d8262b',frame:'#e8b04a',grip:'#d8262b',
     bio:'A rubber-limbed pirate with endless reach and zero patience.'},
-  {id:'tanjiro',name:'Tanjiro',src:'draw',st:[6,6,6,7,6,6,7],sp:'drive',spName:'Water Wheel Drive',col:'#2a9a7a',frame:'#1a1a1a',grip:'#2a9a7a',
+  {id:'tanjiro',name:'Tanjiro',src:'draw',st:[6,6,6,7,6,6,6],sp:'drive',spName:'Water Wheel Drive',col:'#2a9a7a',frame:'#1a1a1a',grip:'#2a9a7a',
     bio:'A kind, balanced swordsman-turned-shuttler.'},
   {id:'sailor',name:'Sailor Moon',src:'draw',st:[5,7,7,7,5,5,7],sp:'wall',spName:'Moon Tiara Guard',col:'#ff6fb5',frame:'#ffd23a',grip:'#ff6fb5',
     bio:'A magical guardian with graceful footwork.'},
   {id:'sonic',name:'Sonic',src:'draw',st:[5,9,7,5,5,6,4],sp:'dash',spName:'Spin Dash',col:'#1f5fe0',frame:'#1f5fe0',grip:'#d8262b',
     bio:'Gotta go fast. The quickest feet on the court.'},
-  {id:'shinchan',name:'Shin-chan',src:'draw',st:[4,5,5,5,4,9,4],sp:'perfect',spName:'Butt-Wiggle Feint',col:'#e8303a',frame:'#e8303a',grip:'#f5d020',
+  {id:'shinchan',name:'Shin-chan',src:'draw',st:[4,5,5,5,4,8,4],sp:'perfect',spName:'Butt-Wiggle Feint',col:'#e8303a',frame:'#e8303a',grip:'#f5d020',
     bio:'A cheeky five-year-old who never, ever gets tired.'},
-  {id:'deadpool',name:'Deadpool',src:'draw',st:[8,6,6,6,6,5,5],sp:'bomb',spName:'Chimichanga Bomb',col:'#b01a24',frame:'#1a1a1a',grip:'#b01a24',
+  {id:'deadpool',name:'Deadpool',src:'draw',st:[8,6,6,7,6,5,5],sp:'bomb',spName:'Chimichanga Bomb',col:'#b01a24',frame:'#1a1a1a',grip:'#b01a24',
     bio:'A chatty masked mercenary who smashes and jokes.'},
-  {id:'spongebob',name:'SpongeBob',src:'draw',st:[4,5,5,6,5,8,6],sp:'wind',spName:'Bubble Blower',col:'#f5e030',frame:'#f5e030',grip:'#8a5a2b',
+  {id:'spongebob',name:'SpongeBob',src:'draw',st:[4,5,5,6,5,7,6],sp:'wind',spName:'Bubble Blower',col:'#f5e030',frame:'#f5e030',grip:'#8a5a2b',
     bio:'A cheerful sea sponge: absorbs everything, tires never.'},
   {id:'golden',name:'Champion Nailoong',src:'tint',base:'nai',tint:'#ffcf3a',glow:'#fff2a0',st:[7,7,7,7,7,6,7],bossSt:[9,9,8,9,8,8,9],sp:'thunder',spName:'Golden Thunder',col:'#e0a800',frame:'#e0a800',grip:'#fff2a0',boss:true,
     bio:'The crowned golden champion. Beat the Tournament to play him (the boss version is even stronger).'}
@@ -1358,11 +1358,16 @@ function solveNet(x0,y0,dir,q=1){
 }
 const SW_START=.03, SW_PEAK=.11, SW_END=.22;
 function contactQuality(p,d,reach){
-  if(p.ai){ const r=DIFF[p.ai.diff].q, late=p.ai.lateId===game.hitId; const inAtk=ATTACK_T.has(shuttle.type)&&game.lastHitter!==p.side&&!shuttle.special; return {q:clamp(rand(r[0],r[1])+.035*chD(p,3)+(inAtk?.03*chD(p,6):0)-(p.st<ST.vlow?.16:tired(p)?.1:0),0,1)*(late?.65:1),label:null}; }
-  const e=p.swingT-SW_PEAK, tq=clamp(1-Math.abs(e)/(.1*pCtl(p)),0,1);
+  const inAtk=ATTACK_T.has(shuttle.type)&&game.lastHitter!==p.side&&!shuttle.special, pw=perfWin(p);
+  if(p.ai){ const r=DIFF[p.ai.diff].q, late=p.ai.lateId===game.hitId; let q=clamp(rand(r[0],r[1])+.035*chD(p,3)+(inAtk?.05*chD(p,6):0),0,1)*(late?.65:1);
+    if(q>=.8&&Math.random()>pw) q=rand(.66,.79);   // v16.6: a tired AI lands Perfect only inside the same shrunken window
+    if(q<.8) q=clamp(q-(p.st<ST.vlow?.16:tired(p)?.1:0),0,1); return {q,label:null}; }
+  const e=p.swingT-SW_PEAK, win=.1*pCtl(p)*(inAtk?clamp(1+.07*chD(p,6),.75,1.3):1), tq=clamp(1-Math.abs(e)/win,0,1);   // v16.6 DEF: a wider timing window against attacks
   const cq=clamp(1-(d-reach*.35)/(reach*.65),0,1);
-  const inAtk=ATTACK_T.has(shuttle.type)&&game.lastHitter!==p.side&&!shuttle.special, q=clamp(tq*.55+cq*.45+(inAtk?.03*chD(p,6):0)-(tired(p)?.08+.14*fatigue(p):0),0,1);   // v16.3: tired contacts are worse   // v16.2 Defence: cleaner returns against attacks
-  let label= q>=.8?'Perfect!': q>=.6?'Good': (1-tq)*.55>(1-cq)*.45 ? (e<0?'Late':'Early') : 'Off-centre';
+  const perf=Math.abs(e)<=.028*(1+.1*chD(p,3))*(inAtk?clamp(1+.07*chD(p,6),.75,1.3):1)*pw&&cq>=.5;   // v16.6: Perfect = a timing window that shrinks hard with fatigue (fresh 100% / tired ~50% / exhausted ~20%)
+  let q=clamp(tq*.55+cq*.45+(inAtk?.05*chD(p,6):0)-(tired(p)?.08+.14*fatigue(p):0),0,1);   // v16.3: tired contacts are worse   // v16.2/16.6 Defence: cleaner returns against attacks
+  q=perf?Math.max(q,.8+.2*tq):Math.min(q,.79);
+  let label= q>=.8?'Perfect!': q>=.7?'Great!': q>=.6?'Good': q<.4?'Weak': (1-tq)*.55>(1-cq)*.45 ? (e<0?'Late':'Early') : 'Off-centre';
   return {q,label};
 }
 function hitShuttle(p,d=0,reach=REACH){
@@ -1378,10 +1383,10 @@ function hitShuttle(p,d=0,reach=REACH){
   if(type==='smash'){
     big=!p.onGround; if(big&&p.st<=0&&game.mode!=='demo'){ big=false; popup(p.x,p.y-160,'too tired to jump-smash','#d0456f',16); }
     if(p.armed==='thunder'||p.armed==='bomb'){ spec=p.armed; p.armed=null; q=Math.max(q,.9); }
-    const sp=(big?78:62)*PX_M*(.45+.55*q)*pPow(p)*(spec==='thunder'?1.22:spec==='bomb'?1.25:1);   // v14: 78 m/s jump smash / 62 m/s ground off the racket (drag does the rest)
+    const sp=(big?78:62)*PX_M*(.45+.55*q)*(q>=.8?1.06:q<.6?.88:1)*pPow(p)*(spec==='thunder'?1.22:spec==='bomb'?1.25:1);   // v14: 78 m/s jump smash / 62 m/s ground off the racket (drag does the rest)
     // aim away from the receiver: short if they are deep, deep if they are up at the net
     const oppFrac=Math.abs(opp.x-NET_X)/(NET_X-COURT_L);
-    const tfr=q<.5?rand(.35,.9):(p.ai&&DIFF[p.ai.diff].smart&&Math.random()<.35)?clamp(oppFrac+rand(-.06,.04),.25,.95):oppFrac>.55?rand(.3,.5):rand(.72,.95), tx=oppX(p.side,tfr);   // mistimed = poorly placed
+    const tfr=q<.6?rand(.3,.9):(p.ai&&DIFF[p.ai.diff].smart&&Math.random()<.35)?clamp(oppFrac+rand(-.06,.04),.25,.95):oppFrac>.55?rand(.3,.5):rand(.72,.95), tx=oppX(p.side,tfr);   // mistimed = poorly placed
     let bestErr=1e9;
     for(let ang=-Math.min(50,Math.round((big?30:24)+(big?30:24)*q)); ang<=8; ang+=2){   // v14: smashes at most 50 deg down
       const r=ang*Math.PI/180, c={vx:Math.cos(r)*dir*sp, vy:-Math.sin(r)*sp};
@@ -1391,7 +1396,7 @@ function hitShuttle(p,d=0,reach=REACH){
     }
     if(!v){ type=p.ai?'clear':'drive'; if(spec==='thunder'||spec==='bomb'){ p.armed=spec; spec=null; } }   // v16.1: no smash line from here -> the armed power special is kept, not wasted on the bail-out
     else if(q<.75){ // mis-timed: angle wobbles, can find the net or go long
-      const sp2=Math.hypot(v.vx,v.vy), a=Math.atan2(v.vy,v.vx*dir)+rand(-1,1)*(1-q)*0.17;
+      const sp2=Math.hypot(v.vx,v.vy), a=Math.atan2(v.vy,v.vx*dir)+rand(-1,1)*(1-q)*0.26;
       v={vx:Math.cos(a)*sp2*dir, vy:Math.sin(a)*sp2};
     }
   }
@@ -1501,9 +1506,9 @@ function hitShuttle(p,d=0,reach=REACH){
   } else if(type==='drop'||type==='block'){
     sfx.hit(.45); for(let i=0;i<5;i++) spark(s.x,s.y,'#fff6a8');
   } else {
-    const fr=aimFrac(p,type)*(shuttle.type==='smash'?.82:1)*(type==='clear'||type==='lift'?.86+.14*q:.72+.28*q);   // high clears stay deep even when hit late   // returns of a smash are weaker; poor contact = shorter
+    const fr=aimFrac(p,type)*(shuttle.type==='smash'&&game.lastHitter!==p.side?clamp(.82+.03*chD(p,6),.7,.95):1)*(type==='clear'||type==='lift'?.72+.28*q:.58+.42*q)*(q<.6?rand(.88,1.04):1);   // v16.6: poor = clearly shorter & scattered; high DEF = deeper defensive lifts   // high clears stay deep even when hit late   // returns of a smash are weaker; poor contact = shorter
     v=solveShot(s.x,s.y,oppX(p.side,fr),(type==='lift'||type==='clear')?highAng(type,q):SHOTS[type].ang);   // v16: lifts/clears pick the HIGHEST trajectory that still lands deep (same for player and AI); timing caps the height
-    sfx.hit(type==='clear'||type==='lift'||type==='punch'?1:.7);
+    sfx.hit((type==='clear'||type==='lift'||type==='punch'?1:.7)*(.55+.45*q));   // v16.6: weak contacts sound duller
     for(let i=0;i<7;i++) spark(s.x,s.y,'#fff6a8');
   }
   if(weakRet){ type='lift'; big=false; const w=solveShot(s.x,s.y,oppX(p.side,weakRet>1?rand(.22,.34):rand(.3,.45)),[62,66,70,58,74]); if(w) v=w; popup(p.x,p.y-185,'weak pop-up!','#ff9a3c',16); }   // v15.6: a blasted return is a short, attackable lift
@@ -1519,8 +1524,8 @@ function hitShuttle(p,d=0,reach=REACH){
   else if(rid&&SPX[rid]){ if(SPX[rid].w==='ret') s.spRet0=rid; else if(SPX[rid].w==='hit'){ spRider(opp,rid); if(SPX[rid].rw) s.spRet0=rid; } }
   s.vx=v.vx; s.vy=v.vy; s.netHit=false; s.netCord=false; s.boostT=0; s.gMul=1; s.bK=BOOST_K; s.tumbleT=type==='net'?.7:0; s.fx=(type==='smash'||type==='netkill'||type==='kill'||type==='flat')?(type==='kill'?1:fxTier):-1; s.fxc=p.side===0?'#ffc61a':'#ff5f9e'; s.hitter=p.side;
   // v16.2 shot errors: a poor contact, a hard incoming attack, low Control/Defence or being tired can put the shot into the net, out, or up short
-  if(v&&!spec&&!weakRet&&!p.perfN&&game.state==='rally'&&!inMine&&(q<.97||tired(p))){ const atkIn=ATTACK_T.has(inT), pres=atkIn?clamp((inSp-18)/45,0,1):0, defShot=atkIn&&!ATTACK_T.has(type);
-    let risk=Math.max(0,.62-q)*.45+pres*(defShot?.12:.06)*clamp(1-.12*chD(p,6),.35,1.8)-.012*chD(p,3); if(p.ai) risk*=p.ai.diff==='easy'?1.4:p.ai.diff==='normal'?1.1:.9;
+  if(v&&!spec&&!weakRet&&!p.perfN&&game.state==='rally'&&!inMine&&(q<.97||tired(p)||ATTACK_T.has(inT))){ const atkIn=ATTACK_T.has(inT), pres=atkIn?clamp((inSp-18)/45,0,1):0, defShot=atkIn&&!ATTACK_T.has(type);
+    let risk=Math.max(0,.68-q)*.7+pres*(defShot?.2:.06)*clamp(1-.17*chD(p,6),.62,1.6)-.012*chD(p,3); // v16.6: poor contact and low DEF err far more if(p.ai) risk*=p.ai.diff==='easy'?1.4:p.ai.diff==='normal'?1.1:.9;
     if(tired(p)){ const fg=fatigue(p); risk+=(.08+.3*fg)*(ATTACK_T.has(type)?1.2:1)*clamp(1-.04*chD(p,5),.75,1.25)*(q>=.8?.8:1); }   // v16.3: fatigue errors on every shot; Perfect timing only softens them
     risk=clamp(risk,0,.6);
     const eRoll=Math.random();
@@ -1532,7 +1537,8 @@ function hitShuttle(p,d=0,reach=REACH){
       else { const w=solveShot(s.x,s.y,oppX(p.side,rand(.22,.4)),[64,68,72,60,76]); if(w) nv=w; }
       if(!nv&&mode!=='short'){ const w=solveShot(s.x,s.y,oppX(p.side,rand(.22,.4)),[64,68,72,60,76,80,56]); if(w){ nv=w; mode='short'; } }   // v16.3: an error that cannot find the net/line pops up short instead of silently vanishing
       if(!nv){ nv={vx:v.vx*.45,vy:Math.max(v.vy,-120)}; mode='net'; }
-      if(nv){ v=nv; if(mode==='short'){ type='lift'; big=false; } p.errN=(p.errN||0)+1; popups.length=Math.min(popups.length,pop0); Q.label=null; if(!p.ai&&game.mode!=='demo') popup(p.x,p.y-205,mode==='net'?'Into the net!':mode==='out'?'Too long!':'Up short!','#d0456f',18); } } }
+      if(nv){ v=nv; if(mode==='short'){ type='lift'; big=false; } p.errN=(p.errN||0)+1; popups.length=Math.min(popups.length,pop0); Q.label=null; if(!p.ai&&game.mode!=='demo') popup(p.x,p.y-205,mode==='net'?'Into the net!':mode==='out'?'Too long!':defShot?'Frame!':'Up short!','#d0456f',18); } }
+      else if(defShot&&(type==='lift'||type==='clear'||type==='block'||type==='drive')&&Math.random()<pres*clamp(.27-.045*chD(p,6),.08,.6)*(q>=.8?.8:q<.6?1.3:1)){ const w=solveShot(s.x,s.y,oppX(p.side,rand(.3,.48)),[60,64,68,72,56]); if(w){ v=w; type='lift'; big=false; p.popN=(p.popN||0)+1; if(!p.ai&&game.mode!=='demo') popup(p.x,p.y-205,'Weak pop-up','#ff9a3c',18); } } }   // v16.6 low DEF: soft, killable pop-ups under fire
   s.type=type; s.bigSmash=big; s.q=q; s.special=spec; s.spRet=s.spRet0||null; s.spRet0=null; s.webDip=s.webDip0||0; s.webDip0=0; if(spec==='wall'&&p.ch.id==='batman'||rid==='batman') s.hideT=.45; if(spec==='bomb'){ const r=Math.hypot(s.vx,s.vy), a=Math.atan2(s.vy,s.vx), d=Math.sign(s.vx)||1, a2=a+d*.07, nv={vx:Math.cos(a2)*r,vy:Math.sin(a2)*r}, sim=simulate(s.x,s.y,nv.vx,nv.vy,3); if(sim.crossY!==null&&sim.crossY<NET_TOP-4&&(sim.landX-NET_X)*d>1.5*PX_M){ s.vx=nv.vx; s.vy=nv.vy; } s.fx=2; game.shake=.45; hitFreeze(.1); sfx.boom&&sfx.boom(.6); game.camP=1; }   // steeper by ~4 deg when it still clears the tape
   if(spec&&spec!=='thunder'&&spec!=='bomb'){ hitFreeze(.07); game.camP=Math.max(game.camP||0,.5); }
   if(spec){ const col=p.ch.col; popup(s.x,s.y-58,'\u2605 '+p.ch.spName,col,30); for(let i=0;i<14;i++) spark(s.x,s.y,col);
@@ -1540,7 +1546,7 @@ function hitShuttle(p,d=0,reach=REACH){
     else if(spec==='spin'){ s.tumbleT=1.4; } }
   gainMeter(p,4+(q>=.6?4:0)+(q>=.8?4:0)+(game.rally>=10?2:0));
   game.lastQ={q:+q.toFixed(3),label:Q.label,type,speed:Math.round(Math.hypot(v.vx,v.vy))};
-  if(Q.label && game.mode!=='demo' && !((type==='smash'||type==='netkill'||type==='flat')&&fxTier===2)){ const c=Q.label==='Perfect!'?'#ffb000':Q.label==='Good'?'#58b368':'#9a8fb0';
+  if(Q.label && game.mode!=='demo' && !((type==='smash'||type==='netkill'||type==='flat')&&fxTier===2)){ const c=Q.label==='Perfect!'?'#ffb000':Q.label==='Great!'?'#3fae5a':Q.label==='Good'?'#58b368':Q.label==='Weak'?'#c0607a':'#9a8fb0';
     popup(p.x+p.f*8,p.y-150,Q.label,c,Q.label==='Perfect!'?30:22); if(Q.label==='Perfect!') for(let i=0;i<10;i++) spark(s.x,s.y,'#fff27a'); }
   game.lastHitter=p.side; game.hitId++; game.rally++;
   game.maxRally=Math.max(game.maxRally||0,game.rally);
@@ -1614,7 +1620,7 @@ function updatePlayer(p,dt){
 function hitCenter(p){ const l=(p.lungeT>0||p.recT>0)?1:0;
   const nk=p.req==='smash'&&p.swingT>=0&&Math.abs(p.x-NET_X)<NK_PX;   // net kill: arm up, racket above the tape
   return {x:p.x+p.f*25+(l?(p.lungeDir||0)*9:0), y:p.y-(nk?(p.onGround?122:140):(p.onGround?75:100))+l*12}; }   // airborne = arm stretched overhead
-function reachOf(p){ return ((p.ai?REACH:REACH+5)+4*chD(p,4)+((p.lungeT>0||p.recT>0)?LUNGE_REACH*(1+.08*chD(p,4)):0))*PHYS.reach; }
+function reachOf(p){ return ((p.ai?REACH:REACH+5)+4*chD(p,4)+(ATTACK_T.has(shuttle.type)&&game.lastHitter!==p.side?3*chD(p,6):0)+((p.lungeT>0||p.recT>0)?LUNGE_REACH*(1+.08*chD(p,4)):0))*PHYS.reach; }
 
 /* ================= AI ================= */
 function aiThink(p,dt){
@@ -1637,7 +1643,7 @@ function aiThink(p,dt){
         a.miss=Math.random()<d.mistake; a.jump=Math.random()<d.jump; a.jroll=Math.random()<d.jump; a.runFrom=p.x; a.leave=Math.random()<d.leave;
         if(s.type==='kill'){ a.react=d.sReact*rand(.8,1.2); a.miss=Math.random()<d.sMiss*1.2; a.jump=false; }
         if(s.type==='netkill'){ a.react=d.sReact*rand(.9,1.3); a.miss=Math.random()<Math.min(.95,d.sMiss+.6); a.jump=false; }
-        if(s.type==='smash'){ const sq=s.q===undefined?1:s.q; a.react=d.sReact*rand(.8,1.25)*(.5+.5*sq); a.miss=Math.random()<(s.bigSmash?d.bigMiss:d.sMiss)*(.25+.75*sq)*clamp(1+.08*chD(players[1-p.side],0)-.1*chD(p,6),.3,2); a.jump=false; }
+        if(s.type==='smash'){ const sq=s.q===undefined?1:s.q; a.react=d.sReact*rand(.8,1.25)*(.5+.5*sq); a.miss=Math.random()<(s.bigSmash?d.bigMiss:d.sMiss)*(.25+.75*sq)*clamp(1+.08*chD(players[1-p.side],0)-.16*chD(p,6),.3,2); a.jump=false; }
         if(s.type==='flat'){ const sq=s.q===undefined?1:s.q, pace=clamp((Math.hypot(s.vx,s.vy)/PX_M-16)/26,0,1);   // v14.2: fast flat attack: the faster and cleaner, the more often even Hard is beaten for pace
           a.react=d.sReact*rand(.8,1.15)*(.6+.4*sq); a.miss=Math.random()<Math.min(.92,(d.fMiss??.4)*FLAT_MISS/2.4)*pace*sq; a.jump=false; }
         if(s.type==='drop'||s.type==='block'||s.type==='net') a.jump=false;
@@ -2570,6 +2576,7 @@ function hitFreeze(t){ if(game.mode==='online'||!SET.slowmo) return; game.hitSto
 const ST={max:100,run:0,lunge:4,jump:3,runDrain:1.5,regenStand:3,regenMove:3,regenFast:2,regenBreak:7.5,low:30,vlow:12,
   shot:{jsmash:20,smash:15,flat:17,netkill:12,kill:12,special:16,punch:8,drive:8,drop:7,block:7,net:7,push:7,clear:4,lift:4,serve:1.5}};   // v15.4: ~1.6-1.8x v15.3
 const tired=p=>p.st<ST.low;
+const perfWin=p=>game.mode==='demo'||game.noStamina||!tired(p)?1:clamp(.52-.32*fatigue(p),.2,.52);   // v16.6 Perfect window scale
 const fatigue=p=>game.mode==='demo'||game.noStamina?0:clamp((ST.low-p.st)/(ST.low-2),0,1);   // v16.3: 0 at the tired line, 1 when empty
 const stMax=p=>ST.max+7*chD(p,5);   // v15.4: stamina stat = bigger tank (79..121) + faster regen
 const pSpd=p=>(p.stunT>0?.3:1)*(p.slowT>0?.6:1)*(1+.055*chD(p,1))*(p.st<ST.vlow&&game.mode!=='demo'?.74:tired(p)?.82:1)*(p.boostT>0?(p.boostK||1.35):1);
@@ -2605,22 +2612,22 @@ const SPX={
   panther:{w:'hit',rw:2,stun:1.6,kb:1.6,txt:'KINETIC PULSE!'},
   flash:{w:'hit',rw:2,stun:2.3,kb:.8,slow:1.5,txt:'AFTERIMAGE FEINT!'},
   batman:{w:'hit',stun:0,txt:'SMOKE BOMB!'},
-  superman:{w:'ret',stun:.45,sta:35,slow:.8,weak:1,txt:'HEAT DRAIN!'},
+  superman:{w:'ret',stun:.2,sta:20,slow:.5,weak:0,txt:'HEAT DRAIN!'},
   wonder:{w:'hit',stun:.2,kb:.6,txt:'LASSO PULL!'},
-  naruto:{w:'hit',rw:1,stun:.8,slow:1,txt:'SHADOW CLONES!'},
-  goku:{w:'ret',stun:.65,kb:1.6,slow:1,weak:1,txt:'KAME BLAST!'},
+  naruto:{w:'hit',rw:1,stun:.6,slow:.8,txt:'SHADOW CLONES!'},
+  goku:{w:'ret',stun:.5,kb:1.3,slow:.8,weak:0,txt:'KAME BLAST!'},
   pikachu:{w:'act',rw:2,stun:3.0,chain:{stun:3.0,kb:.8,slow:1.5,txt:'CHAIN SHOCK!'},txt:'SHOCKED!'},
   doraemon:{w:'hit',rw:1,stun:.6,kb:1.0,slow:2,txt:'AIR CANNON!'},
   xiaoqi:{w:'hit',rw:2,stun:1.4,kb:-1.0,slow:2,txt:'GRABBED!'},
   dalaba:{w:'ret',stun:.7,sta:15,slow:1.2,weak:1,txt:'HORN BLAST!'},
   sheep:{w:'hit',stun:.8,slow:1.2,txt:'SUGAR RUSH!'},
-  luffy:{w:'hit',rw:2,stun:.8,kb:2.4,txt:'RUBBER ROCKET!'},
+  luffy:{w:'hit',rw:2,stun:.6,kb:2.4,txt:'RUBBER ROCKET!'},
   tanjiro:{w:'hit',rw:2,stun:1.6,kb:.5,slow:1.2,txt:'WATER WHEEL!'},
-  sailor:{w:'hit',rw:1,stun:.5,txt:'MOON TIARA!'},
+  sailor:{w:'hit',rw:1,stun:.75,txt:'MOON TIARA!'},
   sonic:{w:'hit',rw:2,stun:2.4,kb:1.0,slow:1.5,txt:'SPIN DASHED!'},
   shinchan:{w:'hit',rw:2,stun:2.6,kb:.8,slow:2,txt:'GIGGLE FIT!'},
   deadpool:{w:'hit',rw:2,stun:1.6,kb:1.2,txt:'CHIMICHANGA BOOM!'},
-  spongebob:{w:'hit',rw:1,stun:1.2,kb:.8,slow:2.5,txt:'BUBBLED!'},
+  spongebob:{w:'hit',rw:1,stun:.95,kb:.8,slow:2.5,txt:'BUBBLED!'},
   golden:{w:'ret',stun:.5,kb:.7,slow:1,weak:1,txt:'GOLDEN STUN!'}
 };
 function spxText(id){ const r=SPX[id]; if(!r) return ''; const bits=[]; if(r.stun) bits.push(`stunned ${r.stun} s`); if(r.kb) bits.push(`pushed back ${r.kb} m`); if(r.sta) bits.push(`loses ${r.sta} stamina`); if(r.slow) bits.push(`slowed ${r.slow} s`); if(r.chain) bits.push(`then your next shot chain-shocks for ${r.chain.stun} s`); if(r.weak||r.rw) bits.push('their return pops up short');
@@ -2848,10 +2855,10 @@ const DESC={
   panther:{fl:'The king of Wakanda moves like a shadow: silent, fast and precise. \uD83D\uDC3E',best:'Speed and control',weak:'Low power',tip:'Run them ragged with drops and drives. Panther Pounce resets your recovery when you\u2019re caught out.',sig:'Kinetic Pulse: your next shot knocks the opponent back and stuns them.'},
   flash:{fl:'The fastest man alive. Already at the shuttle before you hit it. \u26A1\uD83D\uDC5F',best:'Top speed in the game',weak:'The weakest smash',tip:'Retrieve everything and win long rallies. Use Speed Force when you\u2019re pulled out of position.',sig:'Speed Force: double speed for 2 s, and your next shot leaves the opponent frozen.'},
   batman:{fl:'The Dark Knight studies every opponent. He doesn\u2019t miss, he plans. \uD83E\uDD87',best:'The best timing control, plus long reach',weak:'Low jump and average power',tip:'Play patient, precise rallies to the corners. Bat Guard auto-blocks a smash with a smoke surprise.',sig:'Smoke bomb: a cloud hides the shuttle for about half a second, and the CPU reacts late.'},
-  superman:{fl:'Faster than a speeding shuttle. Super strong, super polite. \uD83E\uDDB8',best:'Power, speed and jump',weak:'Average control and stamina',tip:'Attack early and often. Heat Smash drains the returner\u2019s stamina, so use it mid-rally.',sig:'Heat Smash: the returner loses 35 stamina, is stunned and their return pops up short.'},
+  superman:{fl:'Faster than a speeding shuttle. Super strong, super polite. \uD83E\uDDB8',best:'Power, speed and jump',weak:'Average control and stamina',tip:'Attack early and often. Heat Smash drains the returner\u2019s stamina, so use it mid-rally.',sig:'Heat Smash: the returner loses 20 stamina and is briefly stunned.'},
   wonder:{fl:'An Amazon warrior with perfect balance between power and grace. \u2728',best:'Balanced attack and defence',weak:'No big weakness, no single best stat',tip:'Play the all-court game. Bracelet Block deflects a smash and the lasso drags them off position.',sig:'Lasso: the opponent is yanked off position.'},
   naruto:{fl:'Believe it! Never gives up and never runs out of energy, thanks to ramen. \uD83C\uDF5C',best:'Endless stamina and good speed',weak:'Loose timing control',tip:'Drag the CPU into long rallies until they tire. Ramen Second Wind refuels you instantly.',sig:'Shadow clones: your next shot feints the opponent, who is stunned and slowed.'},
-  goku:{fl:'A cheerful Saiyan who just wants a strong opponent. Kame\u2026hame\u2026SMASH! \uD83D\uDD25',best:'Strong all-round attack',weak:'Average reach and stamina',tip:'Keep the pressure on with smashes and net kills. Kame Smash blasts the returner backwards.',sig:'Kame Smash: the returner is blasted back 1.6 m and their return pops up short.'},
+  goku:{fl:'A cheerful Saiyan who just wants a strong opponent. Kame\u2026hame\u2026SMASH! \uD83D\uDD25',best:'Strong all-round attack',weak:'Average reach and stamina',tip:'Keep the pressure on with smashes and net kills. Kame Smash blasts the returner backwards.',sig:'Kame Smash: the returner is stunned and blasted back 1.3 m.'},
   pikachu:{fl:'Tiny, electric and adorable. Pika-pika, then zap! \u26A1\uD83D\uDC2D',best:'Very fast with a good jump',weak:'Tiny reach and low power',tip:'Get to everything early. Quick Attack zaps the opponent the moment you use it, so use it when they\u2019re about to hit.',sig:'Chain shock: +40 extra stamina, the opponent is shocked on activation, and again by your next shot.'},
   doraemon:{fl:'The robot cat from the future with a gadget for every situation. \uD83D\uDD14',best:'Control, reach and great stamina',weak:'Slow and a low jump',tip:'Place the shuttle, don\u2019t chase it. Dorayaki Break refuels you, and the Air Cannon shoves them back.',sig:'Air Cannon: your next shot blows the opponent back, slows them for 2 s and their return pops up short.'},
   xiaoqi:{fl:'Nailoong\u2019s genius best friend. \u201cNailoong, try my new invention!\u201d \uD83D\uDD27',best:'Control and quick feet',weak:'Average power and stamina',tip:'Place the shuttle into the corners and let the gadget drag them out of position.',sig:'Second wind, then a robot arm yanks the opponent 1 m to the net (stun 1.4 s); weak return.'},
