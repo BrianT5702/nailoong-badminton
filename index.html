@@ -999,11 +999,11 @@ const CHARS=[
     bio:'Nailoong\'s blue eggshell rival (\u66b4\u66b4\u9f99). Big hitter, big reach, a bit slow.'},
   {id:'spidey',name:'Spider-Man',src:'draw',st:[9,8,8,8,4,3,4],sp:'spin',spName:'Web Net Trap',col:'#e23b3b',frame:'#1d4fbf',grip:'#e23b3b',
     bio:'Fast, springy and strong, but runs out of breath.',art:{suit:'#d8262b',suit2:'#1f4fbf',head:'mask',mask:'#d8262b',eyes:'lens',web:true,emblem:'spider',boots:'#d8262b'}},
-  {id:'hulk',name:'Hulk',src:'draw',st:[9,4,5,4,8,7,3],sp:'thunder',spName:'Gamma Smash',col:'#5fa83a',frame:'#7b3fa0',grip:'#5fa83a',
+  {id:'hulk',name:'Hulk',src:'draw',st:[9,4,5,5,8,7,3],sp:'thunder',spName:'Gamma Smash',col:'#5fa83a',frame:'#7b3fa0',grip:'#5fa83a',
     bio:'Maximum power and reach. Slow feet, wild control.',art:{skin:'#6fbf44',suit:'#6fbf44',suit2:'#7b3fa0',head:'skin',eyes:'angry',hair:{col:'#23301c',style:'flat'},shorts:true,boots:'#6fbf44',big:1.12}},
   {id:'ironman',name:'Iron Man',src:'draw',st:[8,6,8,6,5,4,5],sp:'drive',spName:'Repulsor Drive',col:'#c8202a',frame:'#b01a24',grip:'#f0c419',
     bio:'Powerful armour with boot-jet jumps; the suit drains energy.',art:{suit:'#c4202a',suit2:'#f0c419',head:'helm',mask:'#c4202a',plate:'#f0c419',eyes:'slit',emblem:'reactor',boots:'#c4202a'}},
-  {id:'cap',name:'Captain America',src:'draw',st:[7,7,5,7,7,6,9],sp:'wall',spName:'Shield Block',col:'#2050b8',frame:'#d8262b',grip:'#ffffff',
+  {id:'cap',name:'Captain America',src:'draw',st:[7,7,5,8,7,6,9],sp:'wall',spName:'Shield Block',col:'#2050b8',frame:'#d8262b',grip:'#ffffff',
     bio:'Solid defender: good reach and control, shield saves a smash.',art:{suit:'#2a55b8',suit2:'#d8262b',head:'cowl',mask:'#2a55b8',skin:'#f6d2b0',eyes:'cute',emblem:'star',stripes:true,boots:'#d8262b',shield:true}},
   {id:'thor',name:'Thor',src:'draw',st:[9,5,6,5,6,6,5],sp:'thunder',spName:'Lightning Smash',col:'#7a8fa8',frame:'#c0c8d8',grip:'#8a5a2b',
     bio:'Thunderous smashes, heavy on his feet.',art:{suit:'#46506a',suit2:'#2b3348',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#f2c94c',style:'long'},cape:'#c8202a',emblem:'discs',boots:'#2b3348'}},
@@ -1043,7 +1043,7 @@ const CHARS=[
     bio:'A cheeky five-year-old who never, ever gets tired.'},
   {id:'deadpool',name:'Deadpool',src:'draw',st:[8,6,6,6,6,5,5],sp:'bomb',spName:'Chimichanga Bomb',col:'#b01a24',frame:'#1a1a1a',grip:'#b01a24',
     bio:'A chatty masked mercenary who smashes and jokes.'},
-  {id:'spongebob',name:'SpongeBob',src:'draw',st:[4,5,5,6,6,8,7],sp:'wind',spName:'Bubble Blower',col:'#f5e030',frame:'#f5e030',grip:'#8a5a2b',
+  {id:'spongebob',name:'SpongeBob',src:'draw',st:[4,5,5,6,5,8,6],sp:'wind',spName:'Bubble Blower',col:'#f5e030',frame:'#f5e030',grip:'#8a5a2b',
     bio:'A cheerful sea sponge: absorbs everything, tires never.'},
   {id:'golden',name:'Champion Nailoong',src:'tint',base:'nai',tint:'#ffcf3a',glow:'#fff2a0',st:[7,7,7,7,7,6,7],bossSt:[9,9,8,9,8,8,9],sp:'thunder',spName:'Golden Thunder',col:'#e0a800',frame:'#e0a800',grip:'#fff2a0',boss:true,
     bio:'The crowned golden champion. Beat the Tournament to play him (the boss version is even stronger).'}
@@ -1825,7 +1825,7 @@ function step(dt){
     }
     for(const p of players){
       if(p.armed==='wall'&&ATTACK_T.has(s.type)&&game.lastHitter!==p.side&&!s.netHit&&(p.side===0?s.x<=NET_X+1:s.x>=NET_X-1)){   // v15 shield: auto-perfect return
-        const hc=hitCenter(p); if(Math.hypot(s.x-hc.x,s.y-hc.y)<reachOf(p)*(p.ch.id==='cap'?1.7:p.ch.id==='batman'?1.4:1.7)){ p.armed=null; p.wallHit=true; if(p.ch.id==='cap') p.st=Math.min(stMax(p),p.st+10); p.swingT=SW_PEAK; p.hitDone=false; p.req='clear';
+        const hc=hitCenter(p); if(Math.hypot(s.x-hc.x,s.y-hc.y)<reachOf(p)*(p.ch.id==='cap'?1.7:p.ch.id==='batman'?1.4:1.7)){ p.armed=null; p.wallHit=true; if(p.ch.id==='cap') p.st=Math.min(stMax(p),p.st+5); p.swingT=SW_PEAK; p.hitDone=false; p.req='clear';
           popup(p.x,p.y-170,'\u2605 '+p.ch.spName+'!',p.ch.col,26); fxBurst('flash',s.x,s.y,p.ch.col,0,1.2); hitShuttle(p,0,reachOf(p)); break; } }
       if(p.swingT>=SW_START && p.swingT<SW_END && !p.hitDone && game.lastHitter!==p.side && !s.netHit){
         // online guest: judge the swing against where the shuttle was when they saw it (rewind ~half the ping)
@@ -2601,7 +2601,7 @@ const SPX={
   goku:{w:'ret',stun:.65,kb:1.6,slow:1,weak:1,txt:'KAME BLAST!'},
   pikachu:{w:'act',rw:2,stun:3.0,chain:{stun:3.0,kb:.8,slow:1.5,txt:'CHAIN SHOCK!'},txt:'SHOCKED!'},
   doraemon:{w:'hit',rw:1,stun:.6,kb:1.0,slow:2,txt:'AIR CANNON!'},
-  xiaoqi:{w:'hit',rw:2,stun:1.0,kb:-1.0,slow:1,txt:'GRABBED!'},
+  xiaoqi:{w:'hit',rw:2,stun:1.4,kb:-1.0,slow:2,txt:'GRABBED!'},
   dalaba:{w:'ret',stun:.7,sta:15,slow:1.2,weak:1,txt:'HORN BLAST!'},
   sheep:{w:'hit',stun:.8,slow:1.2,txt:'SUGAR RUSH!'},
   luffy:{w:'hit',rw:2,stun:.8,kb:2.4,txt:'RUBBER ROCKET!'},
@@ -2829,7 +2829,7 @@ const DESC={
   spidey:{fl:'Your friendly neighbourhood shuttler. Quips, flips and webs everywhere. \uD83D\uDD78\uFE0F',best:'Power, speed, jump, control: the full package',weak:'Short reach and low stamina, so he tires fast',tip:'Play fast, short rallies and finish early. Rest during long clears so you don\u2019t run dry.',sig:'Web shot: the shuttle is pulled down hard past the net and dips about 0.5 m shorter than it looks.'},
   hulk:{fl:'Big. Green. Not a fan of losing. HULK SMASH (shuttles). \uD83D\uDCAA',best:'Monster smashes, giant reach, huge stamina',weak:'Slow feet and loose timing',tip:'Stay in the middle and let your reach do the running. Attack anything above the net.',sig:'Gamma Smash: whoever returns it is shoved 2 m back and their return pops up short.'},
   ironman:{fl:'Genius, billionaire, badminton enthusiast. Suit tuned for jump smashes. \uD83E\uDD16',best:'Power and big jumps',weak:'Low stamina and short reach',tip:'Jump smash from mid court and use the Repulsor Drive to push the opponent to the back line.',sig:'Repulsor Drive leaves the racket about 22% faster with a beam trail, and flashes the opponent.'},
-  cap:{fl:'The steady captain. Never panics, never gives up a point easily. \uD83D\uDEE1\uFE0F',best:'Defence, reach and control',weak:'Plain power and an average jump',tip:'Absorb the attack and wait for the short reply. Shield Block turns their best smash against them.',sig:'Shield ricochet: the blocked smash comes straight back as a fast flat drive, and Cap gets +10 stamina.'},
+  cap:{fl:'The steady captain. Never panics, never gives up a point easily. \uD83D\uDEE1\uFE0F',best:'Defence, reach and control',weak:'Plain power and an average jump',tip:'Absorb the attack and wait for the short reply. Shield Block turns their best smash against them.',sig:'Shield ricochet: the blocked smash comes straight back as a fast flat drive, and Cap gets +5 stamina.'},
   thor:{fl:'God of Thunder, and of very loud smashes. Mjolnir doubles as a racket. \u26A1',best:'Thunderous smashes and solid stamina',weak:'Slightly slow feet',tip:'Clear deep, wait for a short lift, then Lightning Smash. The stun helps you finish the rally.',sig:'Lightning Smash: the returner is stunned and their return pops up short.'},
   panther:{fl:'The king of Wakanda moves like a shadow: silent, fast and precise. \uD83D\uDC3E',best:'Speed and control',weak:'Low power',tip:'Run them ragged with drops and drives. Panther Pounce resets your recovery when you\u2019re caught out.',sig:'Kinetic Pulse: your next shot knocks the opponent back and stuns them.'},
   flash:{fl:'The fastest man alive. Already at the shuttle before you hit it. \u26A1\uD83D\uDC5F',best:'Top speed in the game',weak:'The weakest smash',tip:'Retrieve everything and win long rallies. Use Speed Force when you\u2019re pulled out of position.',sig:'Speed Force: double speed for 2 s, and your next shot leaves the opponent frozen.'},
@@ -2840,7 +2840,7 @@ const DESC={
   goku:{fl:'A cheerful Saiyan who just wants a strong opponent. Kame\u2026hame\u2026SMASH! \uD83D\uDD25',best:'Strong all-round attack',weak:'Average reach and stamina',tip:'Keep the pressure on with smashes and net kills. Kame Smash blasts the returner backwards.',sig:'Kame Smash: the returner is blasted back 1.6 m and their return pops up short.'},
   pikachu:{fl:'Tiny, electric and adorable. Pika-pika, then zap! \u26A1\uD83D\uDC2D',best:'Very fast with a good jump',weak:'Tiny reach and low power',tip:'Get to everything early. Quick Attack zaps the opponent the moment you use it, so use it when they\u2019re about to hit.',sig:'Chain shock: +40 extra stamina, the opponent is shocked on activation, and again by your next shot.'},
   doraemon:{fl:'The robot cat from the future with a gadget for every situation. \uD83D\uDD14',best:'Control, reach and great stamina',weak:'Slow and a low jump',tip:'Place the shuttle, don\u2019t chase it. Dorayaki Break refuels you, and the Air Cannon shoves them back.',sig:'Air Cannon: your next shot blows the opponent back, slows them for 2 s and their return pops up short.'},
-  xiaoqi:{fl:'Nailoong\u2019s genius best friend. \u201cNailoong, try my new invention!\u201d \uD83D\uDD27',best:'Control and quick feet',weak:'Average power and stamina',tip:'Place the shuttle into the corners and let the gadget drag them out of position.',sig:'Second wind, then a robot arm yanks the opponent 1 m to the net (stun 1 s); weak return.'},
+  xiaoqi:{fl:'Nailoong\u2019s genius best friend. \u201cNailoong, try my new invention!\u201d \uD83D\uDD27',best:'Control and quick feet',weak:'Average power and stamina',tip:'Place the shuttle into the corners and let the gadget drag them out of position.',sig:'Second wind, then a robot arm yanks the opponent 1 m to the net (stun 1.4 s); weak return.'},
   dalaba:{fl:'Bombloong\u2019s loudest Purple Soldier. Loves purple sweet potatoes and laughing at the wrong moment. \uD83D\uDCE2',best:'Long reach and a big stamina tank',weak:'Slow feet and an average jump',tip:'Stand tall in the middle, smash anything short, and blast the Big Horn when they are tired.',sig:'Returner deafened 0.7 s, loses 15 stamina; weak return.'},
   sheep:{fl:'A fluffy little pastry chef. Everything she serves is sweet, especially her net shots. \uD83E\uDDC1',best:'Superb control, good stamina',weak:'The softest smash in the game',tip:'Win at the net with tight spinning shots, and rest with high lifts.',sig:'Sugar Swirl Net: a spinning net shot and the opponent is stuck in sugar (stunned 0.8 s, slowed 1.2 s).'},
   luffy:{fl:'A rubber pirate who wants to be King of Badminton. Stretchy arms, huge appetite. \uD83C\uDFF4',best:'Huge reach and a strong smash',weak:'Loose timing, low stamina',tip:'Stretch for everything, attack early, finish rallies before you tire.',sig:'Rocket shot: opponent flung 2.4 m back (the biggest knock-back), stunned 0.8 s; weak return.'},
