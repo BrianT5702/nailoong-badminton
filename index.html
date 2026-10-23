@@ -1356,7 +1356,7 @@ function contactQuality(p,d,reach){
   if(p.ai){ const r=DIFF[p.ai.diff].q, late=p.ai.lateId===game.hitId; const inAtk=ATTACK_T.has(shuttle.type)&&game.lastHitter!==p.side&&!shuttle.special; return {q:clamp(rand(r[0],r[1])+.035*chD(p,3)+(inAtk?.03*chD(p,6):0)-(p.st<ST.vlow?.16:tired(p)?.1:0),0,1)*(late?.65:1),label:null}; }
   const e=p.swingT-SW_PEAK, tq=clamp(1-Math.abs(e)/(.1*pCtl(p)),0,1);
   const cq=clamp(1-(d-reach*.35)/(reach*.65),0,1);
-  const inAtk=ATTACK_T.has(shuttle.type)&&game.lastHitter!==p.side&&!shuttle.special, q=clamp(tq*.55+cq*.45+(inAtk?.03*chD(p,6):0),0,1);   // v16.2 Defence: cleaner returns against attacks
+  const inAtk=ATTACK_T.has(shuttle.type)&&game.lastHitter!==p.side&&!shuttle.special, q=clamp(tq*.55+cq*.45+(inAtk?.03*chD(p,6):0)-(tired(p)?.08+.14*fatigue(p):0),0,1);   // v16.3: tired contacts are worse   // v16.2 Defence: cleaner returns against attacks
   let label= q>=.8?'Perfect!': q>=.6?'Good': (1-tq)*.55>(1-cq)*.45 ? (e<0?'Late':'Early') : 'Off-centre';
   return {q,label};
 }
@@ -1514,13 +1514,19 @@ function hitShuttle(p,d=0,reach=REACH){
   else if(rid&&SPX[rid]){ if(SPX[rid].w==='ret') s.spRet0=rid; else if(SPX[rid].w==='hit'){ spRider(opp,rid); if(SPX[rid].rw) s.spRet0=rid; } }
   s.vx=v.vx; s.vy=v.vy; s.netHit=false; s.netCord=false; s.boostT=0; s.gMul=1; s.bK=BOOST_K; s.tumbleT=type==='net'?.7:0; s.fx=(type==='smash'||type==='netkill'||type==='kill'||type==='flat')?(type==='kill'?1:fxTier):-1; s.fxc=p.side===0?'#ffc61a':'#ff5f9e'; s.hitter=p.side;
   // v16.2 shot errors: a poor contact, a hard incoming attack, low Control/Defence or being tired can put the shot into the net, out, or up short
-  if(v&&!spec&&!weakRet&&!p.perfN&&game.state==='rally'&&!inMine&&q<.97){ const atkIn=ATTACK_T.has(inT), pres=atkIn?clamp((inSp-18)/45,0,1):0, defShot=atkIn&&!ATTACK_T.has(type);
-    let risk=Math.max(0,.62-q)*.45+pres*(defShot?.12:.06)*clamp(1-.12*chD(p,6),.35,1.8)+(p.st<ST.vlow?.1:tired(p)?.05:0)-.012*chD(p,3); if(p.ai) risk*=p.ai.diff==='easy'?1.4:p.ai.diff==='normal'?1.1:.9; risk=clamp(risk,0,.45);
-    if(Math.random()<risk){ const r=Math.random(), soft=type==='net'||type==='drop'||type==='block', high=type==='lift'||type==='clear'||type==='punch'; const mode=high?(r<.5?'short':r<.8?'out':'net'):soft?(r<.65?'net':'short'):(r<.5?'net':r<.75?'out':'short');
+  if(v&&!spec&&!weakRet&&!p.perfN&&game.state==='rally'&&!inMine&&(q<.97||tired(p))){ const atkIn=ATTACK_T.has(inT), pres=atkIn?clamp((inSp-18)/45,0,1):0, defShot=atkIn&&!ATTACK_T.has(type);
+    let risk=Math.max(0,.62-q)*.45+pres*(defShot?.12:.06)*clamp(1-.12*chD(p,6),.35,1.8)-.012*chD(p,3); if(p.ai) risk*=p.ai.diff==='easy'?1.4:p.ai.diff==='normal'?1.1:.9;
+    if(tired(p)){ const fg=fatigue(p); risk+=(.08+.3*fg)*(ATTACK_T.has(type)?1.2:1)*clamp(1-.04*chD(p,5),.75,1.25)*(q>=.8?.8:1); }   // v16.3: fatigue errors on every shot; Perfect timing only softens them
+    risk=clamp(risk,0,.6);
+    const eRoll=Math.random();
+    if(tired(p)&&eRoll>=risk){ const fg=fatigue(p), sp0=Math.hypot(v.vx,v.vy), el=Math.atan2(-v.vy,v.vx*dir)+rand(-1,1)*(.015+.05*fg), c={vx:Math.cos(el)*sp0*dir,vy:-Math.sin(el)*sp0}, sim=simulate(s.x,s.y,c.vx,c.vy,4); if(sim.crossY!==null&&sim.crossY<NET_TOP) v=c; }   // v16.3: tired = looser placement
+    else if(eRoll<risk){ const r=Math.random(), soft=type==='net'||type==='drop'||type==='block', high=type==='lift'||type==='clear'||type==='punch'; let mode=high?(r<.5?'short':r<.8?'out':'net'):soft?(r<.65?'net':'short'):(r<.5?'net':r<.75?'out':'short');
       const sp0=Math.hypot(v.vx,v.vy), el0=Math.atan2(-v.vy,v.vx*dir); let nv=null;
       if(mode==='net'){ for(let k=1;k<=14&&!nv;k++){ const el=el0-k*.035, sp=sp0*(.92-.01*k), c={vx:Math.cos(el)*sp*dir,vy:-Math.sin(el)*sp}, sim=simulate(s.x,s.y,c.vx,c.vy,3); if(sim.crossY===null||sim.crossY>NET_TOP+2) nv=c; } }
       else if(mode==='out'){ for(let k=1;k<=10&&!nv;k++){ const sp=sp0*(1+.08*k), el=el0+.02*k, c={vx:Math.cos(el)*sp*dir,vy:-Math.sin(el)*sp}, sim=simulate(s.x,s.y,c.vx,c.vy,6); if(sim.crossY!==null&&sim.crossY<NET_TOP&&(sim.landX>COURT_R+4||sim.landX<COURT_L-4)) nv=c; } }
       else { const w=solveShot(s.x,s.y,oppX(p.side,rand(.22,.4)),[64,68,72,60,76]); if(w) nv=w; }
+      if(!nv&&mode!=='short'){ const w=solveShot(s.x,s.y,oppX(p.side,rand(.22,.4)),[64,68,72,60,76,80,56]); if(w){ nv=w; mode='short'; } }   // v16.3: an error that cannot find the net/line pops up short instead of silently vanishing
+      if(!nv){ nv={vx:v.vx*.45,vy:Math.max(v.vy,-120)}; mode='net'; }
       if(nv){ v=nv; if(mode==='short'){ type='lift'; big=false; } p.errN=(p.errN||0)+1; if(!p.ai&&game.mode!=='demo') popup(p.x,p.y-205,mode==='net'?'Into the net!':mode==='out'?'Too long!':'Up short!','#d0456f',18); } } }
   s.type=type; s.bigSmash=big; s.q=q; s.special=spec; s.spRet=s.spRet0||null; s.spRet0=null; s.webDip=s.webDip0||0; s.webDip0=0; if(spec==='wall'&&p.ch.id==='batman'||rid==='batman') s.hideT=.45; if(spec==='bomb'){ const r=Math.hypot(s.vx,s.vy), a=Math.atan2(s.vy,s.vx), d=Math.sign(s.vx)||1, a2=a+d*.07, nv={vx:Math.cos(a2)*r,vy:Math.sin(a2)*r}, sim=simulate(s.x,s.y,nv.vx,nv.vy,3); if(sim.crossY!==null&&sim.crossY<NET_TOP-4&&(sim.landX-NET_X)*d>1.5*PX_M){ s.vx=nv.vx; s.vy=nv.vy; } s.fx=2; game.shake=.45; hitFreeze(.1); sfx.boom&&sfx.boom(.6); game.camP=1; }   // steeper by ~4 deg when it still clears the tape
   if(spec&&spec!=='thunder'&&spec!=='bomb'){ hitFreeze(.07); game.camP=Math.max(game.camP||0,.5); }
@@ -1567,7 +1573,7 @@ function updatePlayer(p,dt){
   const live=game.state!=='point'&&game.state!=='win';
   if(i.lunge && live && p.onGround && p.lungeCD<=0 && !(p.lungeT>0)){
     const ld=dir||(Math.abs(p.vx)>30?Math.sign(p.vx):p.f);
-    p.vx=ld*LUNGE_V*(p.ai?DIFF[p.ai.diff].speed:1)*(1+.04*chD(p,4))*(tired(p)?.9:1); staCost(p,ST.lunge); p.lungeT=LUNGE_T; p.recT=LUNGE_REC; p.lungeCD=LUNGE_CD; p.lungeDir=ld;
+    p.vx=ld*LUNGE_V*(p.ai?DIFF[p.ai.diff].speed:1)*(1+.04*chD(p,4))*(tired(p)?.9:1); staCost(p,ST.lunge); p.lungeT=LUNGE_T; p.recT=LUNGE_REC*(1+.5*fatigue(p)+(tired(p)?.15:0)); p.lungeCD=LUNGE_CD; p.lungeDir=ld;
     sfx.jump(); dust(p.x,GROUND,8); }
   let tv=dir*sp, skid=false;
   if(p.lungeT>0){ p.lungeT-=dt; tv=p.vx; }                          // committed: no steering mid-lunge
@@ -2210,6 +2216,9 @@ function drawSpriteDino(p){
     ctx.save(); ctx.translate(hx,hy); ctx.rotate(rAng); const S2=SPR_H/118*RK; ctx.scale(S2,S2); const m2=ctx.getTransform(); ctx.restore();
     const rx=[[55.1,0],[45.5,7.8*fs],[45.5,-7.8*fs],[34.5,0],[52,5],[52,-5]].map(([a,b])=>{ const d=m2.transformPoint(new DOMPoint(a,b)); return (d.x/(scale*dpr)-W/2)/CAM.z+CAM.x; });
     p.dbgRk=p.f>0?Math.max(...rx):Math.min(...rx); }
+  if(low&&game.mode!=='demo'){ const fg=fatigue(p), ph=(game.time*(2.2+2*fg))%1;   // v16.3 panting: breath puffs, faster + bigger when exhausted
+    ctx.save(); ctx.globalAlpha=(1-ph)*(.45+.4*fg); ctx.fillStyle='#ffffff'; ctx.strokeStyle='rgba(120,140,170,.6)'; ctx.lineWidth=1.2; const bx=p.x+p.f*(38+ph*22), by=p.y-118-ph*10;
+    for(const [ox,oy,r] of [[0,0,5+4*fg],[p.f*7,-4,3.5+3*fg],[p.f*12,2,2.5+2*fg]]){ ctx.beginPath(); ctx.arc(bx+ox*(1+ph),by+oy,r*(1+ph*.6),0,7); ctx.fill(); ctx.stroke(); } ctx.restore(); }
   if(low){ // v15 sweat drops (overlay only, face untouched)
     for(let k=0;k<2;k++){ const t=(game.time*1.3+k*.5)%1, x=(k?.2:.95-P.ax)*w*(k?-1:1)*.9, y=-h*.92+t*h*.25; ctx.globalAlpha=1-t; ctx.fillStyle='#7cc8ff';
       ctx.beginPath(); ctx.moveTo(x,y); ctx.quadraticCurveTo(x-4,y+7,x,y+10); ctx.quadraticCurveTo(x+4,y+7,x,y); ctx.fill(); } ctx.globalAlpha=1; }
@@ -2551,6 +2560,7 @@ function hitFreeze(t){ if(game.mode==='online'||!SET.slowmo) return; game.hitSto
 const ST={max:100,run:0,lunge:4,jump:3,runDrain:1.5,regenStand:3,regenMove:3,regenFast:2,regenBreak:7.5,low:30,vlow:12,
   shot:{jsmash:20,smash:15,flat:17,netkill:12,kill:12,special:16,punch:8,drive:8,drop:7,block:7,net:7,push:7,clear:4,lift:4,serve:1.5}};   // v15.4: ~1.6-1.8x v15.3
 const tired=p=>p.st<ST.low;
+const fatigue=p=>game.mode==='demo'||game.noStamina?0:clamp((ST.low-p.st)/(ST.low-2),0,1);   // v16.3: 0 at the tired line, 1 when empty
 const stMax=p=>ST.max+7*chD(p,5);   // v15.4: stamina stat = bigger tank (79..121) + faster regen
 const pSpd=p=>(p.stunT>0?.3:1)*(p.slowT>0?.6:1)*(1+.055*chD(p,1))*(p.st<ST.vlow&&game.mode!=='demo'?.74:tired(p)?.82:1)*(p.boostT>0?(p.boostK||1.35):1);
 const pJmp=p=>(1+.05*chD(p,2))*(p.st<ST.vlow&&game.mode!=='demo'?.74:tired(p)?.82:1);
@@ -2560,6 +2570,8 @@ function staCost(p,v){ if(game.mode==='demo'||game.noStamina) return; p.st=Math.
 function staminaTick(p,dt){
   p.boostT=Math.max(0,(p.boostT||0)-dt); p.stunT=Math.max(0,(p.stunT||0)-dt); p.slowT=Math.max(0,(p.slowT||0)-dt); if(p.kbT>0){ const k=Math.min(dt,p.kbT); p.kbT-=dt; p.x+=p.kbV*k; p.x=p.side===0?clamp(p.x,40,NET_X-30):clamp(p.x,NET_X+30,W-40); } p.spFx=Math.max(0,(p.spFx||0)-dt);
   const rg=(1+.08*chD(p,5))*dt;
+  if(game.mode!=='demo'&&!NET.fxSkip){ if(!p._tw&&tired(p)){ p._tw=1; popup(p.x,p.y-215,p.ai?'Tired!':'Tired! \uD83D\uDE2E\u200D\uD83D\uDCA8','#d0456f',22); }   // v16.3 visible fatigue cues
+    if(p._tw===1&&p.st<ST.vlow){ p._tw=2; popup(p.x,p.y-215,'Exhausted!','#c81e3c',24); } if(p._tw&&p.st>ST.low+8) p._tw=0; }
   if(game.state!=='rally'){ p.st=Math.min(stMax(p),p.st+ST.regenBreak*rg); return; }
   const mv=Math.abs(p.vx);
   if(!p.onGround||p.lungeT>0) return;
