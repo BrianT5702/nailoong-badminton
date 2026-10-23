@@ -1211,12 +1211,13 @@ function netKillOdds(p,s,q,h){
 // J = clear: on-time/early contact out in front = fast flat punch clear; late (behind you) or low = high clear / lift
 // v16 key mapping (shared by player and AI):  J = always a HIGH shot,  K = context attack,  L = drop / net
 function jType(p,s){ return s.y>p.y-118?'lift':'clear'; }   // below ~1.4 m: high lift; chest/overhead: high defensive clear
+const FLAT_H=Math.round(1.15*PX_M), DRIVE_H=62;   // v16.2 K bands: >=1.15 m flat smash, 0.74-1.15 m drive/push, below = lift
 function kType(p,s){
   if(netKillZone(p,s)!==null) return 'netkill';
   const deep=Math.abs(p.x-NET_X)>.62*(NET_X-COURT_L), behind=(s.x-hitCenter(p).x)*p.f<-12, h=p.y-s.y;
   if(!p.onGround&&canSmash(p,s)) return 'smash';                 // airborne + overhead = jump smash
   if(canSmash(p,s)) return (deep||behind)?'punch':'smash';      // overhead: smash from mid/front, punch clear from deep or when late
-  if(h>=118) return 'flat';                                        // shoulder/head height = flat smash
+  if(h>=FLAT_H) return 'flat';                                     // v16.2: shoulder/head height (>=1.15 m) = flat smash
   if(h>=62) return deep?'drive':'push';                            // chest/waist: push (front/mid) or flat drive (deep)
   return 'lift';                                                   // too low to attack: forced lift
 }
@@ -1526,7 +1527,7 @@ function hitShuttle(p,d=0,reach=REACH){
   staCost(p,(spec?ST.shot.special:0)||(type==='smash'&&big?ST.shot.jsmash:ST.shot[type]??3));   // v15.1: every shot costs a little, attacks cost the most
   (game.shotLog=game.shotLog||[]).push({side:p.side,type,big,r:game.rally,q:+q.toFixed(2),x:Math.round(s.x),y:Math.round(s.y)}); if(game.shotLog.length>400) game.shotLog.shift();
   if((type==='drop'||type==='block') && !p.ai) popup(s.x,s.y-30,type==='block'?'Block':'Drop','#7aa0d8',26);
-  if((type==='punch'||type==='clear'||type==='lift') && !p.ai && game.mode!=='demo') popup(s.x,s.y-30,type==='punch'?'Punch clear':type==='clear'?'High clear':'Lift','#58a0c8',22);
+  if(!p.ai && game.mode!=='demo' && !spec){ const SN={punch:'Punch clear',clear:'High clear',lift:'Lift',flat:'Flat smash',drive:'Drive',push:'Push',smash:big?'Jump smash':'Smash',netkill:'Net kill',kill:'Kill',net:'Net shot',drop:'Drop',block:'Block'}; if(SN[type]) popup(s.x,s.y-30,SN[type],type==='flat'||type==='smash'||type==='netkill'||type==='kill'?'#e8603a':'#58a0c8',22); }   // v16.2: every shot is named so the player sees which one fired
   if((type==='push'||type==='drive') && !p.ai && game.mode!=='demo') popup(s.x,s.y-30,type==='push'?'Push':'Drive','#7a9ad8',22);
 }
 const SHORT_PX=Math.round(1.98*(COURT_R-COURT_L)/13.4);   // short service line distance from the net
