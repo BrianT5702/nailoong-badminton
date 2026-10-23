@@ -1564,7 +1564,7 @@ function hitShuttle(p,d=0,reach=REACH){
   if(spec){ const col=p.ch.col; popup(s.x,s.y-58,'\u2605 '+p.ch.spName,col,30); for(let i=0;i<14;i++) spark(s.x,s.y,col);
     if(spec==='thunder'){ s.fx=2; game.shake=.5; hitFreeze(.11); sfx.smashBig(1); fxBurst('burst',s.x,s.y,col,0,1.3); fxBurst('speed',s.x,s.y,col,Math.atan2(v.vy,v.vx)); game.camP=1; }
     else if(spec==='spin'){ s.tumbleT=1.4; } }
-  gainMeter(p,4+(q>=.6?4:0)+(q>=.8?4:0)+(game.rally>=10?2:0));
+  gainMeter(p,1.5+(q>=.6?2:0)+(q>=.8?2.5:0)+(q>=.95?1.5:0)+(game.rally>=10?1:0));   // v16.10: specials are harder to earn (~1.8x longer); Perfect hits still pay best
   game.lastQ={q:+q.toFixed(3),label:Q.label,type,speed:Math.round(Math.hypot(v.vx,v.vy))};
   if(Q.label && game.mode!=='demo' && !((type==='smash'||type==='netkill'||type==='flat')&&fxTier===2)){ const c=Q.label==='Perfect!'?'#ffb000':Q.label==='Great!'?'#3fae5a':Q.label==='Good'?'#58b368':Q.label==='Weak'?'#c0607a':'#9a8fb0';
     popup(p.x+p.f*8,p.y-150,Q.label,c,Q.label==='Perfect!'?30:22); if(Q.label==='Perfect!') for(let i=0;i<10;i++) spark(s.x,s.y,'#fff27a'); }
@@ -1792,7 +1792,7 @@ function pointTo(side,reason){
       game.lastRec=game.rec; game.rec=[]; game.lastEv=game.recEv||[]; game.recEv=[]; }
     const human1p=game.mode==='1p';
     if(human1p&&side===1) sfx.lose(); else sfx.point();
-    gainMeter(players[side],6); gainMeter(players[loser],3);
+    gainMeter(players[side],3); gainMeter(players[loser],1.5);
     players[side].mood='happy'; players[side].moodT=1.4; players[loser].mood='sad'; players[loser].moodT=1.4;
     hearts(players[side].x,players[side].y-150,10);
     game.cheer=1.2;
@@ -2625,7 +2625,8 @@ function staminaTick(p,dt){ spExpireTick(p,dt);
   if(mv<PSPEED*.55) p.st=Math.min(stMax(p),p.st+ST.regenStand*rg);   // v16.1: standing / walking regen 3/s
   else if(game.mode!=='demo'&&!game.noStamina) p.st=Math.max(0,p.st-ST.runDrain*(1-.06*chD(p,5))*dt);   // v16.1: running drains (~1.5/s, scaled by stamina stat); AI pays the same
 }
-function gainMeter(p,v){ if(game.mode==='demo'||p.armed||p.perfN>0) return; const was=p.meter; p.meter=Math.min(100,p.meter+v*.85);   // v15.7: stronger specials fill 15% slower
+const SP_EASY=new Set(['berry','sheep','spidey','sailor','ironman','tanjiro','naruto']);   // v16.10: weaker specials charge ~14% faster
+function gainMeter(p,v){ if(game.mode==='demo'||p.armed||p.perfN>0) return; const was=p.meter; p.meter=Math.min(100,p.meter+v*(SP_EASY.has(p.ch.id)?.97:.85));   // v15.7: stronger specials fill 15% slower
   if(was<100&&p.meter>=100){ popup(p.x,p.y-175,'\u2605 Special ready!',p.ch.col,20); if(!NET.fxSkip) tone(880,.08,'triangle',.12,1320); } }
 /* v15.6 special riders: every special now carries a felt, counterable gameplay effect on the OPPONENT.
    when 'ret' = hits whoever returns the special shot; 'hit' = hits the opponent the moment the special shot is struck (they must still reach it).
