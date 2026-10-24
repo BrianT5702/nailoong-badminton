@@ -512,7 +512,7 @@ const PX_M=(COURT_R-COURT_L)/13.4;   // 83.6 px per metre (13.4 m court)
 // v14: ONE realistic shuttle model for every shot: real gravity + quadratic drag, terminal velocity 7.8 m/s (v14.1, was 6.8) (k = g/vt^2)
 const G=9.81*PX_M, VT=7.8*PX_M, K=G/(VT*VT);   // v14.1: 820 px/s^2, terminal 7.8 m/s = 652 px/s, k=0.00193 /px (one model for every shot)
 // v4: characters are ~0.7x smaller relative to the court (court ~1.45x bigger for them) and slower, with momentum
-const CS=0.62;                                    // character scale vs v3 (court is ~1.6x longer relative to them)
+const CS=0.62, HS=1.3;   /* v16.12: characters ~1.7 m tall vs the 1.4 m-looking net (170:140) */                                    // character scale vs v3 (court is ~1.6x longer relative to them)
 const PG=2000, JUMP_V=680, PSPEED=300, REACH=74;
 const ACC_RUN=1300, DEC_SKID=2200, ACC_AIR=650;   // px/s^2: short start-up, skid to stop
 const NET_GAP=6, FRONT_G=40, FRONT_AIR=47;   // v10: body front edge (px from centre, walk / arms-up pose) + gap kept behind the net
@@ -1041,7 +1041,7 @@ const CHARS=[
     bio:'Never runs out of energy; a bit wild with the racket.',art:{suit:'#f28c28',suit2:'#1f3f8f',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#f5d020',style:'spiky'},headband:'#1f3f8f',whiskers:true,boots:'#1f3f8f',collar:'#1f3f8f'}},
   {id:'goku',name:'Goku',src:'draw',st:[7,7,7,7,5,5,6],sp:'thunder',spName:'Kame Smash',col:'#f28c28',frame:'#ff8c1a',grip:'#2a50b0',
     bio:'Explosive power and jumps, short arms.',art:{suit:'#f28c28',suit2:'#2a50b0',skin:'#f6d2b0',head:'skin',eyes:'cute',hair:{col:'#1a1a22',style:'goku'},belt:'#2a50b0',undershirt:'#2a50b0',boots:'#2a50b0'}},
-  {id:'pikachu',name:'Pikachu',src:'draw',st:[4,7,7,6,3,7,4],sp:'dash',spName:'Quick Attack',col:'#f5d020',frame:'#f5d020',grip:'#8a5a2b',
+  {id:'pikachu',name:'Pikachu',src:'draw',st:[4,7,7,6,4,7,4],sp:'dash',spName:'Quick Attack',col:'#f5d020',frame:'#f5d020',grip:'#8a5a2b',
     bio:'Tiny and electric-quick; very short reach.',art:{suit:'#f7d531',suit2:'#f7d531',skin:'#f7d531',head:'skin',eyes:'dot',ears:'pika',cheeks:'#e8433a',stripes2:'#8a5a12',tail:'bolt',boots:'#f7d531',small:.9}},
   {id:'doraemon',name:'Doraemon',src:'draw',st:[4,5,6,7,6,7,6],sp:'wind',spName:'Air Cannon Gadget',col:'#1fa0e0',frame:'#1fa0e0',grip:'#ffd23a',
     bio:'Steady, tireless and tidy; no big jumps or smashes.',art:{suit:'#1fa0e0',suit2:'#ffffff',skin:'#1fa0e0',head:'dora',eyes:'dora',whiskers:true,nose:'#d8262b',collar:'#d8262b',bell:'#f5d020',belly:'#ffffff',pocket:true,boots:'#ffffff'}},
@@ -1051,7 +1051,7 @@ const CHARS=[
     bio:'Bombloong\u2019s loudest Purple Soldier. Big reach, big lungs.'},
   {id:'sheep',name:'Little Sheep',src:'draw',st:[4,6,5,8,6,7,5],sp:'spin',spName:'Sugar Swirl Net',col:'#ff9ec8',frame:'#ffffff',grip:'#ff9ec8',
     bio:'A fluffy pastry chef who bakes sweet net shots.'},
-  {id:'luffy',name:'Luffy',src:'draw',st:[8,7,6,7,8,5,5],sp:'thunder',spName:'Rubber Rocket Smash',col:'#d8262b',frame:'#e8b04a',grip:'#d8262b',
+  {id:'luffy',name:'Luffy',src:'draw',st:[8,7,6,6,8,5,5],sp:'thunder',spName:'Rubber Rocket Smash',col:'#d8262b',frame:'#e8b04a',grip:'#d8262b',
     bio:'A rubber-limbed pirate with endless reach and zero patience.'},
   {id:'tanjiro',name:'Tanjiro',src:'draw',st:[6,6,6,7,6,6,6],sp:'drive',spName:'Water Wheel Drive',col:'#2a9a7a',frame:'#1a1a1a',grip:'#2a9a7a',
     bio:'A kind, balanced swordsman-turned-shuttler.'},
@@ -1140,7 +1140,7 @@ function serveClockTick(p,dt){ if(game.mode==='demo'||game.paused||game.replay||
   if(!game.delayW[p.side]){ game.delayW[p.side]=1; popup(p.x,p.y-170,'Serve clock! Warning \u2013 auto serve','#ff4d4d',22); p.req='drop'; doServe(p); }
   else pointTo(1-p.side,'Delay of play'); }
 function setupServe(side){ for(const q of players) q.atkN=0; game.rallySp=false; if(game.mode!=='demo'&&Math.random()<.35) crowdLightClap(5+Math.floor(Math.random()*6));
-  game.state='serve'; game.server=side; game.lastHitter=-1; game.rally=0; game.serveTimer=0; game.sClock=SERVE_CLOCK; if(typeof shuttle!=="undefined"&&shuttle) shuttle.special=null; if(typeof shuttle!=="undefined"&&shuttle) shuttle.spRet=null; for(const q of (typeof players!=='undefined'&&players)||[]){ q.rider=null; q.stunT=0; q.kbT=0; q.slowT=0; q.webT=0; if(q.cloneN>0||q.smokeN>0){ q.cloneN=0; q.smokeN=0; q.armT=0; } }
+  game.state='serve'; game.server=side; game.lastHitter=-1; game.rally=0; game.serveTimer=0; game.sClock=SERVE_CLOCK; if(typeof shuttle!=="undefined"&&shuttle) shuttle.special=null; if(typeof shuttle!=="undefined"&&shuttle) shuttle.spRet=null; for(const q of (typeof players!=='undefined'&&players)||[]){ q.rider=null; q.stunT=0; q.kbT=0; q.slowT=0; q.webT=0; if(q.cloneN>0||q.smokeN>0||q.armed||q.perfN>0){ q.meter=Math.max(q.meter||0,(q.armed&&game.state!=='win')?SP_REFUND:0); } q.cloneN=0; q.smokeN=0; q.armed=null; q.perfN=0; q.armT=0; q.boostT=0; q.boostK=1; q.rider=null; } /* v16.12: every special modifier ends with the rally */ if(typeof shuttle!=='undefined'&&shuttle){ shuttle.webDip=0; shuttle.webDip0=0; shuttle.tumbleT=0; shuttle.hideT=0; shuttle.spRet0=null; shuttle.gMul=1; shuttle.bK=BOOST_K; shuttle.special=null; }
   const P0=players[0],P1=players[1];
   P0.x = side===0?300:340; P1.x = side===1?980:940;
   for(const p of players){ p.y=GROUND; p.vx=p.vy=0; p.onGround=true; p.swingT=-1; p.lungeT=p.recT=0; }
@@ -1306,8 +1306,8 @@ function aimFrac(p,type){
 }
 // v12 attacking punch clear: fastest trajectory that lands at tx and passes the opponent's mid/front court at least
 // minClear px above the floor (just over a jumping opponent's reach), with a low-drag launch window.
-const JUMP_REACH_H=Math.round(100+JUMP_V*JUMP_V/(2*PG)+REACH*.95);
-const STAND_REACH_H=Math.round(75+REACH*.95), JPUNCH_MAXSP=92*PX_M;   // v16.11 jump punch: must clear a standing opponent's racket   // ~285 px: highest contact of a jumping player
+const JUMP_REACH_H=Math.round(100*HS+JUMP_V*JUMP_V/(2*PG)+REACH*.95);
+const STAND_REACH_H=Math.round(75*HS+REACH*.95), JPUNCH_MAXSP=92*PX_M;   // v16.11 jump punch: must clear a standing opponent's racket   // ~285 px: highest contact of a jumping player
 function solvePunch(x0,y0,dir,tx,minClear,ox,maxSp=PUNCH_MAXSP){
   // clearance is needed where the opponent actually stands (front/mid court), not over the whole court
   const oc=clamp((ox-NET_X)*dir,40,(tx-NET_X)*dir-110), z0=NET_X+dir*(oc-45), z1=NET_X+dir*(oc+45); let best=null;
@@ -1413,16 +1413,16 @@ function hitShuttle(p,d=0,reach=REACH){
     const oppFrac=Math.abs(opp.x-NET_X)/(NET_X-COURT_L);
     const tfr=q<.6?rand(.3,.9):(p.ai&&DIFF[p.ai.diff].smart&&Math.random()<.35)?clamp(oppFrac+rand(-.06,.04),.25,.95):oppFrac>.55?rand(.3,.5):rand(.72,.95), tx=oppX(p.side,tfr);   // mistimed = poorly placed
     let bestErr=1e9;
-    for(let ang=-Math.min(50,Math.round((big?30:24)+(big?30:24)*q)); ang<=8; ang+=2){   // v14: smashes at most 50 deg down
-      const r=ang*Math.PI/180, c={vx:Math.cos(r)*dir*sp, vy:-Math.sin(r)*sp};
+    for(const spk of (big?[1]:[1,.86,.74,.63,.54,.46,.4,.34,.29])){ if(v) break; for(let ang=-Math.min(50,Math.round((big?30:24)+(big?30:24)*q)); ang<=(big?8:16); ang+=2){   /* v16.12: a standing smash from a lower contact is hit flatter and slower so a good overhead contact always has a line over the tape */   // v14: smashes at most 50 deg down
+      const r=ang*Math.PI/180, c={vx:Math.cos(r)*dir*sp*spk, vy:-Math.sin(r)*sp*spk};
       const sim=simulate(s.x,s.y,c.vx,c.vy,6);
       if(sim.crossY===null || sim.crossY>NET_TOP-8 || sim.landX<COURT_L+12 || sim.landX>COURT_R-12) continue;
       const e=Math.abs(sim.landX-tx); if(e<bestErr){ bestErr=e; v=c; }
-    }
+    } }
     if(!v){ type=p.ai?'clear':'drive'; if(spec==='thunder'||spec==='bomb'){ if(p.ai&&p.armT>=SP_WIN-.05){ spec=null; p.armT=0; p.meter=100; const L=game.spLog||[]; if(L.length&&L[L.length-1].side===p.side) L.pop(); } else { p.armed=spec; spec=null; } } }   // v16.9: an AI that armed at this very hit but has no smash line takes the arming back   // v16.1: no smash line from here -> the armed power special is kept, not wasted on the bail-out
     else if(q<.75){ // mis-timed: angle wobbles, can find the net or go long
       const sp2=Math.hypot(v.vx,v.vy), a=Math.atan2(v.vy,v.vx*dir)+rand(-1,1)*(1-q)*0.26;
-      v={vx:Math.cos(a)*sp2*dir, vy:Math.sin(a)*sp2};
+      const w0={vx:Math.cos(a)*sp2*dir, vy:Math.sin(a)*sp2}; if(!big&&q>=.6&&!tired(p)){ const sw=simulate(s.x,s.y,w0.vx,w0.vy,6); if(!(sw.crossY===null||sw.crossY>NET_TOP-4)) v=w0; } else v=w0;   /* v16.12: a Good+ standing smash never wobbles into the tape */
     }
   }
   if(type==='flat'){
@@ -1549,7 +1549,7 @@ function hitShuttle(p,d=0,reach=REACH){
   }
   if(weakRet){ type='lift'; big=false; const w=solveShot(s.x,s.y,oppX(p.side,weakRet>1?rand(.22,.34):rand(.3,.45)),[62,66,70,58,74]); if(w) v=w; popup(p.x,p.y-185,'weak pop-up!','#ff9a3c',16); }   // v15.6: a blasted return is a short, attackable lift
   s.webDip=0; s.hideT=0;
-  if(spec==='wall'&&p.ch.id==='cap'&&!weakRet){ const w=solveShot(s.x,s.y,oppX(p.side,rand(.8,.95)),[3,6,9,12,15,18,22,26,30,34],70*PX_M); if(w){ v=w; type='drive'; }   // v15.8 shield ricochet: the blocked attack comes straight back as a fast flat drive
+  if(spec==='wall'&&p.ch.id==='cap'&&!weakRet){ let w=null, best=-1; for(const f of [.3,.45,.6,.8,.92]) for(const sp of [72,62,52,44]) for(const ag of [-10,-5,0,4,8,12,16,22,28]){ const r=ag*Math.PI/180, c={vx:Math.cos(r)*dir*sp*PX_M, vy:-Math.sin(r)*sp*PX_M}, sm=simulate(s.x,s.y,c.vx,c.vy,4); if(sm.crossY===null||sm.crossY>NET_TOP-6||sm.landX<COURT_L+6||sm.landX>COURT_R-6) continue; const sc=Math.abs(sm.landX-opp.x)+sp*3-sm.t*120; if(sc>best){ best=sc; w=c; } } if(w){ v=w; type='smash'; }   /* v16.12 shield rebound: the smash comes back as a fast counter-smash away from the attacker */   // v15.8 shield ricochet: the blocked attack comes straight back as a fast flat drive
     popup(p.x,p.y-200,'RICOCHET!','#9fd3ff',22); if(!NET.fxSkip){ tone(1900,.12,'square',.1,1200); tone(2600,.25,'triangle',.08,1700,.02); } }
   if(spec==='drive'&&p.ch.id==='ironman'){ const sp0=Math.hypot(v.vx,v.vy), a0=Math.atan2(v.vy,v.vx), dd=Math.sign(v.vx)||1;   // v15.8 repulsor: +22% off the racket, flattened just enough to stay in
     for(let k=0;k<=20;k++){ const a=a0+dd*k*.025, c={vx:Math.cos(a)*sp0*1.22,vy:Math.sin(a)*sp0*1.22}, sm=simulate(s.x,s.y,c.vx,c.vy,4);
@@ -1568,7 +1568,7 @@ function hitShuttle(p,d=0,reach=REACH){
       else if(A==='agile') risk+=.025*ramp;
       else if(A==='wall'&&defShot) risk*=.75;
       if(defShot&&tired(p)) risk+=.05+.12*fatigue(p); }   // v16.11 tired defence: more errors on blocks / smash returns / lifts
-    risk=clamp(risk,0,.6);
+    risk=clamp(risk,0,.6); if(type==='smash'&&p.onGround&&q>=.6&&!tired(p)) risk=0;   /* v16.12: Good+ standing smashes (fresh) do not err */
     const eRoll=Math.random();
     if(tired(p)&&eRoll>=risk){ const fg=fatigue(p), sp0=Math.hypot(v.vx,v.vy), el=Math.atan2(-v.vy,v.vx*dir)+rand(-1,1)*(.015+.05*fg), c={vx:Math.cos(el)*sp0*dir,vy:-Math.sin(el)*sp0}, sim=simulate(s.x,s.y,c.vx,c.vy,4); if(sim.crossY!==null&&sim.crossY<NET_TOP) v=c; }   // v16.3: tired = looser placement
     else if(eRoll<risk){ if(game.errLog) game.errLog.push([p.side,game.rally]); const r=Math.random(), soft=type==='net'||type==='drop'||type==='block', high=type==='lift'||type==='clear'||type==='punch'; let mode=high?(r<.5?'short':r<.8?'out':'net'):soft?(r<.65?'net':'short'):(r<.5?'net':r<.75?'out':'short');
@@ -1585,7 +1585,7 @@ function hitShuttle(p,d=0,reach=REACH){
     if(dv){ game.decoyId=(game.decoyId||0)+1; game.decoy={id:game.decoyId,x:s.x,y:s.y,vx:dv.vx,vy:dv.vy,t:.5,side:p.side,tr:[],ctr:[],rot:Math.atan2(dv.vy,dv.vx),type,fx:s.fx,fxc:s.fxc}; game.cloneFx={side:p.side,t:.5,x:p.x-p.f*48};
       const o=players[1-p.side]; game.decoyDelay=0; if(o.ai){ const base={easy:.85,normal:.75,hard:.78}[o.ai.diff]??.78, fool=Math.random()<base*clamp(1-.07*chD(o,3),.6,1.4); game.decoyDelay=fool?.45:.15; game.decoyFool=fool; game.decoyOff=clamp(simulate(s.x,s.y,dv.vx,dv.vy,6).landX-real.landX,-260,260); }
       popup(p.x,p.y-175,'SHADOW CLONE!','#f28c28',22); } }
-  s.type=type; s.jp=type==='punch'&&p._jp?1:0; p._jp=false; s.bigSmash=big; s.q=q; s.special=spec; s.spRet=s.spRet0||null; s.spRet0=null; s.webDip=s.webDip0||0; s.webDip0=0; if(p.smokeN>0&&game.state==='rally'){ p.smokeN--; p.armT=p.smokeN>0?SP_WIN:0; s.hideT=.52; if(!p.ai) popup(p.x,p.y-190,'Smoke '+(p.smokeN?p.smokeN+' left':'last'),'#8a8aa8',18); }   /* v16.12: hidden ~0.5 s after each smoke-screen contact */ if(spec==='bomb'){ const r=Math.hypot(s.vx,s.vy), a=Math.atan2(s.vy,s.vx), d=Math.sign(s.vx)||1, a2=a+d*.07, nv={vx:Math.cos(a2)*r,vy:Math.sin(a2)*r}, sim=simulate(s.x,s.y,nv.vx,nv.vy,3); if(sim.crossY!==null&&sim.crossY<NET_TOP-4&&(sim.landX-NET_X)*d>1.5*PX_M){ s.vx=nv.vx; s.vy=nv.vy; } s.fx=2; game.shake=.45; hitFreeze(.1); sfx.boom&&sfx.boom(.6); game.camP=1; }   // steeper by ~4 deg when it still clears the tape
+  s.type=type; s.jp=type==='punch'&&p._jp?1:0; p._jp=false; s.bigSmash=big; s.q=q; s.special=spec; s.spRet=s.spRet0||null; s.spRet0=null; s.webDip=s.webDip0||0; s.webDip0=0; if(p.smokeN>0&&game.state==='rally'){ p.smokeN--; p.armT=p.smokeN>0?SP_WIN:0; s.hideT=.52; spRider(opp,'batman'); if(!p.ai) popup(p.x,p.y-190,'Smoke '+(p.smokeN?p.smokeN+' left':'last'),'#8a8aa8',18); }   /* v16.12: hidden ~0.5 s after each smoke-screen contact */ if(spec==='bomb'){ const r=Math.hypot(s.vx,s.vy), a=Math.atan2(s.vy,s.vx), d=Math.sign(s.vx)||1, a2=a+d*.07, nv={vx:Math.cos(a2)*r,vy:Math.sin(a2)*r}, sim=simulate(s.x,s.y,nv.vx,nv.vy,3); if(sim.crossY!==null&&sim.crossY<NET_TOP-4&&(sim.landX-NET_X)*d>1.5*PX_M){ s.vx=nv.vx; s.vy=nv.vy; } s.fx=2; game.shake=.45; hitFreeze(.1); sfx.boom&&sfx.boom(.6); game.camP=1; }   // steeper by ~4 deg when it still clears the tape
   if(spec&&spec!=='thunder'&&spec!=='bomb'){ hitFreeze(.07); game.camP=Math.max(game.camP||0,.5); }
   if(spec){ const col=p.ch.col; popup(s.x,s.y-58,'\u2605 '+p.ch.spName,col,30); for(let i=0;i<14;i++) spark(s.x,s.y,col);
     if(spec==='thunder'){ s.fx=2; game.shake=.5; hitFreeze(.11); sfx.smashBig(1); fxBurst('burst',s.x,s.y,col,0,1.3); fxBurst('speed',s.x,s.y,col,Math.atan2(v.vy,v.vx)); game.camP=1; }
@@ -1666,7 +1666,7 @@ function updatePlayer(p,dt){
 }
 function hitCenter(p){ const l=(p.lungeT>0||p.recT>0)?1:0;
   const nk=p.req==='smash'&&p.swingT>=0&&Math.abs(p.x-NET_X)<NK_PX;   // net kill: arm up, racket above the tape
-  return {x:p.x+p.f*25+(l?(p.lungeDir||0)*9:0), y:p.y-(nk?(p.onGround?122:140):(p.onGround?75:100))+l*12}; }   // airborne = arm stretched overhead
+  return {x:p.x+p.f*25+(l?(p.lungeDir||0)*9:0), y:p.y-HS*(nk?(p.onGround?122:140):(p.onGround?75:100))+l*12}; }   // airborne = arm stretched overhead
 function reachOf(p){ return ((p.ai?REACH:REACH+5)+4*chD(p,4)+(SPIDER(p)&&!p.onGround?12:0)+(ATTACK_T.has(shuttle.type)&&game.lastHitter!==p.side?3*chD(p,6):0)+((p.lungeT>0||p.recT>0)?LUNGE_REACH*(1+.08*chD(p,4)):0))*PHYS.reach; }
 
 /* ================= AI ================= */
@@ -2092,7 +2092,7 @@ const SPR={};
 for(const k in SPRITE_SRC){ SPR[k]={}; for(const pose in SPRITE_SRC[k]){ const im=new Image(); im.src=SPRITE_SRC[k][pose]; SPR[k][pose]=im; } }
 // anchor = feet centre (fraction of width); hand = racket hand (fractions of width/height)
 const POSE={walk:{ax:.52,hand:[.9,.54],face:[100/239,220/239,30/380,140/380]},cheer:{ax:.5,hand:[.9,.34],face:[75/289,220/289,35/380,145/380]}};
-const SPR_H=Math.round(190*CS);
+const SPR_H=Math.round(190*CS*HS);
 function spritesReady(k){ const s=SPR[k]; return !!s && Object.values(s).every(im=>im.complete && im.naturalWidth>0); }
 /* ---- v15 character sprites: official art (unedited faces) + original chibi heroes drawn on canvas ---- */
 // per-art anchors (same meaning as POSE): ax = feet centre, hand = racket hand, face = keep-the-racket-off-the-face box
@@ -2383,7 +2383,7 @@ function drawDino(p){
   const bob=p.run>0?-Math.abs(Math.sin(p.run))*7:0;
   const hgt=GROUND-p.y;
   ctx.fillStyle=`rgba(60,90,60,${.25*clamp(1-hgt/300,.3,1)})`; ell(p.x,GROUND+4,50*clamp(1-hgt/400,.5,1),10); ctx.fill();
-  ctx.save(); ctx.translate(p.x,p.y+bob); ctx.scale(p.f*sx*CS,sy*CS);
+  ctx.save(); ctx.translate(p.x,p.y+bob); ctx.scale(p.f*sx*CS*HS,sy*CS*HS);
   ctx.rotate(clamp(p.vx*p.f/PSPEED,-1,1)*.06);
   const legA=p.run>0?Math.sin(p.run*1.2)*6:0;
   const L=sk.line;
