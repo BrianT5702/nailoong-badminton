@@ -512,7 +512,7 @@ const PX_M=(COURT_R-COURT_L)/13.4;   // 83.6 px per metre (13.4 m court)
 // v14: ONE realistic shuttle model for every shot: real gravity + quadratic drag, terminal velocity 7.8 m/s (v14.1, was 6.8) (k = g/vt^2)
 const G=9.81*PX_M, VT=7.8*PX_M, K=G/(VT*VT);   // v14.1: 820 px/s^2, terminal 7.8 m/s = 652 px/s, k=0.00193 /px (one model for every shot)
 // v4: characters are ~0.7x smaller relative to the court (court ~1.45x bigger for them) and slower, with momentum
-const CS=0.62, HS=1.3;   /* v16.12: characters ~1.7 m tall vs the 1.4 m-looking net (170:140) */                                    // character scale vs v3 (court is ~1.6x longer relative to them)
+const CS=0.62, HS=1.3, BODY_W=.74;   /* v16.14: same 170 cm height, slimmer body (width x0.74) so heroes sit in proportion with the court */   /* v16.12: characters ~1.7 m tall vs the 1.4 m-looking net (170:140) */                                    // character scale vs v3 (court is ~1.6x longer relative to them)
 const PG=2000, JUMP_V=680, PSPEED=300, REACH=74;
 const ACC_RUN=1300, DEC_SKID=2200, ACC_AIR=650;   // px/s^2: short start-up, skid to stop
 const NET_GAP=6, FRONT_G=40, FRONT_AIR=47;   // v10: body front edge (px from centre, walk / arms-up pose) + gap kept behind the net
@@ -1323,7 +1323,7 @@ const STAND_REACH_H=Math.round(75*HS+REACH*.95), JPUNCH_MAXSP=92*PX_M;   // v16.
 function solvePunch(x0,y0,dir,tx,minClear,ox,maxSp=PUNCH_MAXSP){
   // clearance is needed where the opponent actually stands (front/mid court), not over the whole court
   const oc=clamp((ox-NET_X)*dir,40,(tx-NET_X)*dir-110), z0=NET_X+dir*(oc-45), z1=NET_X+dir*(oc+45); let best=null;
-  for(let ang=2; ang<=46; ang+=2){ const r=ang*Math.PI/180, c=Math.cos(r)*dir, sn=-Math.sin(r);
+  for(let ang=(maxSp>PUNCH_MAXSP?-10:2); ang<=46; ang+=2){ const r=ang*Math.PI/180, c=Math.cos(r)*dir, sn=-Math.sin(r);   /* v16.14: a jump punch may be hit flat or slightly down */
     let lo=600,hi=maxSp;
     for(let i=0;i<16;i++){ const m=(lo+hi)/2, sim=simulate(x0,y0,c*m,sn*m,4); if((sim.landX-x0)*dir<(tx-x0)*dir) lo=m; else hi=m; }
     const sp=(lo+hi)/2, q={x:x0,y:y0,vx:c*sp,vy:sn*sp}; let t=0, minH=1e9, cross=null, px;
@@ -1412,7 +1412,7 @@ function hitShuttle(p,d=0,reach=REACH){
   const pop0=popups.length; const Q=contactQuality(p,d,reach); let q=Q.q; const inT=s.type, inSp=Math.hypot(s.vx,s.vy)/PX_M, inMine=game.lastHitter===p.side;
   if(p.perfN>0){ p.perfN--; p.armT=SP_WIN; q=Math.max(q,.97); Q.label='Perfect!'; }
   const wallUsed=!!p.wallHit; if(p.wallHit){ p.wallHit=false; q=1; Q.label='Perfect!'; }
-  let weakRet=false; if(s.spRet&&game.lastHitter!==p.side){ const id=s.spRet; if(SPX[id].w==='ret'){ spRider(p,id); weakRet=SPX[id].weak||0; } else { weakRet=SPX[id].rw||0; } if(id==='bombloong'||id==='deadpool'){ sfx.boom&&sfx.boom(.7); bombBlast(s.x,s.y,.6); } }   // v15.6: returning a power special costs you (stun, knock-back, weak pop-up)
+  let weakRet=false; if(s.spRet&&game.lastHitter!==p.side){ const id=s.spRet; if(SPX[id].w==='ret'){ spRider(p,id); weakRet=SPX[id].weak||0; } else { weakRet=SPX[id].rw||0; } if(id==='bombloong'||id==='deadpool'){ sfx.boom&&sfx.boom(.7); bombBlast(s.x,s.y,.6); } } if(!weakRet&&s.jp&&(s.q??0)>=.6&&game.lastHitter!==p.side&&Math.random()<clamp(.38-.03*chD(p,6),.2,.55)) weakRet=1;   /* v16.14: a clean jump punch often forces a weak, attackable return */   // v15.6: returning a power special costs you (stun, knock-back, weak pop-up)
   s.spRet=null;   // v15.5 Boom Smash: returning it costs you
   s.special=null; let spec=wallUsed?'wall':null;
   p.hitT=game.time; p.hitPt={x:s.x,y:s.y};
@@ -1431,7 +1431,7 @@ function hitShuttle(p,d=0,reach=REACH){
       if(sim.crossY===null || sim.crossY>NET_TOP-8 || sim.landX<COURT_L+12 || sim.landX>COURT_R-12) continue;
       const e=Math.abs(sim.landX-tx); if(e<bestErr){ bestErr=e; v=c; }
     } }
-    if(!v){ type=p.ai?'clear':'drive'; if(spec==='thunder'||spec==='bomb'){ if(p.ai&&p.armT>=SP_WIN-.05){ spec=null; p.armT=0; p.meter=100; const L=game.spLog||[]; if(L.length&&L[L.length-1].side===p.side) L.pop(); } else { p.armed=spec; spec=null; } } }   // v16.9: an AI that armed at this very hit but has no smash line takes the arming back   // v16.1: no smash line from here -> the armed power special is kept, not wasted on the bail-out
+    if(!v){ type=p.ai?'clear':'drive'; if(spec==='thunder'||spec==='bomb'){ p.armed=spec; spec=null; type='flat'; } }   /* v16.14: no smash line -> the armed power shot goes out as a flat power attack instead of waiting (and fizzling) */   // v16.9: an AI that armed at this very hit but has no smash line takes the arming back   // v16.1: no smash line from here -> the armed power special is kept, not wasted on the bail-out
     else if(q<.75){ // mis-timed: angle wobbles, can find the net or go long
       const sp2=Math.hypot(v.vx,v.vy), a=Math.atan2(v.vy,v.vx*dir)+rand(-1,1)*(1-q)*0.26;
       const w0={vx:Math.cos(a)*sp2*dir, vy:Math.sin(a)*sp2}; if(!big&&q>=.6&&!tired(p)){ const sw=simulate(s.x,s.y,w0.vx,w0.vy,6); if(!(sw.crossY===null||sw.crossY>NET_TOP-4)) v=w0; } else v=w0;   /* v16.12: a Good+ standing smash never wobbles into the tape */
@@ -1539,7 +1539,7 @@ function hitShuttle(p,d=0,reach=REACH){
     p._jp=jp;
     // perfect = fastest + deep; good = a touch slower/higher; mistimed = too low (interceptable) or too long (out)
     if(!p.ai){ const tp=clamp(1-Math.abs(p.swingT-SW_PEAK-.01)/.04,0,1); q*=jp?.85+.15*tp:.55+.45*tp; }   /* v16.12: the jump punch uses normal contact quality; only a Poor contact degrades it */   // punch timing window is tight
-    const base=dir>0?COURT_R:COURT_L; let tx, clr=jp?STAND_REACH_H+25:JUMP_REACH_H+PUNCH_CLR;
+    const base=dir>0?COURT_R:COURT_L; let tx, clr=jp?STAND_REACH_H-12:JUMP_REACH_H+PUNCH_CLR;   /* v16.14: flatter jump punch, just over a standing racket */
     if(q>=.8){ tx=base-dir*rand(22,55); }
     else if(q>=.6){ tx=base-dir*rand(35,85); clr+=rand(25,50); }
     else { const long=(p.swingT-SW_PEAK>.015)?Math.random()<.3:Math.random()<.12;   // v16.9: a poor punch mostly comes out low & short
@@ -1566,7 +1566,7 @@ function hitShuttle(p,d=0,reach=REACH){
   if(spec==='drive'&&p.ch.id==='ironman'){ const sp0=Math.hypot(v.vx,v.vy), a0=Math.atan2(v.vy,v.vx), dd=Math.sign(v.vx)||1;   // v15.8 repulsor: +22% off the racket, flattened just enough to stay in
     for(let k=0;k<=20;k++){ const a=a0+dd*k*.025, c={vx:Math.cos(a)*sp0*1.22,vy:Math.sin(a)*sp0*1.22}, sm=simulate(s.x,s.y,c.vx,c.vy,4);
       if(sm.crossY!==null&&sm.crossY<NET_TOP-6&&sm.landX>COURT_L+8&&sm.landX<COURT_R-8){ v=c; break; } } }
-  if(spec==='spin'&&p.ch.id==='spidey'){ const od=Math.abs(opp.x-NET_X)/(NET_X-COURT_L), fr=od>.5?.4:.9; let w=null, best=-1; for(const f of [fr,od>.5?.55:.8,fr<.5?.9:.4]) for(const a of [8,14,4,20,26,32,40,50,60]){ const c=solveShot(s.x,s.y,oppX(p.side,f),[a]); if(!c) continue; const sm=simulate(s.x,s.y,c.vx,c.vy,5); if(sm.crossY===null||sm.crossY>NET_TOP-8||sm.landX<COURT_L+4||sm.landX>COURT_R-4) continue; const sc=Math.abs(sm.landX-opp.x)+Math.hypot(c.vx,c.vy)*.02; if(sc>best){ best=sc; w=c; } } if(w) v=w; if(game.webLog) game.webLog.push([Math.round(od*100)/100,fr,!!w,Math.round(s.y),Math.round(s.x)]); type='smash'; popup(s.x,s.y-50,'WEB SMASH!','#e23b3b',38); game.shake=Math.max(game.shake,.35); for(let i=0;i<14;i++) spark(s.x,s.y,'#ffffff'); }   /* v16.12: the web yanks the shuttle into a web-powered smash aimed away from the pinned opponent */   // v15.8 web: the shot dips hard once past the net
+  if(spec==='spin'&&p.ch.id==='spidey'){ const od=Math.abs(opp.x-NET_X)/(NET_X-COURT_L), fr=od>.5?.4:.9; let w=null, best=-1; for(const sp of [64,56,48,41,35,30,26,22,19,16]){ for(let ag=-40;ag<=40;ag+=3){ const r=ag*Math.PI/180, c={vx:Math.cos(r)*dir*sp*PX_M, vy:-Math.sin(r)*sp*PX_M}, sm=simulate(s.x,s.y,c.vx,c.vy,5); if(sm.crossY===null||sm.crossY>NET_TOP-8||sm.landX<COURT_L+4||sm.landX>COURT_R-4) continue; const dd=Math.abs(sm.landX-opp.x), sc=Math.min(dd,320)-Math.max(0,ag)*6-Math.max(0,-ag)*.5+1000; if(sc>best){ best=sc; w=c; } } if(w&&best>1120) break; }   /* v16.14: the web smash is always a fast, flat-to-downward smash (never a lob) */ if(w) v=w; if(game.webLog) game.webLog.push([Math.round(od*100)/100,fr,!!w,Math.round(s.y),Math.round(s.x)]); type='smash'; popup(s.x,s.y-50,'WEB SMASH!','#e23b3b',38); game.shake=Math.max(game.shake,.35); for(let i=0;i<14;i++) spark(s.x,s.y,'#ffffff'); }   /* v16.12: the web yanks the shuttle into a web-powered smash aimed away from the pinned opponent */   // v15.8 web: the shot dips hard once past the net
   const rid=spec&&spec!=='wall'&&spec!=='rider'?p.ch.id:p.rider?p.rider:spec==='wall'?p.ch.id:null; const fromRider=!spec&&!!p.rider; p.rider=null; if(fromRider&&!rid.endsWith(':chain')) spec='rider';
   if(rid&&rid.endsWith(':chain')){ const id=rid.split(':')[0]; spRider(opp,id,{...SPX[id].chain}); if(SPX[id].rw) s.spRet0=id; if(!spec) spec='rider'; }
   else if(rid&&SPX[rid]){ if(SPX[rid].w==='ret') s.spRet0=rid; else if(SPX[rid].w==='hit'){ spRider(opp,rid); if(SPX[rid].rw) s.spRet0=rid; } }
@@ -1699,7 +1699,7 @@ function aiThink(p,dt){
     else tx=base;
   } else if(game.state==='rally'){
     if(game.lastHitter!==p.side){
-      if(a.seen!==game.hitId){ a.seen=game.hitId; a.react=d.react*rand(.7,1.3)*(s.type==='net'&&s.netRep>=2?.6:1)+(s.hideT>0?.65:0)+(game.decoy&&game.decoy.side!==p.side?game.decoyDelay||0:0); a.err=rand(-1,1)*d.err*clamp(1-.08*chD(p,3),.5,1.5);
+      if(a.seen!==game.hitId){ a.seen=game.hitId; a.react=d.react*rand(.7,1.3)*(s.type==='net'&&s.netRep>=2?.6:1)+(s.jp?.08:0)+(s.hideT>0?.65:0)+(game.decoy&&game.decoy.side!==p.side?game.decoyDelay||0:0); a.err=rand(-1,1)*d.err*clamp(1-.08*chD(p,3),.5,1.5);
         a.miss=Math.random()<d.mistake; a.jump=Math.random()<d.jump; a.jroll=Math.random()<d.jump; a.runFrom=p.x; a.leave=Math.random()<d.leave;
         if(s.type==='kill'){ a.react=d.sReact*rand(.8,1.2); a.miss=Math.random()<d.sMiss*1.2; a.jump=false; }
         if(s.type==='netkill'){ a.react=d.sReact*rand(.9,1.3); a.miss=Math.random()<Math.min(.95,d.sMiss+.6); a.jump=false; }
@@ -2254,7 +2254,7 @@ function drawSpriteDino(p){
   p.pose=pose;
   const img=CS_[pose], P=CS_.pose[pose];
   if(low&&p.onGround){ sy-=.03; bob+=Math.sin(game.time*5)*1.5; }   // v15 tired: droop + heavy breathing
-  const h=SPR_H*(p.ch.src==='bomb'?.86:1), w=h*(img.naturalWidth||img.width)/(img.naturalHeight||img.height);
+  const h=SPR_H*(p.ch.src==='bomb'?.86:1), w=h*(img.naturalWidth||img.width)/(img.naturalHeight||img.height)*BODY_W;
   const hgt=GROUND-p.y;
   ctx.fillStyle=`rgba(50,90,60,${.28*clamp(1-hgt/300,.3,1)})`; ell(p.x,GROUND+3,27*clamp(1-hgt/400,.5,1),9); ctx.fill();
   ctx.save(); ctx.translate(p.x,p.y+bob); ctx.scale(p.f*sx,sy);
@@ -2320,7 +2320,7 @@ function drawSpriteDino(p){
 }
 // Realistic badminton racket in px (character-scaled): ~68 cm overall -> ~56 px. Grip+butt cap, thin shaft, T-joint,
 // oval head ~23x19 cm. fs = face foreshortening (1 = face-on, smaller = head turned edge-on mid-swing).
-const RK=1.45, RK_HEAD=45.5*RK;      // racket scale vs v7 (overall ~83 px at this character size), head-centre distance from the hand
+const RK=1.2, RK_HEAD=45.5*RK;   /* v16.14: racket scaled down with the slimmer bodies */      // racket scale vs v7 (overall ~83 px at this character size), head-centre distance from the hand
 const HANDC={elsa:'#f4d6c4',wukong:'#e8b878',spidey:'#d2232a',batman:'#2b2b33',ironman:'#c8202a',cap:'#2b4fa8',deadpool:'#a01c26',flash:'#d8262a',superman:'#f2c7a0',wonder:'#f0c49a',hulk:'#6fbf3a',sonic:'#ffffff',mario:'#ffffff',ultraman:'#c9ccd6',pikachu:'#ffd83a',nailoong:'#ffd23a',bombloong:'#ffd23a',berry:'#ffb6c8',doraemon:'#ffffff',spongebob:'#f4e24a',golden:'#ffcf3a',sheep:'#ffffff',xiaoqi:'#ffd23a',dalaba:'#ffd23a'};
 function drawRacket(sk,fs=1){
   const S=SPR_H/118*RK;
@@ -2401,7 +2401,7 @@ function drawDino(p){
   const bob=p.run>0?-Math.abs(Math.sin(p.run))*7:0;
   const hgt=GROUND-p.y;
   ctx.fillStyle=`rgba(60,90,60,${.25*clamp(1-hgt/300,.3,1)})`; ell(p.x,GROUND+4,50*clamp(1-hgt/400,.5,1),10); ctx.fill();
-  ctx.save(); ctx.translate(p.x,p.y+bob); ctx.scale(p.f*sx*CS*HS,sy*CS*HS);
+  ctx.save(); ctx.translate(p.x,p.y+bob); ctx.scale(p.f*sx*CS*HS*BODY_W,sy*CS*HS);
   ctx.rotate(clamp(p.vx*p.f/PSPEED,-1,1)*.06);
   const legA=p.run>0?Math.sin(p.run*1.2)*6:0;
   const L=sk.line;
@@ -2699,7 +2699,7 @@ const SPX={
   superman:{w:'ret',stun:.2,sta:20,slow:.5,weak:0,txt:'HEAT DRAIN!'},
   wonder:{w:'hit',stun:1.4,kb:.8,txt:'LASSO PULL!'},
   goku:{w:'ret',stun:.5,kb:1.3,slow:.8,weak:0,txt:'KAME BLAST!'},
-  pikachu:{w:'act',rw:2,stun:3.0,chain:{stun:3.0,kb:.8,slow:1.5,txt:'CHAIN SHOCK!'},txt:'SHOCKED!'},
+  pikachu:{w:'act',rw:2,stun:3.0,chain:{stun:3.0,web:1.9,kb:.8,slow:1.5,txt:'CHAIN SHOCK!'},txt:'SHOCKED!'},
   doraemon:{w:'hit',rw:1,stun:.6,kb:1.0,slow:2,txt:'AIR CANNON!'},
   xiaoqi:{w:'hit',rw:2,stun:1.8,kb:-1.0,slow:2,txt:'GRABBED!'},
   dalaba:{w:'ret',stun:.7,sta:15,slow:1.2,weak:1,txt:'HORN BLAST!'},
