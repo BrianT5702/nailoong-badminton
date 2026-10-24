@@ -1073,7 +1073,7 @@ const STAT_N=['Power','Speed','Jump','Control','Reach','Stamina','Defence'];
 const STAT_TIP=['Power: smash and attack speed (+6% per point) and how hard your attacks are to return.','Speed: running speed (+5.5% per point).','Jump: jump height (+5% per point) for higher jump smashes.','Control: timing window and shot accuracy. More Control = a wider Perfect window, tighter placement and fewer errors (net / out / too short).','Reach: how far your racket reaches from your body (+4 px per point) and your lunge distance: reach shuttles others would miss.','Stamina: max stamina (+7 per point) and slower drain. Tired players move, jump and hit worse.','Defence: return quality against strong attacks. Higher Defence = cleaner blocks and lifts against smashes, fewer defensive errors.'];
 const SPECIALS={
   perfect:'Your next 3 shots are automatically Perfect.',
-  clone:'A shadow clone swings with you: your next 2 shots each send a real shuttle plus an identical decoy on another path (the decoy vanishes after ~1 s).',
+  clone:'A shadow clone swings with you: your next 2 shots each send a real shuttle plus an identical decoy on another path (the decoy is a quick ~0.5 s feint).',
   bomb:'Your next smash (or flat attack) becomes a lit bomb: 25% faster and steeper, explodes on landing.',
   thunder:'Your next smash (or flat attack) is a huge thunder shot: much faster, slow-motion, very hard to return.',
   spin:'Your next drop / net shot spins and tumbles tight over the tape: nearly impossible to kill.',
@@ -1140,7 +1140,7 @@ function serveClockTick(p,dt){ if(game.mode==='demo'||game.paused||game.replay||
   if(!game.delayW[p.side]){ game.delayW[p.side]=1; popup(p.x,p.y-170,'Serve clock! Warning \u2013 auto serve','#ff4d4d',22); p.req='drop'; doServe(p); }
   else pointTo(1-p.side,'Delay of play'); }
 function setupServe(side){ for(const q of players) q.atkN=0; game.rallySp=false; if(game.mode!=='demo'&&Math.random()<.35) crowdLightClap(5+Math.floor(Math.random()*6));
-  game.state='serve'; game.server=side; game.lastHitter=-1; game.rally=0; game.serveTimer=0; game.sClock=SERVE_CLOCK; if(typeof shuttle!=="undefined"&&shuttle) shuttle.special=null; if(typeof shuttle!=="undefined"&&shuttle) shuttle.spRet=null; for(const q of (typeof players!=='undefined'&&players)||[]){ q.rider=null; q.stunT=0; q.kbT=0; q.slowT=0; }
+  game.state='serve'; game.server=side; game.lastHitter=-1; game.rally=0; game.serveTimer=0; game.sClock=SERVE_CLOCK; if(typeof shuttle!=="undefined"&&shuttle) shuttle.special=null; if(typeof shuttle!=="undefined"&&shuttle) shuttle.spRet=null; for(const q of (typeof players!=='undefined'&&players)||[]){ q.rider=null; q.stunT=0; q.kbT=0; q.slowT=0; q.webT=0; if(q.cloneN>0||q.smokeN>0){ q.cloneN=0; q.smokeN=0; q.armT=0; } }
   const P0=players[0],P1=players[1];
   P0.x = side===0?300:340; P1.x = side===1?980:940;
   for(const p of players){ p.y=GROUND; p.vx=p.vy=0; p.onGround=true; p.swingT=-1; p.lungeT=p.recT=0; }
@@ -1236,7 +1236,7 @@ function netKillOdds(p,s,q,h){
 // v16 key mapping (shared by player and AI):  J = always a HIGH shot,  K = context attack,  L = drop / net
 // v16.9 J by contact position (player and AI alike): low = underhand lift; out in FRONT at 1.4-2.3 m = punch clear (flatter, faster, to the rear court);
 // overhead / above / behind the body = high clear (max height, deep)
-function jType(p,s){ const h=p.y-s.y, fwd=(s.x-p.x)*p.f; if(h<1.4*PX_M) return 'lift'; if(!p.onGround) return 'punch'; /* v16.11: J in the air = jump punch clear */ if(h<=2.3*PX_M&&fwd>=30) return 'punch'; return 'clear'; }
+function jType(p,s){ const h=p.y-s.y, fwd=(s.x-p.x)*p.f; if(!p.ai&&(p.reqAir||!p.onGround)) return 'punch'; /* v16.12: any J pressed in the air (or just around take-off) is a jump punch, checked before the low-contact lift */ if(h<1.4*PX_M) return 'lift'; if(!p.onGround) return 'punch'; /* v16.11: J in the air = jump punch clear */ if(h<=2.3*PX_M&&fwd>=30) return 'punch'; return 'clear'; }
 const FLAT_H=Math.round(1.15*PX_M), DRIVE_H=62, STAND_SMASH_H=Math.round(1.45*PX_M);   // v16.2 K bands: >=1.15 m flat smash, 0.74-1.15 m drive/push, below = lift
 function kType(p,s){
   if(netKillZone(p,s)!==null) return 'netkill';
@@ -1250,7 +1250,8 @@ function kType(p,s){
 }
 function clearType(p,s){ return jType(p,s); }
 // the AI decides an intent, then presses the same key a player would: the shot itself comes from the shared mapping
-function aiKey(p,t){ const s=shuttle; if(p.armed==='spin'&&t!=='kill'&&t!=='netkill'&&t!=='smash') t=Math.abs(s.x-NET_X)<200?'net':'drop'; if(p.armed==='drive'&&t!=='kill'&&t!=='netkill'&&t!=='smash') t='clear'; if(p.ai&&p.meter>=100&&!p.armed&&(p.ch.sp==='thunder'||p.ch.sp==='bomb')&&game.state==='rally'&&game.mode!=='demo'&&canSmash(p,s)&&t!=='net'&&t!=='drop'&&t!=='block') trySpecial(p);   // v16.9: AI power specials arm at the smash itself
+function aiKey(p,t){ const s=shuttle; if(p.ai&&p.meter>=100&&!spPending(p)&&(p.ch.id==='spidey'||p.ch.id==='batman'||p.ch.id==='naruto')&&game.state==='rally'&&game.mode!=='demo') trySpecial(p);   /* v16.12: the AI fires web / smoke at the moment it hits */
+ if(p.armed==='spin'&&t!=='kill'&&t!=='netkill'&&t!=='smash') t=Math.abs(s.x-NET_X)<200?'net':'drop'; if(p.armed==='drive'&&t!=='kill'&&t!=='netkill'&&t!=='smash') t='clear'; if(p.ai&&p.meter>=100&&!p.armed&&(p.ch.sp==='thunder'||p.ch.sp==='bomb')&&game.state==='rally'&&game.mode!=='demo'&&canSmash(p,s)&&t!=='net'&&t!=='drop'&&t!=='block') trySpecial(p);   // v16.9: AI power specials arm at the smash itself
  if((p.armed==='thunder'||p.armed==='bomb')&&canSmash(p,s)) return 'smash';   // v16.9: an armed AI plays the shot that fires its special inside the window
   if(t==='block'||t==='drop'||t==='net'||t==='kill') return t;
   if(t==='lift'||t==='clear') return (shuttle.type==='smash'||shuttle.type==='kill'||shuttle.type==='netkill'||shuttle.type==='flat')?'lift':jType(p,s);
@@ -1292,7 +1293,7 @@ function shotFor0(p){
     if(low) return r<.6?'lift':'drop';
     return r<.3?'drive':r<.55?'clear':r<.75?'punch':'drop';
   }
-  if(vsSmash) return p.req==='drop'?'block':'lift';      // smashes can only be defended
+  if(vsSmash) return p.req==='drop'?'block':(p.req==='clear'&&(p.reqAir||!p.onGround))?'punch':'lift';      // smashes can only be defended
   if(p.req==='smash') return kType(p,s);
   if(p.req==='drop') return netPlay(p,s)||'drop';
   return clearType(p,s);
@@ -1490,7 +1491,7 @@ function hitShuttle(p,d=0,reach=REACH){
       const e=Math.abs(sim.landX-tx); if(e<bestErr){ bestErr=e; v=c; } }
     if(!v) type='net';
   }
-  if(p.armed==='spin'&&(type==='net'||type==='drop'||type==='block')){ spec='spin'; p.armed=null; q=1; if(Math.abs(s.x-NET_X)<150) type='net'; }
+  if(p.armed==='spin'&&(type==='net'||type==='drop'||type==='block'||p.ch.id==='spidey')){ spec='spin'; p.armed=null; q=1; if(Math.abs(s.x-NET_X)<150) type='net'; }
   if(p.armed==='drive'&&(type==='clear'||type==='punch'||type==='lift')){ spec='drive'; p.armed=null; q=1; type='punch'; }
   let netV=null;   // v16.11 richer net play (drop key at the net): direction + contact height pick the shot
   if(type==='net'&&!spec){ const inp=p.input||{}, tow=p.side===0?inp.right:inp.left, awy=p.side===0?inp.left:inp.right;
@@ -1522,10 +1523,10 @@ function hitShuttle(p,d=0,reach=REACH){
       popup(s.x,s.y-30,big?'Jump smash!':'Smash!','#ff7f9f',30); }
     else { sfx.thwack(); fxBurst('puff',s.x,s.y); }
   } else if(type==='punch'){
-    const jp=!p.onGround&&p.req==='clear'&&!spec;   // v16.11 jump punch clear: J at airborne contact = a flat, near-smash-speed clear to the back line
+    const jp=(p.reqAir||!p.onGround)&&p.req==='clear'&&!spec;   // v16.11 jump punch clear: J at airborne contact = a flat, near-smash-speed clear to the back line
     p._jp=jp;
     // perfect = fastest + deep; good = a touch slower/higher; mistimed = too low (interceptable) or too long (out)
-    if(!p.ai){ const tp=clamp(1-Math.abs(p.swingT-SW_PEAK-.01)/.04,0,1); q*=.55+.45*tp; }   // punch timing window is tight
+    if(!p.ai){ const tp=clamp(1-Math.abs(p.swingT-SW_PEAK-.01)/.04,0,1); q*=jp?.85+.15*tp:.55+.45*tp; }   /* v16.12: the jump punch uses normal contact quality; only a Poor contact degrades it */   // punch timing window is tight
     const base=dir>0?COURT_R:COURT_L; let tx, clr=jp?STAND_REACH_H+25:JUMP_REACH_H+PUNCH_CLR;
     if(q>=.8){ tx=base-dir*rand(22,55); }
     else if(q>=.6){ tx=base-dir*rand(35,85); clr+=rand(25,50); }
@@ -1553,7 +1554,7 @@ function hitShuttle(p,d=0,reach=REACH){
   if(spec==='drive'&&p.ch.id==='ironman'){ const sp0=Math.hypot(v.vx,v.vy), a0=Math.atan2(v.vy,v.vx), dd=Math.sign(v.vx)||1;   // v15.8 repulsor: +22% off the racket, flattened just enough to stay in
     for(let k=0;k<=20;k++){ const a=a0+dd*k*.025, c={vx:Math.cos(a)*sp0*1.22,vy:Math.sin(a)*sp0*1.22}, sm=simulate(s.x,s.y,c.vx,c.vy,4);
       if(sm.crossY!==null&&sm.crossY<NET_TOP-6&&sm.landX>COURT_L+8&&sm.landX<COURT_R-8){ v=c; break; } } }
-  if(spec==='spin'&&p.ch.id==='spidey') s.webDip0=dir;   // v15.8 web: the shot dips hard once past the net
+  if(spec==='spin'&&p.ch.id==='spidey'){ const od=Math.abs(opp.x-NET_X)/(NET_X-COURT_L), fr=od>.5?.4:.9; let w=null, best=-1; for(const f of [fr,od>.5?.55:.8,fr<.5?.9:.4]) for(const a of [8,14,4,20,26,32,40,50,60]){ const c=solveShot(s.x,s.y,oppX(p.side,f),[a]); if(!c) continue; const sm=simulate(s.x,s.y,c.vx,c.vy,5); if(sm.crossY===null||sm.crossY>NET_TOP-8||sm.landX<COURT_L+4||sm.landX>COURT_R-4) continue; const sc=Math.abs(sm.landX-opp.x)+Math.hypot(c.vx,c.vy)*.02; if(sc>best){ best=sc; w=c; } } if(w) v=w; if(game.webLog) game.webLog.push([Math.round(od*100)/100,fr,!!w,Math.round(s.y),Math.round(s.x)]); type='smash'; popup(s.x,s.y-50,'WEB SMASH!','#e23b3b',38); game.shake=Math.max(game.shake,.35); for(let i=0;i<14;i++) spark(s.x,s.y,'#ffffff'); }   /* v16.12: the web yanks the shuttle into a web-powered smash aimed away from the pinned opponent */   // v15.8 web: the shot dips hard once past the net
   const rid=spec&&spec!=='wall'&&spec!=='rider'?p.ch.id:p.rider?p.rider:spec==='wall'?p.ch.id:null; const fromRider=!spec&&!!p.rider; p.rider=null; if(fromRider&&!rid.endsWith(':chain')) spec='rider';
   if(rid&&rid.endsWith(':chain')){ const id=rid.split(':')[0]; spRider(opp,id,{...SPX[id].chain}); if(SPX[id].rw) s.spRet0=id; if(!spec) spec='rider'; }
   else if(rid&&SPX[rid]){ if(SPX[rid].w==='ret') s.spRet0=rid; else if(SPX[rid].w==='hit'){ spRider(opp,rid); if(SPX[rid].rw) s.spRet0=rid; } }
@@ -1581,10 +1582,10 @@ function hitShuttle(p,d=0,reach=REACH){
       else if(defShot&&(type==='lift'||type==='clear'||type==='block'||type==='drive')&&Math.random()<pres*clamp(.27-.045*chD(p,6),.08,.6)*(q>=.8?.8:q<.6?1.3:1)){ const w=solveShot(s.x,s.y,oppX(p.side,rand(.3,.48)),[60,64,68,72,56]); if(w){ v=w; type='lift'; big=false; p.popN=(p.popN||0)+1; if(!p.ai&&game.mode!=='demo') popup(p.x,p.y-205,'Weak pop-up','#ff9a3c',18); } } }   // v16.6 low DEF: soft, killable pop-ups under fire
   if(p.cloneN&&v&&game.state==='rally'){ p.cloneN--; p.armT=SP_WIN; const real=simulate(s.x,s.y,v.vx,v.vy,6), deep=Math.abs(real.landX-NET_X)/(NET_X-COURT_L)>.5;   // v16.7 Shadow Clone: a decoy on a different path
     const dv=deep?(solveShot(s.x,s.y,oppX(p.side,rand(.18,.3)),[20,26,32,38,44,14])||null):(solveShot(s.x,s.y,oppX(p.side,rand(.85,.95)),[40,46,52,34,58])||null);
-    if(dv){ game.decoyId=(game.decoyId||0)+1; game.decoy={id:game.decoyId,x:s.x,y:s.y,vx:dv.vx,vy:dv.vy,t:1.0,side:p.side,tr:[],ctr:[],rot:Math.atan2(dv.vy,dv.vx),type,fx:s.fx,fxc:s.fxc}; game.cloneFx={side:p.side,t:.5,x:p.x-p.f*48};
-      const o=players[1-p.side]; game.decoyDelay=0; if(o.ai){ const base={easy:.75,normal:.6,hard:.5}[o.ai.diff]??.55, fool=Math.random()<base*clamp(1-.07*chD(o,3),.6,1.4); game.decoyDelay=fool?.35:.12; game.decoyFool=fool; game.decoyOff=clamp(simulate(s.x,s.y,dv.vx,dv.vy,6).landX-real.landX,-260,260); }
+    if(dv){ game.decoyId=(game.decoyId||0)+1; game.decoy={id:game.decoyId,x:s.x,y:s.y,vx:dv.vx,vy:dv.vy,t:.5,side:p.side,tr:[],ctr:[],rot:Math.atan2(dv.vy,dv.vx),type,fx:s.fx,fxc:s.fxc}; game.cloneFx={side:p.side,t:.5,x:p.x-p.f*48};
+      const o=players[1-p.side]; game.decoyDelay=0; if(o.ai){ const base={easy:.85,normal:.75,hard:.78}[o.ai.diff]??.78, fool=Math.random()<base*clamp(1-.07*chD(o,3),.6,1.4); game.decoyDelay=fool?.45:.15; game.decoyFool=fool; game.decoyOff=clamp(simulate(s.x,s.y,dv.vx,dv.vy,6).landX-real.landX,-260,260); }
       popup(p.x,p.y-175,'SHADOW CLONE!','#f28c28',22); } }
-  s.type=type; s.jp=type==='punch'&&p._jp?1:0; p._jp=false; s.bigSmash=big; s.q=q; s.special=spec; s.spRet=s.spRet0||null; s.spRet0=null; s.webDip=s.webDip0||0; s.webDip0=0; if(spec==='wall'&&p.ch.id==='batman'||rid==='batman') s.hideT=.45; if(spec==='bomb'){ const r=Math.hypot(s.vx,s.vy), a=Math.atan2(s.vy,s.vx), d=Math.sign(s.vx)||1, a2=a+d*.07, nv={vx:Math.cos(a2)*r,vy:Math.sin(a2)*r}, sim=simulate(s.x,s.y,nv.vx,nv.vy,3); if(sim.crossY!==null&&sim.crossY<NET_TOP-4&&(sim.landX-NET_X)*d>1.5*PX_M){ s.vx=nv.vx; s.vy=nv.vy; } s.fx=2; game.shake=.45; hitFreeze(.1); sfx.boom&&sfx.boom(.6); game.camP=1; }   // steeper by ~4 deg when it still clears the tape
+  s.type=type; s.jp=type==='punch'&&p._jp?1:0; p._jp=false; s.bigSmash=big; s.q=q; s.special=spec; s.spRet=s.spRet0||null; s.spRet0=null; s.webDip=s.webDip0||0; s.webDip0=0; if(p.smokeN>0&&game.state==='rally'){ p.smokeN--; p.armT=p.smokeN>0?SP_WIN:0; s.hideT=.52; if(!p.ai) popup(p.x,p.y-190,'Smoke '+(p.smokeN?p.smokeN+' left':'last'),'#8a8aa8',18); }   /* v16.12: hidden ~0.5 s after each smoke-screen contact */ if(spec==='bomb'){ const r=Math.hypot(s.vx,s.vy), a=Math.atan2(s.vy,s.vx), d=Math.sign(s.vx)||1, a2=a+d*.07, nv={vx:Math.cos(a2)*r,vy:Math.sin(a2)*r}, sim=simulate(s.x,s.y,nv.vx,nv.vy,3); if(sim.crossY!==null&&sim.crossY<NET_TOP-4&&(sim.landX-NET_X)*d>1.5*PX_M){ s.vx=nv.vx; s.vy=nv.vy; } s.fx=2; game.shake=.45; hitFreeze(.1); sfx.boom&&sfx.boom(.6); game.camP=1; }   // steeper by ~4 deg when it still clears the tape
   if(spec&&spec!=='thunder'&&spec!=='bomb'){ hitFreeze(.07); game.camP=Math.max(game.camP||0,.5); }
   if(spec){ const col=p.ch.col; popup(s.x,s.y-58,'\u2605 '+p.ch.spName,col,30); for(let i=0;i<14;i++) spark(s.x,s.y,col);
     if(spec==='thunder'){ s.fx=2; game.shake=.5; hitFreeze(.11); sfx.smashBig(1); fxBurst('burst',s.x,s.y,col,0,1.3); fxBurst('speed',s.x,s.y,col,Math.atan2(v.vy,v.vx)); game.camP=1; }
@@ -1642,10 +1643,10 @@ function updatePlayer(p,dt){
     if(p.vx<tv) p.vx=Math.min(tv,p.vx+acc*dt); else p.vx=Math.max(tv,p.vx-acc*dt);
   }
   if(skid && Math.random()<dt*20) dust(p.x+Math.sign(p.vx)*14*CS,GROUND,1);
-  if(p.wantJump && p.onGround && !(p.stunT>0) && game.state!=='point' && game.state!=='win'){ p.vy=-JUMP_V*pJmp(p); staCost(p,ST.jump); p.onGround=false; if(p.recT>0) p.vy*=.75; sfx.jump(); dust(p.x,p.y,6); }
+  if(p.wantJump && p.onGround && !(p.stunT>0) && !(p.webT>0) && game.state!=='point' && game.state!=='win'){ p.vy=-JUMP_V*pJmp(p); staCost(p,ST.jump); p.onGround=false; p.jumpT0=game.time; if(p.swingT>=0&&p.swingT<.12&&p.req==='clear') p.reqAir=true; if(p.recT>0) p.vy*=.75; sfx.jump(); dust(p.x,p.y,6); }
   p.wantJump=false;
   p.justSwung=false;
-  if(p.wantShot && (p.swingT<0||p.swingT>.3) && game.state!=='point' && game.state!=='win'){ p.lastSwing=game.time; p.swingT=0; p.hitDone=false; p.justSwung=true; p.req=p.wantShot; }
+  if(p.wantShot && !(p.webT>0) && (p.swingT<0||p.swingT>.3) && game.state!=='point' && game.state!=='win'){ p.lastSwing=game.time; p.swingT=0; p.hitDone=false; p.justSwung=true; p.req=p.wantShot; p.reqAir=!p.onGround||game.time-(p.jumpT0??-9)<.15; }
   p.wantShot=null;
   if(p.swingT>=0){ p.swingT+=dt; if(p.swingT>.4) p.swingT=-1; }
   if(!p.onGround){ p.vy+=PG*PHYS.pg*dt; }
@@ -1673,7 +1674,7 @@ function aiThink(p,dt){
   const a=p.ai, d=DIFF[a.diff], s=shuttle, inp={left:false,right:false};
   if(p.meter>=100&&!p.armed&&game.state==='rally'&&game.mode!=='demo'){ const t=p.ch.sp;   // v15: AI specials
     const inc=game.lastHitter!==p.side, hi=s.type==='lift'||s.type==='clear'||s.type==='serve';   // v16.9: arm only when it can be used inside the 6 s window
-    if(t==='wind'?p.st<45:t==='dash'?(inc&&Math.abs(p.vx)>PSPEED*.6):t==='thunder'||t==='bomb'?false:t==='spin'||t==='drive'?inc:t==='wall'?(!inc&&hi):true) inp.special=true; }
+    if(t==='wind'?p.st<45:t==='dash'?(inc&&Math.abs(p.vx)>PSPEED*.6):t==='thunder'||t==='bomb'?false:(p.ch.id==='spidey'||p.ch.id==='batman'||p.ch.id==='naruto')?false:t==='spin'||t==='drive'?inc:t==='wall'?(!inc&&hi):true) inp.special=true; }
   let jump=false, swing=false;
   let base=p.side===0?340:940;
   if(d.smart){ const ls=p.lastShot, off=(ls==='drop'||ls==='net'||ls==='block')?-70:(ls==='clear'||ls==='lift'||ls==='punch')?25:ls==='smash'?-35:0;
@@ -1686,7 +1687,7 @@ function aiThink(p,dt){
     else tx=base;
   } else if(game.state==='rally'){
     if(game.lastHitter!==p.side){
-      if(a.seen!==game.hitId){ a.seen=game.hitId; a.react=d.react*rand(.7,1.3)*(s.type==='net'&&s.netRep>=2?.6:1)+(s.hideT>0?.45:0)+(game.decoy&&game.decoy.side!==p.side?game.decoyDelay||0:0); a.err=rand(-1,1)*d.err*clamp(1-.08*chD(p,3),.5,1.5);
+      if(a.seen!==game.hitId){ a.seen=game.hitId; a.react=d.react*rand(.7,1.3)*(s.type==='net'&&s.netRep>=2?.6:1)+(s.hideT>0?.65:0)+(game.decoy&&game.decoy.side!==p.side?game.decoyDelay||0:0); a.err=rand(-1,1)*d.err*clamp(1-.08*chD(p,3),.5,1.5);
         a.miss=Math.random()<d.mistake; a.jump=Math.random()<d.jump; a.jroll=Math.random()<d.jump; a.runFrom=p.x; a.leave=Math.random()<d.leave;
         if(s.type==='kill'){ a.react=d.sReact*rand(.8,1.2); a.miss=Math.random()<d.sMiss*1.2; a.jump=false; }
         if(s.type==='netkill'){ a.react=d.sReact*rand(.9,1.3); a.miss=Math.random()<Math.min(.95,d.sMiss+.6); a.jump=false; }
@@ -1700,7 +1701,7 @@ function aiThink(p,dt){
           if(s.special==='thunder'){ a.react*=1.3; if(Math.random()<.45) a.miss=true; } if(s.special==='bomb'){ a.react*=1.3; if(Math.random()<.45) a.miss=true; } }
         if(s.special==='spin'){ a.react*=1.25; a.nkRoll=false; }
         if(s.special==='drive'&&Math.random()<.3) a.miss=true;
-        if(game.decoy&&game.decoyFool&&game.decoy.side!==p.side&&Math.random()<.8) a.miss=true;   // v16.7 guessed the decoy: committed the wrong way
+        if(game.decoy&&game.decoyFool&&game.decoy.side!==p.side&&Math.random()<.9) a.miss=true; if(s.hideT>0&&Math.random()<.3) a.miss=true;   /* v16.12 smoke: lost sight of it */   // v16.7 guessed the decoy: committed the wrong way
         if(p.armed==='wall'&&ATTACK_T.has(s.type)) a.miss=false;
         if(d.smart&&p.st<38) a.jump=a.jump&&Math.random()<.25; if(p.st<12) a.jump=false;   // v15 Hard: no jump-smash spam when tired
         if(d.smart){ const T={drop:['drop','net','block','kill'],clear:['clear','punch','lift','drive'],smash:['smash','netkill','drive','flat']}[a.readReq]||[];
@@ -2633,7 +2634,7 @@ const tired=p=>p.st<ST.low;
 const perfWin=p=>game.mode==='demo'||game.noStamina||!tired(p)?1:clamp(.52-.32*fatigue(p),.2,.52);   // v16.6 Perfect window scale
 const fatigue=p=>game.mode==='demo'||game.noStamina?0:clamp((ST.low-p.st)/(ST.low-2),0,1);   // v16.3: 0 at the tired line, 1 when empty
 const stMax=p=>ST.max+3.5*chD(p,5);   // v16.10: Stamina stat compressed (89..110)   // v15.4: stamina stat = bigger tank (79..121) + faster regen
-const pSpd=p=>(p.stunT>0?.3:1)*(p.slowT>0?.6:1)*(1+.055*chD(p,1))*(p.st<ST.vlow&&game.mode!=='demo'?.74:tired(p)?.82:1)*(p.boostT>0?(p.boostK||1.35):1);
+const pSpd=p=>(p.webT>0?0:1)*(p.stunT>0?.3:1)*(p.slowT>0?.6:1)*(1+.055*chD(p,1))*(p.st<ST.vlow&&game.mode!=='demo'?.74:tired(p)?.82:1)*(p.boostT>0?(p.boostK||1.35):1);
 const ARCH={nailoong:'all',berry:'all',bombloong:'power',spidey:'agile',hulk:'power',ironman:'power',cap:'wall',thor:'power',panther:'all',flash:'speed',batman:'wall',superman:'power',wonder:'wall',naruto:'endure',goku:'all',pikachu:'speed',doraemon:'all',xiaoqi:'all',dalaba:'power',sheep:'all',luffy:'power',tanjiro:'all',sailor:'wall',sonic:'speed',shinchan:'endure',deadpool:'all',spongebob:'endure',golden:'all'};
 const ARCH_INFO={all:['\u2696\uFE0F All-rounder','#8a7f99','Balanced, with control and touch: no weak spot, no extreme edge.'],speed:['\u26A1 Speed','#3a8aff','Fast feet but inconsistent: errors grow in long rallies and when hitting at full run or in a lunge; their smashes rarely win outright, so they keep attacking until the defender pops one up.'],power:['\uD83D\uDCA5 Power','#e8603a','Big smashes that need a Perfect to break through; stamina drains faster as rallies get long; a smaller Perfect window when forced to defend.'],wall:['\uD83D\uDEE1\uFE0F Defender','#2f8a5a','A much wider defence window and fewer defensive errors, but every block or fast-shot return costs stamina; fair power to smash once the opening comes.'],endure:['\uD83D\uDD0B Endurance','#c89a1a','Shots cost less stamina, so they last in long rallies; otherwise modest.'],agile:['\uD83D\uDD77\uFE0F Agile power','#e23b3b','Power-style smashes with a springy leap and extra airborne reach; only a mild long-rally consistency cost.']};
 const archOf=p=>ARCH[(p.ch||p).id]||'all';
@@ -2645,11 +2646,11 @@ const pCtl=p=>(1+.1*chD(p,3))*(p.st<ST.vlow&&game.mode!=='demo'?.45:tired(p)?.62
 function staCost(p,v){ if(game.mode==='demo'||game.noStamina) return; const A=archOf(p); v*=A==='power'?1+clamp((game.rally-6)/10,0,1)*.45:A==='endure'?.9:1;   // v16.11: Power tires in long rallies (up to +45%), Endurance pays 15% less
   p.st=Math.max(0,p.st-v*(1-.025*chD(p,5))*(1+(p.rk?p.rk.cost:0))); }
 const SP_WIN=6, SP_REFUND=25;   // v16.9: an armed special must be used within 6 s of rally time; on expiry it fizzles and 25% of the bar comes back
-function spPending(p){ return !!(p.armed||p.perfN>0||p.cloneN>0); }
+function spPending(p){ return !!(p.armed||p.perfN>0||p.cloneN>0||p.smokeN>0); }
 function spExpireTick(p,dt){ if(game.mode==='online'&&NET.role==='guest') return; if(!spPending(p)){ p.armT=0; return; } if(game.state!=='rally'||game.mode==='demo') return; p.armT=(p.armT||SP_WIN)-dt;
-  if(p.armT<=0){ p.armed=null; p.perfN=0; p.cloneN=0; p.armT=0; p.meter=Math.max(p.meter,SP_REFUND); game.spFizN=(game.spFizN||0)+1; popup(p.x,p.y-190,'Special fizzled…','#9a8fb0',20); for(let i=0;i<10;i++) spark(p.x,p.y-90,'#c8c0d8'); if(!NET.fxSkip){ tone(420,.25,'triangle',.07,180); } } }
+  if(p.armT<=0){ p.armed=null; p.perfN=0; p.cloneN=0; p.smokeN=0; p.armT=0; p.meter=Math.max(p.meter,SP_REFUND); game.spFizN=(game.spFizN||0)+1; popup(p.x,p.y-190,'Special fizzled…','#9a8fb0',20); for(let i=0;i<10;i++) spark(p.x,p.y-90,'#c8c0d8'); if(!NET.fxSkip){ tone(420,.25,'triangle',.07,180); } } }
 function staminaTick(p,dt){ spExpireTick(p,dt);
-  p.boostT=Math.max(0,(p.boostT||0)-dt); p.stunT=Math.max(0,(p.stunT||0)-dt); p.slowT=Math.max(0,(p.slowT||0)-dt); if(p.kbT>0){ const k=Math.min(dt,p.kbT); p.kbT-=dt; p.x+=p.kbV*k; p.x=p.side===0?clamp(p.x,40,NET_X-30):clamp(p.x,NET_X+30,W-40); } p.spFx=Math.max(0,(p.spFx||0)-dt);
+  p.boostT=Math.max(0,(p.boostT||0)-dt); p.stunT=Math.max(0,(p.stunT||0)-dt); p.slowT=Math.max(0,(p.slowT||0)-dt); p.webT=Math.max(0,(p.webT||0)-dt); if(p.kbT>0){ const k=Math.min(dt,p.kbT); p.kbT-=dt; p.x+=p.kbV*k; p.x=p.side===0?clamp(p.x,40,NET_X-30):clamp(p.x,NET_X+30,W-40); } p.spFx=Math.max(0,(p.spFx||0)-dt);
   const rg=(1+.04*chD(p,5))*dt;
   if(game.mode!=='demo'&&!NET.fxSkip){ if(!p._tw&&tired(p)){ p._tw=1; popup(p.x,p.y-215,p.ai?'Tired!':'Tired! \uD83D\uDE2E\u200D\uD83D\uDCA8','#d0456f',22); }   // v16.3 visible fatigue cues
     if(p._tw===1&&p.st<ST.vlow){ p._tw=2; popup(p.x,p.y-215,'Exhausted!','#c81e3c',24); } if(p._tw&&p.st>ST.low+8) p._tw=0; }
@@ -2669,7 +2670,7 @@ const SPX={
   nailoong:{w:'hit',rw:2,stun:1.8,kb:.6,slow:2,txt:'SLIPPERY MILK!'},
   berry:{w:'hit',stun:.8,slow:.8,txt:'STICKY SYRUP!'},
   bombloong:{w:'ret',stun:1.4,kb:1.2,weak:2,txt:'KNOCKED BACK!'},
-  spidey:{w:'hit',stun:1.5,kb:.9,slow:2.2,txt:'WEBBED!'},   // v16.11: the web pins longer and yanks the opponent back from the net
+  spidey:{w:'hit',stun:3.2,web:3.2,txt:'WEBBED!'},   /* v16.12: the opponent is pinned in a web (cannot move or jump) until the web smash lands */   // v16.11: the web pins longer and yanks the opponent back from the net
   hulk:{w:'ret',stun:.3,kb:2.0,slow:1,weak:1,txt:'SMASHED BACK!'},
   ironman:{w:'hit',rw:2,stun:1.6,slow:.8,txt:'REPULSOR FLASH!'},
   cap:{w:'hit',rw:2,stun:2.0,kb:.6,slow:1.5,txt:'SHIELD RICOCHET!'},
@@ -2698,7 +2699,7 @@ function spxText(id){ const r=SPX[id]; if(!r) return ''; const bits=[]; if(r.stu
   return `<br><i>${r.txt.replace('!','')}: ${r.w==='ret'?'whoever returns it is':r.w==='act'?'on activation your opponent is':'the moment you hit it, your opponent is'} ${bits.join(', ')}.</i>`; }
 function spRider(p,id,rr){ const r=rr||SPX[id]; if(!r) return; p.stunT=Math.max(p.stunT||0,r.stun||0);
   if(r.kb){ p.kbT=.3; p.kbV=-p.f*r.kb*PX_M/.3; } if(r.sta) p.st=Math.max(0,p.st-r.sta);
-  if(r.slow) p.slowT=Math.max(p.slowT||0,r.slow);
+  if(r.slow) p.slowT=Math.max(p.slowT||0,r.slow); if(r.web) p.webT=Math.max(p.webT||0,r.web);
   p.squash=.5; game.shake=Math.max(game.shake,.4); spRing(p.x,p.y-80,SPFX_COL[id]||'#fff',130,.45,10); popup(p.x,p.y-150,r.txt,SPFX_COL[id]||'#ff7a1a',22); for(let i=0;i<12;i++) spark(p.x,p.y-80,SPFX_COL[id]||'#fff'); }
 function trySpecial(p){
   if(p.meter<100||game.mode==='demo'||game.state==='win'||game.state==='point'||p.armed||p.perfN>0) return false;
@@ -2708,9 +2709,9 @@ function trySpecial(p){
   else if(t==='dash'){ p.lungeCD=0; p.recT=0; p.lungeT=0; p.boostT=p.ch.id==='flash'||p.ch.id==='sonic'?2:p.ch.id==='pikachu'?2.4:1.6; if(p.ch.id==='pikachu') p.st=Math.min(stMax(p),p.st+40);   // v16.3 Quick Attack also catches Pikachu's breath
  p.boostK=p.ch.id==='flash'?2:p.ch.id==='sonic'?2.2:1.5; dust(p.x,GROUND,10); }
   else if(t==='wind'){ p.st=stMax(p); p.boostT=3; p.boostK=1.2; }
-  else if(t==='clone'){ p.cloneN=2; p.st=stMax(p); game.cloneFx={side:p.side,t:.6}; }   // v16.7 Naruto: the next shot comes with a decoy
+  else if(t==='clone'){ p.cloneN=3; p.st=stMax(p); game.cloneFx={side:p.side,t:.6}; }   // v16.7 Naruto: the next shot comes with a decoy
   if(SPX[p.ch.id]){ if(SPX[p.ch.id].w==='act'){ spRider(players[1-p.side],p.ch.id); if(SPX[p.ch.id].chain) p.rider=p.ch.id+':chain'; } else if(t==='perfect'||t==='dash'||t==='wind') p.rider=p.ch.id; }   // v15.6: instant specials ride on your next shot
-  if(t==='perfect'||t==='dash'||t==='wind'||t==='clone'); else p.armed=t;
+  if(p.ch.id==='batman'){ p.smokeN=3; p.armed=null; } else if(t==='perfect'||t==='dash'||t==='wind'||t==='clone'); else p.armed=t;   /* v16.12 Batman smoke screen: his next 3 shots are hidden */
   p.armT=SP_WIN;   // v16.9 activation window   // thunder / spin / wall / drive wait for the right shot
   for(let i=0;i<10;i++) spark(p.x,p.y-90,p.ch.col);   // v15.1: the big name banner + aura come from the SPFX layer
   if(!NET.fxSkip){ tone(520,.18,'sawtooth',.08,1040); tone(780,.22,'triangle',.12,1560,.06); }
@@ -2730,6 +2731,9 @@ function drawPerfDot(p){ if(!p||p.ai||shuttle.hideT>0||!perfJS(p)) return; const
   ctx.save(); ctx.globalAlpha=.9; ctx.fillStyle='rgba(20,20,40,.55)'; ctx.beginPath(); ctx.arc(shuttle.x,shuttle.y-22,r+2.5,0,7); ctx.fill();
   ctx.fillStyle='#ffe14d'; ctx.beginPath(); ctx.arc(shuttle.x,shuttle.y-22,r,0,7); ctx.fill(); ctx.restore(); }
 function drawPlayerBars(p){
+  if(p.webT>0){ ctx.save(); const cx=p.x, cy=p.y-75, R0=78, a0=Math.min(1,p.webT*2); ctx.globalAlpha=.9*a0; ctx.strokeStyle='#ffffff'; ctx.lineWidth=2.2; ctx.shadowColor='#000'; ctx.shadowBlur=3; ctx.beginPath(); for(let i=0;i<10;i++){ const a=i*Math.PI/5+.2; ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*R0,cy+Math.sin(a)*R0*1.15); } for(let k=1;k<=4;k++){ const rr=R0*k/4; for(let i=0;i<=10;i++){ const a=i*Math.PI/5+.2, x=cx+Math.cos(a)*rr, y=cy+Math.sin(a)*rr*1.15; i?ctx.lineTo(x,y):ctx.moveTo(x,y); } } ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx-p.f*30,GROUND); ctx.moveTo(cx,cy); ctx.lineTo(cx+p.f*40,GROUND); ctx.stroke(); ctx.restore(); }   /* v16.12 web pin */
+  if(p.smokeN>0&&game.state==='rally'){ ctx.save(); const x0=p.side===0?COURT_L:NET_X, x1=p.side===0?NET_X:COURT_R, tt=performance.now()/900; for(let i=0;i<14;i++){ const x=x0+(x1-x0)*((i*.137+tt*.05)%1), y=GROUND-60-((i*53)%220), r=60+((i*37)%40); const g=ctx.createRadialGradient(x,y,4,x,y,r); g.addColorStop(0,'rgba(40,40,55,.42)'); g.addColorStop(1,'rgba(40,40,55,0)'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill(); } ctx.restore(); }
+  if((p.smokeN>0||p.cloneN>0)&&game.state==='rally'&&game.mode!=='demo'){ ctx.save(); ctx.font='bold 26px sans-serif'; ctx.textAlign='center'; ctx.lineWidth=4; ctx.strokeStyle='#000'; const t=(p.smokeN>0?'\u{1F4A8} ':'\u{1F465} ')+(p.smokeN||p.cloneN); ctx.strokeText(t,p.x,p.y-215); ctx.fillStyle='#fff'; ctx.fillText(t,p.x,p.y-215); ctx.restore(); }
   if(game.mode==='demo') return;
   if(spPending(p)&&p.armT>0){ const fr=clamp(p.armT/SP_WIN,0,1), fl=p.armT<2&&Math.sin(performance.now()/70)>0, col=fl?'#ff4d6d':(p.ch.col||'#ffd23a');   // v16.9 activation countdown: glow on the character + ring by the bars
     ctx.save(); const g=ctx.createRadialGradient(p.x,p.y-80,10,p.x,p.y-80,95); g.addColorStop(0,col+'55'); g.addColorStop(1,col+'00'); ctx.globalAlpha=fl?.9:.6; ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y-80,95,0,7); ctx.fill();
@@ -3332,7 +3336,7 @@ function chalRender(){ const S=PROG.stats, n=CHAL.filter(c=>PROG.chal[c.id]).len
     ['Longest rally',S.longestRally||0],['Net kills (total)',S.netKills||0],['Specials used',S.specials||0],['Wins per character',pc]].map(([a,b])=>`<tr><td>${a}</td><td><b>${kbEsc(String(b))}</b></td></tr>`).join(''); }
 /* ---- instant replay (offline): the last point, slow motion, skippable ---- */
 const REC_N=480;
-const RP_P=['x','y','vx','vy','onGround','swingT','f','run','squash','lungeT','recT','lungeDir','hitT','hitPt','req','mood','moodT','stunT','spFx','slowT','armed','armT','boostT','perfN','cloneN','kbT','meter','st'], RP_S=['x','y','vx','vy','rot','type','jp','fx','fxc','netHit','tumbleT','special','hideT','webDip','q','bigSmash'];
+const RP_P=['x','y','vx','vy','onGround','swingT','f','run','squash','lungeT','recT','lungeDir','hitT','hitPt','req','mood','moodT','stunT','spFx','slowT','armed','armT','boostT','perfN','cloneN','kbT','meter','st','webT','smokeN'], RP_S=['x','y','vx','vy','rot','type','jp','fx','fxc','netHit','tumbleT','special','hideT','webDip','q','bigSmash'];
 function recFrame(){ if(game.mode==='online'||game.mode==='demo') return; const r=game.rec||(game.rec=[]); const D=game.decoy, C=game.cloneFx;
   r.push({p:players.map(p=>RP_P.map(k=>p[k])),s:RP_S.map(k=>shuttle[k]),t:game.time,hid:game.hitId,lh:game.lastHitter,
     g:{sh:game.shake,dc:D?{id:D.id,x:D.x,y:D.y,vx:D.vx,vy:D.vy,t:D.t,side:D.side,type:D.type,fx:D.fx,fxc:D.fxc,rot:D.rot}:null,cf:C?{...C}:null}});   // v16.9 replays also carry special state
@@ -3566,7 +3570,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden && game.mo
    Host = Nailoong (authoritative simulation), guest = Berry (sends inputs, predicts itself, interpolates the host).
    Reliable PeerJS channel: lobby/start/fx/win events. Extra unordered, no-retransmit channel: inputs, snapshots, pings. */
 const QS=new URLSearchParams(location.search);
-const NET_VER=28, ROOM_PREFIX='nailoong-badminton-v13-', CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const NET_VER=29, ROOM_PREFIX='nailoong-badminton-v13-', CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const NET={on:false,role:null,side:0,peer:null,conn:null,ch:null,code:'',closing:false,lost:false,
   rtt:0,rtts:[],off:0,offS:[],lastRecv:0,lastPing:0,epoch:0,
   lag:Math.max(0,+QS.get('netlag')||0), loss:clamp(+QS.get('netloss')||0,0,.9),
@@ -3755,7 +3759,7 @@ function netHostAfter(dt){
   if(NET.fxq.length){ sendEv({t:'fx',e:NET.epoch,l:NET.fxq}); NET.fxq=[]; }
   const now=performance.now(); if(now-NET.lastSnapT<14) return; NET.lastSnapT=now;
   const s=shuttle, r=v=>Math.round(v*10)/10, f3=v=>Math.round((v||0)*1000)/1000;
-  const P=p=>[r(p.x),r(p.y),r(p.vx),r(p.vy),p.onGround?1:0,f3(p.swingT),f3(p.lungeT),f3(p.recT),p.lungeDir||0,f3(p.lungeCD),p.mood||0,f3(p.moodT),p.req||'clear',p.hitDone?1:0,f3(p.squash),p.f,Math.round(p.st*10)/10,Math.round(p.meter),p.armed||0,f3(p.boostT),p.perfN||0,p.spN||0,f3(p.stunT),f3(p.armT||0),p.cloneN||0];
+  const P=p=>[r(p.x),r(p.y),r(p.vx),r(p.vy),p.onGround?1:0,f3(p.swingT),f3(p.lungeT),f3(p.recT),p.lungeDir||0,f3(p.lungeCD),p.mood||0,f3(p.moodT),p.req||'clear',p.hitDone?1:0,f3(p.squash),p.f,Math.round(p.st*10)/10,Math.round(p.meter),p.armed||0,f3(p.boostT),p.perfN||0,p.spN||0,f3(p.stunT),f3(p.armT||0),p.cloneN||0,f3(p.webT||0),p.smokeN||0];
   sendSt({t:'s',e:NET.epoch,ht:now,ack:NET.gSeq,st:game.state,sc:game.score,sv:game.server,sk:+(game.sClock||0).toFixed(2),lh:game.lastHitter,hid:game.hitId,ra:game.rally,
     p:[P(players[0]),P(players[1])],
     s:[r(s.x),r(s.y),r(s.vx),r(s.vy),f3(s.rot),f3(s.boostT),s.gMul||1,s.bK||BOOST_K,f3(s.tumbleT),s.netHit?1:0,s.type||0,s.landT?1:0,s.fx||0,s.fxc||0,s.special||0,s.webDip||0,f3(s.hideT)],hs:game.hitStop>0?1:0,
@@ -3767,7 +3771,7 @@ function netHostAfter(dt){
 function setPState(p,a){
   p.x=a[0]; p.y=a[1]; p.vx=a[2]; p.vy=a[3]; p.onGround=!!a[4]; p.swingT=a[5]; p.lungeT=a[6]; p.recT=a[7]; p.lungeDir=a[8]; p.lungeCD=a[9];
   p.mood=a[10]||null; p.moodT=a[11]; p.req=a[12]; p.hitDone=!!a[13]; p.squash=a[14];
-  if(a.length>16){ p.st=a[16]; p.meter=a[17]; p.armed=a[18]||null; p.boostT=a[19]; p.perfN=a[20]; if(a.length>21) p.spN=a[21]; if(a.length>22) p.stunT=a[22]; if(a.length>23){ p.armT=a[23]; p.cloneN=a[24]; } }
+  if(a.length>16){ p.st=a[16]; p.meter=a[17]; p.armed=a[18]||null; p.boostT=a[19]; p.perfN=a[20]; if(a.length>21) p.spN=a[21]; if(a.length>22) p.stunT=a[22]; if(a.length>23){ p.armT=a[23]; p.cloneN=a[24]; } if(a.length>25) p.webT=a[25]; if(a.length>26) p.smokeN=a[26]; }
 }
 function simPlayer(p,dt){ const n=Math.max(1,Math.ceil(dt/(1/120)-1e-6)), h=dt/n; for(let k=0;k<n;k++) updatePlayer(p,h); }
 function guestSnap(m){
