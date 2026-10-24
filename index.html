@@ -2267,7 +2267,12 @@ function drawSpriteDino(p){
     for(let k=0;k<110&&fwd(rAng)>lim&&rAng>-2.7;k++) rAng-=.05; }   // tilt it up/back until it clears
   // the face turns edge-on through the middle of the swing (perspective foreshortening)
   const sw=p.swingT>.05&&p.swingT<.2?(p.swingT-.05)/.15:-1, fs=sw>=0?1-.7*Math.sin(sw*Math.PI):1;
-  const racket=()=>{ ctx.save(); ctx.translate(hx,hy); ctx.rotate(rAng); drawRacket(p.skin,fs); ctx.restore(); };
+  const racket=()=>{ ctx.save(); ctx.translate(hx,hy); ctx.rotate(rAng); const S=SPR_H/118*RK, hc=HANDC[p.ch.id]||'#f6c9a2';
+    /* v16.12 grip: palm behind the handle, racket shifted so the fist closes round the grip and the butt sticks out below it, fingers wrapped in front */
+    ctx.save(); ctx.scale(S,S); ctx.fillStyle=hc; ctx.strokeStyle='rgba(40,25,20,.55)'; ctx.lineWidth=.45; ctx.beginPath(); ctx.ellipse(.5,1.2,4.4,3.6,0,0,7); ctx.fill(); ctx.stroke(); ctx.restore();
+    ctx.save(); ctx.translate(-4.2*S,0); drawRacket(p.skin,fs); ctx.restore();
+    ctx.save(); ctx.scale(S,S); ctx.fillStyle=hc; ctx.strokeStyle='rgba(40,25,20,.6)'; ctx.lineWidth=.4; for(let i=0;i<4;i++){ const x=-2.1+i*1.55; ctx.beginPath(); ctx.ellipse(x,-1.3,.95,2.5,0,0,7); ctx.fill(); ctx.stroke(); } ctx.beginPath(); ctx.ellipse(2.6,-2.2,1.8,.9,-.4,0,7); ctx.fill(); ctx.stroke(); ctx.restore();
+    ctx.restore(); };
   // the racket goes behind the body whenever its head would overlap the face (keeps the original eyes visible)
   const RS=SPR_H/118, rhx=hx+Math.cos(rAng)*RK_HEAD*RS, rhy=hy+Math.sin(rAng)*RK_HEAD*RS, F=P.face, rr2=15*RS;
   const fx0=(F[0]-P.ax)*w, fx1=(F[1]-P.ax)*w, fy0=-(1-F[2])*h, fy1=-(1-F[3])*h;
@@ -2304,6 +2309,7 @@ function drawSpriteDino(p){
 // Realistic badminton racket in px (character-scaled): ~68 cm overall -> ~56 px. Grip+butt cap, thin shaft, T-joint,
 // oval head ~23x19 cm. fs = face foreshortening (1 = face-on, smaller = head turned edge-on mid-swing).
 const RK=1.45, RK_HEAD=45.5*RK;      // racket scale vs v7 (overall ~83 px at this character size), head-centre distance from the hand
+const HANDC={spidey:'#d2232a',batman:'#2b2b33',ironman:'#c8202a',cap:'#2b4fa8',deadpool:'#a01c26',flash:'#d8262a',superman:'#f2c7a0',wonder:'#f0c49a',hulk:'#6fbf3a',sonic:'#ffffff',mario:'#ffffff',ultraman:'#c9ccd6',pikachu:'#ffd83a',nailoong:'#ffd23a',bombloong:'#ffd23a',berry:'#ffb6c8',doraemon:'#ffffff',spongebob:'#f4e24a',golden:'#ffcf3a',sheep:'#ffffff',xiaoqi:'#ffd23a',dalaba:'#ffd23a'};
 function drawRacket(sk,fs=1){
   const S=SPR_H/118*RK;
   ctx.save(); ctx.scale(S,S); ctx.lineCap='round'; ctx.lineJoin='round';
