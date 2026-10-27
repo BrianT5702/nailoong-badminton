@@ -163,7 +163,15 @@
   h1.logo{font-size:2.9em;margin:0;white-space:nowrap}
   .tmain .sub{margin:.25em 0 .6em}
   button.play{font-size:1.6em;padding:.4em 2.6em;margin:0 0 .7em;border-radius:1.2em;white-space:nowrap}
-  .tiles{display:grid;grid-template-columns:repeat(4,7.4em);gap:.55em}
+  .tiles{display:grid;grid-template-columns:repeat(5,6.4em);gap:.5em}
+  .trcard{max-width:44em;width:44em;font-size:.8em;max-height:95%;display:flex;flex-direction:column;padding:.5em 1.1em .7em}.trcard>*{flex-shrink:0}
+  .trtop{display:flex;gap:.6em;align-items:stretch}.trtop canvas{width:21em;height:11.8em;border-radius:.8em;background:#eaf6e4;border:.15em solid #ffd93b;flex-shrink:0}
+  .trside{flex:1;text-align:left;font-size:.92em}.trside select{font:inherit;padding:.2em .4em;border-radius:.5em;width:100%}
+  #trRows{overflow:auto;min-height:0;flex:1 1 auto;margin-top:.4em}.trrow{display:grid;grid-template-columns:6.4em 1fr 6.6em 7.6em;gap:.5em;align-items:center;background:#fff8e6;border-radius:.6em;padding:.25em .5em;margin:.2em 0;text-align:left}
+  .trbar{position:relative;height:.9em;background:#f1e4c8;border-radius:.45em;overflow:hidden}.trbar b{position:absolute;left:0;top:0;bottom:0;background:#ffc61a}.trbar i{position:absolute;left:0;top:0;bottom:0;background:#5cc46a}.trbar u{position:absolute;top:0;bottom:0;width:2px;background:#c0392b}
+  .trrow button{padding:.25em .4em;font-size:.95em}.trrow small{color:#a08060}.trmsg{min-height:1.3em;font-weight:bold;color:#e0659a}
+  .ctier{display:flex;align-items:center;gap:.5em;margin:.5em 0 .1em;padding:.3em .6em;border-radius:.7em;color:#fff;font-weight:bold;text-align:left;font-size:.95em}.ctier small{font-weight:normal;opacity:.95}
+  .tiercard{max-width:26em}.tiercard .tbig{font-size:3.2em;line-height:1}
   button.tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.15em;height:4.3em;padding:.3em;border-radius:1em;background:#fff8e1;white-space:nowrap}
   button.tile i{font-style:normal;font-size:1.45em;line-height:1}
   button.tile b{font-size:.92em}
@@ -264,6 +272,7 @@
         <button class="tile" id="onlineBtn"><i>&#127760;</i><b>Online</b></button>
         <button class="tile" id="charsBtn"><i>&#11088;</i><b>Characters</b></button>
         <button class="tile" id="shopBtn"><i>&#128717;&#65039;</i><b>Shop</b></button>
+        <button class="tile" id="trainBtn"><i>&#127947;&#65039;</i><b>Training</b></button>
         <button class="tile" id="chalBtn"><i>&#127919;</i><b>Challenges</b></button>
         <button class="tile" id="howBtn"><i>&#10067;</i><b>How to Play</b></button>
         <button class="tile" id="setBtn"><i>&#9881;&#65039;</i><b>Settings</b></button>
@@ -419,6 +428,19 @@
       <div class="kbbtns"><button class="big alt" id="crBack">Back</button><button class="big" id="crNext">Fight &#9829;</button></div></div>
   </div>
 
+  <div class="overlay hidden" id="trainScreen">
+    <div class="card trcard"><h1 style="font-size:1.6em">Training <span>Camp</span></h1>
+      <div class="sub">&#129689; <b class="coins">0</b> coins. Train one stat per session: a small random gain (sometimes a full +1). Each hero has caps that fit their style; weaknesses stay weak. Trained stats count in solo and Tournament play (online and 2-player use base stats).</div>
+      <div class="trtop"><canvas id="trCv" width="420" height="236"></canvas><div class="trside"><b>Hero</b><br><select id="trCh"></select><div id="trInfo" style="margin-top:.35em"></div><div class="trmsg" id="trMsg"></div></div></div>
+      <div id="trRows"></div>
+      <div class="kbbtns"><button class="big alt" id="trBack">Back</button></div></div>
+  </div>
+
+  <div class="overlay hidden" id="tierScreen">
+    <div class="card tiercard"><div class="tbig" id="tierIcon">&#127942;</div><h1 style="font-size:1.6em" id="tierTitle"></h1><div class="sub" id="tierBody"></div>
+      <div class="kbbtns"><button class="big" id="tierOk">Continue &#9829;</button></div></div>
+  </div>
+
   <div class="overlay hidden" id="shopScreen">
     <div class="card shcard"><h1 style="font-size:1.6em">Shop <span>&amp; Locker</span></h1>
       <div class="sub">&#129689; <b class="coins">0</b> coins for rackets, headbands and courts. Characters unlock in the Tournament.</div>
@@ -512,7 +534,7 @@ const PX_M=(COURT_R-COURT_L)/13.4;   // 83.6 px per metre (13.4 m court)
 // v14: ONE realistic shuttle model for every shot: real gravity + quadratic drag, terminal velocity 7.8 m/s (v14.1, was 6.8) (k = g/vt^2)
 const G=9.81*PX_M, VT=7.8*PX_M, K=G/(VT*VT);   // v14.1: 820 px/s^2, terminal 7.8 m/s = 652 px/s, k=0.00193 /px (one model for every shot)
 // v4: characters are ~0.7x smaller relative to the court (court ~1.45x bigger for them) and slower, with momentum
-const CS=0.62, HS=1.3, BODY_W=.74;   /* v16.14: same 170 cm height, slimmer body (width x0.74) so heroes sit in proportion with the court */   /* v16.12: characters ~1.7 m tall vs the 1.4 m-looking net (170:140) */                                    // character scale vs v3 (court is ~1.6x longer relative to them)
+const CS=0.62, HS=1.3, BODY_W=.9;   /* v16.19: natural chibi proportions (art barely narrowed: real shoulders and torso) */   /* v16.14: same 170 cm height, slimmer body (width x0.74) so heroes sit in proportion with the court */   /* v16.12: characters ~1.7 m tall vs the 1.4 m-looking net (170:140) */                                    // character scale vs v3 (court is ~1.6x longer relative to them)
 const PG=2000, JUMP_V=680, PSPEED=300, REACH=74;
 const ACC_RUN=1300, DEC_SKID=2200, ACC_AIR=650;   // px/s^2: short start-up, skid to stop
 const NET_GAP=6, FRONT_G=40, FRONT_AIR=47;   // v10: body front edge (px from centre, walk / arms-up pose) + gap kept behind the net
@@ -1149,6 +1171,7 @@ function newMatch(mode,diff,target,c0,c1){
   const nm=(id,t)=>CH[id].name+(mode==='2p'?` (${t})`:'');
   players=[ makePlayer(0,c0, nm(c0,'P1'), mode==='demo'?'normal':null),
             makePlayer(1,c1, nm(c1,'P2'), (mode==='2p'||mode==='online')?null:(mode==='demo'?'normal':diff)) ];
+  if(mode==='1p'&&typeof trSt==='function'){ players[0].ch={...players[0].ch,st:trSt(c0)}; players[0].st=stMax(players[0]); }   /* v16.19: your trained stats (solo + Tournament only; online and 2-player use base stats) */
   if(mode==='1p'||mode==='2p') applyRk(players[0],rkEq(c0)); if(mode==='2p') applyRk(players[1],rkEq(c1));   // v15.4 your saved racket for that character
   game.bo=1; game.games=[0,0]; game.career=null; game.delayW=[0,0]; if(mode!=='demo'&&typeof musForMatch==='function') musForMatch(); applyFun('none'); game.mt=mtNew(); game.maxRally=0; game.rec=[]; game.lastRec=null; game.replay=null; game.pendReplay=false;
   if(mode==='1p'||mode==='2p'||mode==='online'){ const P=players[mode==='online'?NET.side:0], rk=cosmOf('racket'), bd=cosmOf('band');   // v15.2 cosmetics (your player only)
@@ -2956,7 +2979,7 @@ const PORT={};
 function portURL(ch){ if(PORT[ch.id]) return PORT[ch.id]; const S=charSprites(ch); if(!S) return ''; return PORT[ch.id]=charPortrait(ch,96).toDataURL(); }
 // v16.5 roster order = unlock order: the two starters, then Tournament stage order, Champion Nailoong last
 function CHARS_ORD(){ const o=[...START_UNLOCK,...LADDER.filter(L=>!L.boss).map(L=>L.ch)], seen=new Set(); const out=[]; for(const id of [...o,...CHARS.filter(c=>!c.boss).map(c=>c.id),...CHARS.filter(c=>c.boss).map(c=>c.id)]) if(CH[id]&&!seen.has(id)){ seen.add(id); out.push(CH[id]); } return out; }
-function statBars(st,big){ return `<div class="sbars${big?' big':''}">`+st.map((v,i)=>`<div class="sb" title="${STAT_TIP[i]}"><span>${big?STAT_N[i]:STAT_N[i].slice(0,3)}</span><i><b style="width:${v*10}%;background:${v>=8?'#5cc46a':v<=4?'#ff8f6f':'#ffc61a'}"></b></i>${big?`<em>${v}</em>`:''}</div>`).join('')+'</div>'; }
+function statBars(st,big){ return `<div class="sbars${big?' big':''}">`+st.map((v,i)=>`<div class="sb" title="${STAT_TIP[i]}"><span>${big?STAT_N[i]:STAT_N[i].slice(0,3)}</span><i><b style="width:${Math.min(100,v*10)}%;background:${v>=8?'#5cc46a':v<=4?'#ff8f6f':'#ffc61a'}"></b></i>${big?`<em>${Math.round(v*10)/10}</em>`:''}</div>`).join('')+'</div>'; }
 function chTabs(){ const m=chUI.mode; return m==='career'?[['p1','You']]:m==='2p'?[['p1','Player 1'],['p2','Player 2']]:m==='online'?[['online','You']]:[['p1','You'],['opp','Opponent']]; }
 function chRender(){
   const tabs=chTabs(); if(!tabs.some(t=>t[0]===chUI.tab)) chUI.tab=tabs[0][0];
@@ -3027,7 +3050,7 @@ function chInfo(id,tab){ const e=$('chInfo'); chUI.view=id; if(tab) chUI.itab=ta
   if(hide) body=`<p class="fl">${DESC_TEASE.golden}</p>`;
   else if(T==='ov') body=`<p class="fl">${D.fl||kbEsc(ch.bio)}</p>${lock?`<p class="tease">${DESC_TEASE._}</p>`:''}<div class="ib"><b>\uD83D\uDC4D Best at:</b> ${D.best||''}</div><div class="ib"><b>\uD83D\uDC4E Weak at:</b> ${D.weak||''}</div>${lock?'':`<div class="ib tip"><b>\uD83D\uDCA1 Tip:</b> ${D.tip||''}</div>`}`;
   else if(T==='sp') body=`<div class="sp"><b>\u2605 ${kbEsc(ch.spName)}</b><br>${SPECIALS[ch.sp]}${spxText(ch.id)}${D.sig?`<br><b>Signature:</b> ${D.sig}`:''}</div>`;
-  else body=`<div class="ib">${archTag(ch)} ${ARCH_INFO[ARCH[ch.id]||'all'][2]}</div>${statBars(ch.st,true)}${statFxHTML(ch)}<div class="sxp"><b>Control</b> = timing window + accuracy (fewer net/out errors) · <b>Reach</b> = racket reach + lunge distance · <b>Defence</b> = cleaner blocks/lifts vs smashes</div><div class="rk"><img alt="" src="${racketURL(ch,rkEq(id))}"><span><b>${rkName(rkEq(id))}</b><br>${rkMods(rkEq(id))}</span></div>`;
+  else body=`<div class="ib">${archTag(ch)} ${ARCH_INFO[ARCH[ch.id]||'all'][2]}</div>${statBars(chUI.tab!=='opp'&&chUI.mode!=='online'&&typeof trSt==='function'?trSt(ch.id):ch.st,true)}${statFxHTML(ch)}<div class="sxp"><b>Control</b> = timing window + accuracy (fewer net/out errors) · <b>Reach</b> = racket reach + lunge distance · <b>Defence</b> = cleaner blocks/lifts vs smashes</div><div class="rk"><img alt="" src="${racketURL(ch,rkEq(id))}"><span><b>${rkName(rkEq(id))}</b><br>${rkMods(rkEq(id))}</span></div>`;
   e.innerHTML=head+(hide?'':tabs)+`<div class="ibody">${body}</div>`+(ch.src==='draw'&&!hide?'<div class="fan">Fan-made chibi art; character belongs to its owner.</div>':'');
   e.querySelectorAll('.itabs button').forEach(b=>b.onclick=()=>chInfo(id,b.dataset.it)); }
 function chChoose(id){
@@ -3204,7 +3227,7 @@ TOUR_T.forEach((u,i)=>{ DIFF['t'+(i+1)]=u<=1?diffLerp(DIFF.oldNormal,DIFF.hard,u
 const DIFF_NAME={easy:'Easy',normal:'Normal',hard:'Hard',champ:'Champion',rookie:'Rookie'};
 const diffName=d=>DIFF_NAME[d]||(/^t\d$/.test(d)?`Tournament Lv ${d[1]}`:d);
 const STYLE_LEVEL={easy:0,normal:1,hard:2,champ:3}; TOUR_T.forEach((u,i)=>STYLE_LEVEL['t'+(i+1)]=u<.35?0:u<1?1:u<1.4?2:3);
-function progDefault(){ return {v:1,coins:0,unlocked:[...START_UNLOCK],owned:{racket:['default'],band:['none'],theme:['classic'],music:['relax'],crowd:['default'],trail:['none']},equip:{racket:'default',band:'none',theme:'classic',music:'relax',crowd:'default',trail:'none'},career:{stage:0,cleared:0},stats:{},chal:{},rk:{},lad2:1,lad3:1,lad4:1}; }
+function progDefault(){ return {v:1,coins:0,unlocked:[...START_UNLOCK],owned:{racket:['default'],band:['none'],theme:['classic'],music:['relax'],crowd:['default'],trail:['none']},equip:{racket:'default',band:'none',theme:'classic',music:'relax',crowd:'default',trail:'none'},career:{stage:0,cleared:0},stats:{},chal:{},rk:{},lad2:1,lad3:1,lad4:1,lad5:1,train:{},tiers:[]}; }
 function progLoad(){ const d=progDefault();
   try{ const o=JSON.parse(LS.getItem(PROG_KEY)||'null'); if(!o||typeof o!=='object'||o.v!==1) return d;
     d.coins=Number.isFinite(o.coins)?clamp(Math.floor(o.coins),0,1e7):0;
@@ -3219,8 +3242,10 @@ function progLoad(){ const d=progDefault();
       if(d.career.cleared>0){ d.career.stage=LADDER.length; for(const c of CHARS) if(!d.unlocked.includes(c.id)) d.unlocked.push(c.id); }   // champions keep everything, new heroes included
       else { let k=-1; for(let t=0;t<Math.min(d.career.stage,OLD.length-1);t++){ const n=LADDER.findIndex(L=>L.ch===OLD[t]); if(n>k) k=n; }   // resume right after the furthest stage you had actually beaten
         d.career.stage=k+1; for(let t=0;t<=k;t++) if(!d.unlocked.includes(LADDER[t].ch)) d.unlocked.push(LADDER[t].ch); } }   // and get the new heroes placed before that point (shop unlocks are kept, never removed)
-    if(!o.lad4&&!(d.career.cleared>0)) for(let t=0;t<Math.min(d.career.stage,LADDER.length);t++) if(!d.unlocked.includes(LADDER[t].ch)) d.unlocked.push(LADDER[t].ch);   /* v16.18 ladder reorder: progress is kept by stage number, and every opponent now placed before your stage counts as beaten (nothing you unlocked is ever removed) */
+    if((!o.lad4||!o.lad5)&&!(d.career.cleared>0)) for(let t=0;t<Math.min(d.career.stage,LADDER.length);t++) if(!d.unlocked.includes(LADDER[t].ch)) d.unlocked.push(LADDER[t].ch);   /* v16.18 ladder reorder: progress is kept by stage number, and every opponent now placed before your stage counts as beaten (nothing you unlocked is ever removed) */
     if(d.career&&d.career.cleared>0) for(const c of CHARS) if(!d.unlocked.includes(c.id)) d.unlocked.push(c.id);   /* v16.13: champions get the new heroes too */
+    if(o.train&&typeof o.train==='object'&&!Array.isArray(o.train)) for(const k in o.train){ const a=o.train[k]; if(!CH[k]||CH[k].boss||!Array.isArray(a)||a.length!==7) continue; const cap=trainCap(k); d.train[k]=a.map((v,i)=>{ v=+v; return Number.isFinite(v)?Math.round(clamp(v,0,cap[i]-CH[k].st[i])*10)/10:0; }); }   /* v16.19 trained stats, sanitised against the caps */
+    if(Array.isArray(o.tiers)) d.tiers=o.tiers.filter(x=>['reg','state','nat','intl'].includes(x)); if(!o.lad5){ const ends={reg:8,state:16,nat:25,intl:LADDER.length-1}; d.tiers=Object.keys(ends).filter(k=>d.career.stage>ends[k]||(k==='intl'&&d.career.cleared>0)); }   /* v16.19: old saves keep their stage index; tiers already passed count as complete (rewards are not paid twice) */
     if(o.stats&&typeof o.stats==='object'&&!Array.isArray(o.stats)) d.stats=o.stats; if(o.chal&&typeof o.chal==='object'&&!Array.isArray(o.chal)) d.chal=o.chal;
     return d; }catch(e){ return d; } }
 let PROG=progLoad(); MUS.track=PROG.equip.music||'relax';
@@ -3258,30 +3283,95 @@ function matchReward(w){
     if(game.career){ const i=game.career.stage, L=LADDER[i];
       if(won){ c+=6*i; const first=PROG.career.stage<=i; if(first){ c+=50; lines.push('Stage clear bonus'); PROG.career.stage=i+1; }
         for(const id of L.un){ if(id==='*'){ let n=0; for(const ch of CHARS) if(unlockChar(ch.id)) n++; if(n) lines.push('Unlocked ALL characters!'); } else if(unlockChar(id)) lines.push(`Unlocked ${CH[id].name}!`); }
-        if(L.boss){ PROG.career.cleared++; c+=100; lines.push('TOURNAMENT CHAMPION!'); } } } }
+        if(L.boss){ PROG.career.cleared++; c+=100; lines.push('TOURNAMENT CHAMPION!'); }
+        { const T=tierOf(i); if(i===T.to){ const fst=!(PROG.tiers||[]).includes(T.id); if(fst){ (PROG.tiers=PROG.tiers||[]).push(T.id); c+=T.reward; } lines.push(`${T.name} tier complete!`); game.tierDone={T,first:fst}; } } } } }
   c=Math.round(c*COIN_K); addCoins(c); return {c,lines}; }
 /* ---- career screen ---- */
 function careerOpen(){ hideAll(); $('careerScreen').classList.remove('hidden'); careerRender(); kbFocus('#crNext'); }
 function careerRender(){ const st=PROG.career.stage; let h='';
   LADDER.forEach((L,i)=>{ const ch=CH[L.ch], done=i<st, next=i===st, lock=i>st;
+    { const T=tierOf(i); if(i===T.from) h+=`<div class="ctier" style="background:${T.col}">${T.icon} ${T.name} <small>\u00b7 stages ${T.from+1}\u2013${T.to+1} \u00b7 opponents +${T.boost[0]} to +${T.boost[1]} key stats \u00b7 reward ${Math.round(T.reward*COIN_K)} \uD83E\uDE99 ${st>T.to?'\u2714 complete':''}</small></div>`; }
     h+=`<div class="crow${done?' done':''}${next?' next':''}${lock?' lock':''}"><div class="pt" style="background-image:url(${lock&&L.boss?'':portURL(ch)});border-color:${ch.col}">${lock&&L.boss?'?':''}</div>
       <div class="cinfo"><b>${i+1}. ${lock&&L.boss?'???':kbEsc(ch.name)}</b> <span class="ctag">${L.title}</span> <span class="lvl">Lv ${i+1}</span><br><small>${L.desc} \u00b7 ${L.bo===1?'1 game':'best of 3'} to 21</small>
         <div class="unl">Unlocks: ${L.un.map(id=>id==='*'?'<span class="ua">\u2605 all characters</span>':(CH[id].boss&&!progUnlocked(id))?'<span class="uc">??? \uD83D\uDD12</span>':`<span class="uc${progUnlocked(id)?' got':''}" title="${kbEsc(CH[id].name)}"><i style="background-image:url(${portURL(CH[id])})"></i>${kbEsc(CH[id].name)}${progUnlocked(id)?' \u2714':' \uD83D\uDD12'}</span>`).join('')}</div></div>
       <div class="cst">${done?'\u2714 beaten':next?'\u25B6 next':'\uD83D\uDD12'}</div></div>`; });
   $('crList').innerHTML=h; $('crNext').disabled=false; { const nx=$('crList').querySelector('.next'); if(nx) $('crList').scrollTop=Math.max(0,nx.offsetTop-$('crList').offsetTop-$('crList').clientHeight/2+nx.offsetHeight/2); }   // v16.1: 26 stages - keep the next stage in view
   $('crNext').innerHTML=st>=LADDER.length?'Rematch the Champion &#9829;':`Fight stage ${st+1} &#9829;`;
-  $('crSub').textContent=st>=LADDER.length?`Champion ${PROG.career.cleared}\u00d7! Replay the final any time.`:`Stage ${st+1} of ${LADDER.length} \u00b7 next: ${CH[LADDER[st].ch].name} (Lv ${st+1}). Beat a character to unlock them. All games to 21 (win by 2, max 30).`; }
+  $('crSub').textContent=st>=LADDER.length?`Champion ${PROG.career.cleared}\u00d7! Replay the final any time.`:`${tierOf(st).icon} ${tierOf(st).name} tier \u00b7 Stage ${st+1} of ${LADDER.length} \u00b7 next: ${CH[LADDER[st].ch].name} (Lv ${st+1}). Beat a character to unlock them. All games to 21 (win by 2, max 30).`; }
 function careerFight(){ const i=Math.min(PROG.career.stage,LADDER.length-1), L=LADDER[i];
   if(!progUnlocked(chPick.p1)) chPick.p1='nailoong';
   ensureAudio(); hideAll(); if(document.activeElement) document.activeElement.blur();
   newMatch('1p',L.diff,21,chPick.p1,L.ch); game.career={stage:i}; musForMatch(); if(L.boss&&CH[L.ch].bossSt) players[1].ch={...CH[L.ch],st:CH[L.ch].bossSt,name:CH[L.ch].name+' (Boss)'}; const lb=lateBuff(i,players[1]); game.career.st=players[1].ch.st; applyRk(players[1],lb.rk); players[1].st=stMax(players[1]); game.bo=L.bo; game.games=[0,0]; players[1].ai.style=L.style;   // boss: fixed Attack Pro loadout. v16.1 fix: Bo3 + AI style were inside this comment and never applied
   for(const k in keys) keys[k]=false; buildTouch(); tone(660,.1,'triangle',.15); tone(990,.15,'triangle',.15,null,.1);
-  showBanner(1,`Stage ${i+1}: ${CH[L.ch].name} \u2014 ${L.title}`+(lb.txt?` \u00b7 ${lb.txt}`:'')); }
+  { const T=tierOf(i); showBanner(1,`${T.icon} ${T.name} ${i-T.from+1}/${T.to-T.from+1}${i===T.from?' \u2014 NEW TIER':''} \u00b7 Stage ${i+1}: ${CH[L.ch].name} \u2014 ${L.title}`+(lb.txt?` \u00b7 ${lb.txt}`:'')); } }
 /* v16.16 late-tournament loadout: stages 1-14 keep the Attack Pro racket they always had; from stage 15 the opponent carries the Pro racket that suits its type and gets a stat buff that grows with the stage (+1 on two key stats at 15, up to +2/+2/+1 near the end) */
-function lateBuff(i,o){ const n=i+1; if(LADDER[i].boss||n<15) return {rk:'atk3',txt:''}; const A=archOf(o), key={power:[0,3],speed:[1,3],wall:[6,3],endure:[5,3],agile:[1,0],all:[3,0]}[A]||[3,0], third={power:1,speed:2,wall:4,endure:1,agile:2,all:1}[A]??1;
+/* v16.19 Tournament tiers: Regional -> State -> National -> International, each its own bracket with a banner, a tier-complete screen and a reward.
+   Opponent stat boost ramps inside each tier (Regional +0..+1, State +1..+2, National +2..+3, International +3..+5; may exceed 10).
+   Key stats of the opponent's type get the full boost, the rest half. AI difficulty keeps the per-stage ramp (TOUR_T). */
+const TIERS=[{id:'reg',name:'Regional',icon:'\uD83E\uDD49',col:'#4aa860',from:0,to:8,boost:[0,1],rk:2,reward:150},
+  {id:'state',name:'State',icon:'\uD83E\uDD48',col:'#3a7ae0',from:9,to:16,boost:[1,2],rk:3,reward:250},
+  {id:'nat',name:'National',icon:'\uD83E\uDD47',col:'#a04ad0',from:17,to:25,boost:[2,3],rk:3,reward:400},
+  {id:'intl',name:'International',icon:'\uD83C\uDF0D',col:'#d89a00',from:26,to:LADDER.length-1,boost:[3,5],rk:3,reward:600}];
+const tierOf=i=>TIERS.find(t=>i>=t.from&&i<=t.to)||TIERS[TIERS.length-1];
+const TIER_KEY={power:[0,2,4],speed:[1,2],wall:[6,5],endure:[5,6],agile:[1,0],all:[3,1]};
+function tierBoost(i){ const T=tierOf(i), u=T.to>T.from?(i-T.from)/(T.to-T.from):1; return Math.round((T.boost[0]+(T.boost[1]-T.boost[0])*u)*2)/2; }
+function lateBuff(i,o){ const T=tierOf(i), b=tierBoost(i), A=archOf(o), key=LADDER[i].boss?[3,6]:TIER_KEY[A]||[3,1];   /* the Champion's +5 goes on Control and Defence */
+  const sec=T.id==='intl'?.3:.5, base=LADDER[i].boss?CH[LADDER[i].ch].st:o.ch.st, st=base.map((v,k)=>Math.round((v+(key.includes(k)?b:b*sec))*10)/10); o.ch={...o.ch,st};   /* International: the big boost goes on the key stats, the rest +30% of it */
+  const rk=({power:'atk',speed:'spd'}[A]||'bal')+T.rk, N=STAT_N;
+  return {rk,b,txt:`${rkName(rk)} racket, `+(b?`+${b} ${key.map(k=>N[k]).join('/')}, +${Math.round(b*sec*10)/10} others`:'no stat boost')}; }
+function lateBuffOld(i,o){ const n=i+1; if(LADDER[i].boss||n<15) return {rk:'atk3',txt:''}; const A=archOf(o), key={power:[0,3],speed:[1,3],wall:[6,3],endure:[5,3],agile:[1,0],all:[3,0]}[A]||[3,0], third={power:1,speed:2,wall:4,endure:1,agile:2,all:1}[A]??1;
   const amt=n>=26?[2,2,1]:n>=20?[1,1,1]:[1,0,0], st=[...o.ch.st]; [key[0],key[1],third].forEach((k,j)=>{ st[k]=Math.min(10,st[k]+amt[j]); }); o.ch={...o.ch,st};
   const rk={power:'atk3',speed:'spd3',wall:'bal3',endure:'bal3',agile:'bal3',all:'bal3'}[A]||'bal3', N=STAT_N, b=[key[0],key[1],third].map((k,j)=>amt[j]?`+${amt[j]} ${N[k]}`:'').filter(Boolean).join(', ');
   return {rk,txt:`${rkName(rk)} racket, ${b}`}; }
+/* ================= v16.19 Training camp ================= */
+/* caps: a stat can be trained up to base+2 (a key stat of the hero's type: +2.5), max 10; a weak stat (<=4) or a stat that is a weakness
+   of the type (Defender Power/Speed, Speed Power/Control, Power Defence, Endurance Power) only +1. Gains: 20% a full +1, else +0.1..+0.5. */
+function trainCap(id){ const TR_WEAK={wall:[0,1],speed:[0,3],power:[6],endure:[0],agile:[],all:[]}, TR_KEY={power:[0,2,4],speed:[1,2],wall:[6,5],endure:[5,6],agile:[1,0],all:[3]}; const c=CH[id], A=ARCH[id]||'all'; return c.st.map((v,i)=>{ if(v>=10) return v; const w=v<=4||(TR_WEAK[A]||[]).includes(i); return Math.max(v,Math.min(10,v+(w?1:(TR_KEY[A]||[]).includes(i)?2.5:2))); }); }
+function trGain(id){ return (PROG.train&&PROG.train[id])||[0,0,0,0,0,0,0]; }
+function trSt(id){ const c=CH[id]; if(!c||c.boss) return c?c.st:[6,6,6,6,6,6,6]; const g=trGain(id); return c.st.map((v,i)=>Math.round((v+(g[i]||0))*10)/10); }
+function trCost(id,i){ const cap=trainCap(id), room=cap[i]-CH[id].st[i]; if(room<=0||trGain(id)[i]>=room-1e-6) return 0; const fr=clamp(trGain(id)[i]/room,0,1); return Math.round((30+110*fr*fr)/5)*5; }
+const TR_ANIM=['Smash practice','Shuttle-run sprints','Jump rope','Target drills','Stretching','Jogging','Block drills'], TR_ICON=['\uD83D\uDCA5','\uD83D\uDCA8','\uD83E\uDD98','\uD83C\uDFAF','\uD83E\uDDD8','\uD83C\uDFC3','\uD83D\uDEE1\uFE0F'];
+const trUI={id:null,anim:null,busy:false};
+function trainOpen(){ hideAll(); $('trainScreen').classList.remove('hidden'); const sel=$('trCh'), ids=CHARS.filter(c=>!c.boss&&progUnlocked(c.id)).map(c=>c.id);
+  if(!trUI.id||!ids.includes(trUI.id)) trUI.id=ids.includes(chPick.p1)?chPick.p1:ids[0];
+  sel.innerHTML=ids.map(id=>`<option value="${id}"${id===trUI.id?' selected':''}>${kbEsc(CH[id].name)} (${ARCH_INFO[ARCH[id]||'all'][0]})</option>`).join(''); sel.onchange=()=>{ trUI.id=sel.value; $('trMsg').textContent=''; trainRender(); };
+  $('trMsg').textContent=''; trainRender(); trAnimStart(-1); kbFocus('#trRows button'); }
+function trainRender(){ const id=trUI.id, c=CH[id], cap=trainCap(id), g=trGain(id), cur=trSt(id); let h='';
+  $('trInfo').innerHTML=`${archTag?archTag(c):''}<br><small>Trained so far: +${Math.round(g.reduce((a,b)=>a+b,0)*10)/10} total</small>`;
+  STAT_N.forEach((n,i)=>{ const room=cap[i]-c.st[i], cost=trCost(id,i), full=room<=0||g[i]>=room-1e-6;
+    h+=`<div class="trrow"><b>${TR_ICON[i]} ${n}</b><div class="trbar" title="base ${c.st[i]}, now ${cur[i]}, cap ${cap[i]}"><b style="width:${Math.min(100,cap[i]*10)}%"></b><i style="width:${Math.min(100,cur[i]*10)}%"></i><u style="left:${Math.min(99.5,cap[i]*10)}%"></u></div>
+      <span><b>${cur[i].toFixed(1)}</b> <small>/ cap ${cap[i]}</small></span><button data-st="${i}"${full||PROG.coins<cost||trUI.busy?' disabled':''}>${full?'MAX':`Train ${cost} \uD83E\uDE99`}</button></div>`; });
+  $('trRows').innerHTML=h; $('trRows').querySelectorAll('button[data-st]').forEach(b=>b.onclick=()=>trainDo(+b.dataset.st)); }
+function trainDo(i){ const id=trUI.id, cost=trCost(id,i); if(trUI.busy||!cost||PROG.coins<cost) return; const cap=trainCap(id), room=cap[i]-CH[id].st[i], g=[...trGain(id)];
+  PROG.coins-=cost; const big=Math.random()<.2, gain=Math.round(Math.min(room-g[i],big?1:Math.round((.1+Math.random()*.4)*10)/10)*10)/10; g[i]=Math.round((g[i]+gain)*10)/10;
+  (PROG.train=PROG.train||{})[id]=g; progSave(); trUI.busy=true; $('trMsg').textContent=`${TR_ANIM[i]}\u2026`; trainRender();
+  try{ tone(520,.08,'triangle',.1); }catch(e){}
+  trAnimStart(i,()=>{ trUI.busy=false; const msg=`+${gain.toFixed(1)} ${STAT_N[i]}${big?' \u2014 BREAKTHROUGH!':'!'}`; $('trMsg').textContent=msg; trUI.anim&&(trUI.anim.pop={txt:msg,t0:performance.now(),big}); try{ tone(big?990:780,.12,'triangle',.15); }catch(e){} trainRender(); });
+  return gain; }
+/* the animation: the hero's sprite on a little practice court, one drill per stat, ~1.6 s, then a gain popup */
+function trAnimStart(i,done){ const cv=$('trCv'); trUI.anim={i,t0:performance.now(),done,dur:i<0?1e9:1600,pop:trUI.anim&&i<0?null:null}; if(!trUI.raf) trUI.raf=requestAnimationFrame(trTick); }
+function trTick(now){ trUI.raf=0; const A=trUI.anim, cv=$('trCv'); if(!A||$('trainScreen').classList.contains('hidden')) return; const x=cv.getContext('2d'), W=cv.width, H=cv.height, t=(now-A.t0)/1000;
+  x.clearRect(0,0,W,H); const g=x.createLinearGradient(0,0,0,H); g.addColorStop(0,'#cfeaff'); g.addColorStop(.62,'#eaf6ff'); g.addColorStop(.62,'#7cc58a'); g.addColorStop(1,'#5fb57d'); x.fillStyle=g; x.fillRect(0,0,W,H);
+  x.strokeStyle='rgba(255,255,255,.8)'; x.lineWidth=2; x.beginPath(); x.moveTo(0,H*.8); x.lineTo(W,H*.8); x.stroke();
+  const ch=CH[trUI.id], S=charSprites(ch), img=S&&S.walk, GY=H*.86, hH=130; let cx=W*.32, cy=GY, sx=1, sy=1, rot=0; const k=A.i;
+  const shut=(px,py,a)=>{ x.save(); x.translate(px,py); x.rotate(a||0); x.fillStyle='#fff'; x.strokeStyle='#999'; x.lineWidth=1; x.beginPath(); x.moveTo(0,0); x.lineTo(12,-5); x.lineTo(12,5); x.closePath(); x.fill(); x.stroke(); x.fillStyle='#e23b3b'; x.beginPath(); x.arc(0,0,3,0,7); x.fill(); x.restore(); };
+  const ph=(t*1.6)%1;
+  if(k===0){ sy=1-.12*Math.max(0,Math.sin(ph*Math.PI*2)); rot=-.15*Math.sin(ph*Math.PI*2); const p2=(ph+.5)%1; shut(W*.38+p2*W*.6,H*.28+p2*H*.45,.6); for(let j=0;j<4;j++){ x.strokeStyle=`rgba(255,120,40,${.6-j*.12})`; x.lineWidth=3; x.beginPath(); x.moveTo(W*.38+p2*W*.6-14-j*18,H*.28+p2*H*.45-8-j*6); x.lineTo(W*.38+p2*W*.6-30-j*18,H*.28+p2*H*.45-14-j*6); x.stroke(); } }
+  else if(k===1){ cx=W*.18+(W*.6)*(.5-.5*Math.cos(t*Math.PI*2.4)); rot=.12*Math.sin(t*Math.PI*2.4); for(const cxn of [W*.14,W*.82]){ x.fillStyle='#ff8a1a'; x.beginPath(); x.moveTo(cxn-9,GY); x.lineTo(cxn,GY-24); x.lineTo(cxn+9,GY); x.fill(); } x.strokeStyle='rgba(255,255,255,.8)'; x.lineWidth=2; for(let j=0;j<5;j++){ const yy=GY-30-j*18; x.beginPath(); x.moveTo(cx-60-j*4,yy); x.lineTo(cx-30,yy); x.stroke(); } }
+  else if(k===2){ const a=t*Math.PI*3.2; cy=GY-Math.max(0,Math.sin(a))*38; x.strokeStyle='#d8262b'; x.lineWidth=3; x.beginPath(); x.ellipse(cx,GY-hH*.5,62,hH*.58,0,0,7); x.save(); x.globalAlpha=.25; x.stroke(); x.restore(); x.beginPath(); const ry=-Math.cos(a)*hH*.58; x.moveTo(cx-62,GY-hH*.5); x.quadraticCurveTo(cx,GY-hH*.5-ry*2,cx+62,GY-hH*.5); x.stroke(); }
+  else if(k===3){ for(const [tx,r] of [[W*.72,26],[W*.86,18]]){ for(let j=3;j>0;j--){ x.fillStyle=j%2?'#ff5a5a':'#fff'; x.beginPath(); x.ellipse(tx,GY-4,r*j/3,r*j/3*.35,0,0,7); x.fill(); } } const p2=ph, ax=cx+40, bx=W*.72; shut(ax+(bx-ax)*p2,GY-60-Math.sin(p2*Math.PI)*90+p2*56,.4); }
+  else if(k===4){ sy=1+.16*Math.max(0,Math.sin(t*Math.PI*1.4)); sx=1-.06*Math.max(0,Math.sin(t*Math.PI*1.4)); rot=.25*Math.sin(t*Math.PI*.7); x.strokeStyle='rgba(90,160,255,.7)'; x.lineWidth=3; x.beginPath(); x.arc(cx,GY-hH*.6,hH*.62*sy,-2.6,-.5); x.stroke(); }
+  else if(k===5){ cy=GY-Math.abs(Math.sin(t*Math.PI*4))*9; rot=.06; x.strokeStyle='rgba(255,255,255,.9)'; x.lineWidth=3; for(let j=0;j<6;j++){ const xx=((j*90-t*260)%(W+90)+W+90)%(W+90)-45; x.beginPath(); x.moveTo(xx,H*.95); x.lineTo(xx+40,H*.95); x.stroke(); } x.fillStyle='#7fd0ff'; x.beginPath(); x.arc(cx-30,GY-hH*.9+(t*80%30),3.5,0,7); x.fill(); }
+  else if(k===6){ const p2=ph, sxp=W-(W-cx-45)*p2; if(p2<.9) shut(sxp,GY-70-20*Math.sin(p2*3),Math.PI); else { x.fillStyle='rgba(58,160,255,.5)'; x.beginPath(); x.arc(cx+46,GY-72,30,0,7); x.fill(); shut(cx+60+(p2-.9)*900,GY-80-(p2-.9)*400,0); } x.strokeStyle='rgba(58,160,255,.9)'; x.lineWidth=4; x.beginPath(); x.arc(cx+30,GY-70,40,-1,1); x.stroke(); }
+  else { cy=GY-Math.abs(Math.sin(t*2))*4; }
+  x.fillStyle='rgba(40,80,50,.25)'; x.beginPath(); x.ellipse(cx,GY+2,30,7,0,0,7); x.fill();
+  if(img){ const P=S.pose.walk, w=hH*(img.naturalWidth||img.width)/(img.naturalHeight||img.height)*(typeof BODY_W!=='undefined'?BODY_W:1); x.save(); x.translate(cx,cy); x.rotate(rot); x.scale(sx,sy); x.drawImage(img,-P.ax*w,-hH,w,hH); x.restore(); }
+  else { x.fillStyle=ch.col; x.beginPath(); x.arc(cx,cy-60,40,0,7); x.fill(); }
+  x.fillStyle='#7a5a30'; x.font='bold 15px sans-serif'; x.textAlign='left'; x.fillText(k>=0?`${TR_ICON[k]} ${TR_ANIM[k]}`:`${ch.name} \u00b7 pick a drill`,10,22);
+  if(k>=0&&t*1000<A.dur){ x.fillStyle='rgba(255,255,255,.7)'; x.fillRect(10,30,140,8); x.fillStyle='#ffc61a'; x.fillRect(10,30,140*Math.min(1,t*1000/A.dur),8); }
+  if(A.pop){ const pt=(now-A.pop.t0)/1000; if(pt<2.2){ x.save(); x.globalAlpha=Math.min(1,2.2-pt); x.font=`bold ${A.pop.big?26:24}px sans-serif`; { const mw=x.measureText(A.pop.txt).width; if(mw>W-20) x.font=`bold ${Math.floor((A.pop.big?26:24)*(W-20)/mw)}px sans-serif`; } x.textAlign='center'; x.lineWidth=5; x.strokeStyle='#fff'; const yy=H*.42-pt*18; x.strokeText(A.pop.txt,W*.5,yy); x.fillStyle=A.pop.big?'#e0659a':'#2e9a4a'; x.fillText(A.pop.txt,W*.5,yy); x.restore(); } }
+  if(k>=0&&t*1000>=A.dur&&A.done){ const d=A.done; A.done=null; A.dur=1e9; d(); }
+  trUI.raf=requestAnimationFrame(trTick); }
 /* ---- shop / locker ---- */
 const shopUI={tab:'char',confirm:false};
 function shopOpen(){ hideAll(); $('shopScreen').classList.remove('hidden'); shopUI.confirm=false; shopRender(); kbFocus('#shopBody button'); }
@@ -3471,7 +3561,7 @@ function toggleFs(){ try{ if(isFs()) (document.exitFullscreen||document.webkitEx
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>setTimeout(resize,50)));
 $('fsBtn').onclick=()=>{ toggleFs(); $('fsBtn').blur(); };
 $('fsTitleBtn').onclick=()=>{ toggleFs(); $('fsTitleBtn').blur(); };
-function hideAll(){ ['profScreen','qmScreen','setScreen','howScreen','titleScreen','pauseScreen','winScreen','onlineScreen','kbScreen','chScreen','careerScreen','shopScreen','chalScreen'].forEach(id=>$(id).classList.add('hidden')); kbUI.open=false; kbUI.cap=null; chUI.open=false; }
+function hideAll(){ ['trainScreen','tierScreen','profScreen','qmScreen','setScreen','howScreen','titleScreen','pauseScreen','winScreen','onlineScreen','kbScreen','chScreen','careerScreen','shopScreen','chalScreen'].forEach(id=>$(id).classList.add('hidden')); kbUI.open=false; kbUI.cap=null; chUI.open=false; }
 function startFromMenu(){
   if(menuSel.mode==='online'&&!(document.querySelector('#qmScreen button[data-mode="online"]'))&&$('titleScreen')&&!$('titleScreen').classList.contains('hidden')) menuSel.mode=(document.querySelector('#qmScreen button[data-mode].sel')||{dataset:{mode:'1p'}}).dataset.mode;
   if(menuSel.mode==='online'){ ensureAudio(); onShow('main'); onStatus(''); netCharLine(); setTimeout(()=>$('onCode').focus(),0); return; }
@@ -3514,10 +3604,15 @@ function showWin(){
   const rw=matchReward(w); $('winCoins').innerHTML=rw?`+${rw.c} \uD83E\uDE99 coins`+(rw.lines.length?' \u00b7 '+rw.lines.map(kbEsc).join(' \u00b7 '):'')+` <small>(total ${PROG.coins})</small>`:'';
   if(game.career) $('againBtn').innerHTML=w===0?(game.career.stage>=LADDER.length-1?'Tournament &#9829;':'Next opponent &#9829;'):'Try again &#9829;';
   if(typeof afterMatch==='function') afterMatch(w);
+  if(game.tierDone){ const {T,first}=game.tierDone, nx=TIERS[TIERS.indexOf(T)+1]; game.tierDone=null;
+    $('tierIcon').textContent=T.icon; $('tierTitle').innerHTML=`${T.name} <span>Champion!</span>`;
+    $('tierBody').innerHTML=`You won the ${T.name} bracket (stages ${T.from+1}\u2013${T.to+1}).`+(first?`<br>Tier reward: <b>+${Math.round(T.reward*COIN_K)} \uD83E\uDE99</b>`:'')+(nx?`<br><br>Next: <b style="color:${nx.col}">${nx.icon} ${nx.name}</b> \u2014 opponents get +${nx.boost[0]} to +${nx.boost[1]} on their key stats and Pro rackets. Train up!`:'<br><br>You are the International Champion! \uD83C\uDF0D');
+    $('tierScreen').classList.remove('hidden'); sfx.win&&sfx.win(); for(let i=0;i<40;i++) confetti(); }
 }
 $('startBtn').onclick=startFromMenu;
 $('chalBtn').onclick=()=>{ ensureAudio(); chalOpen(); }; $('chalBack').onclick=()=>toMenu();
 $('careerBtn').onclick=()=>{ ensureAudio(); careerOpen(); }; $('shopBtn').onclick=()=>{ ensureAudio(); shopOpen(); };
+$('tierOk').onclick=()=>$('tierScreen').classList.add('hidden'); $('trainBtn').onclick=()=>{ ensureAudio(); trainOpen(); }; $('trBack').onclick=()=>{ trUI.anim=null; toMenu(); };
 $('crBack').onclick=()=>toMenu(); $('crNext').onclick=()=>chOpen('career','career'); $('shopBack').onclick=()=>toMenu(); $('shopReset').onclick=shopReset;
 addEventListener('keydown',e=>{ if(e.code==='Escape'&&(!$('careerScreen').classList.contains('hidden')||!$('chalScreen').classList.contains('hidden')||!$('shopScreen').classList.contains('hidden'))){ e.preventDefault(); e.stopImmediatePropagation(); toMenu(); } },true);
 refreshCoins();
@@ -3637,7 +3732,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden && game.mo
    Host = Nailoong (authoritative simulation), guest = Berry (sends inputs, predicts itself, interpolates the host).
    Reliable PeerJS channel: lobby/start/fx/win events. Extra unordered, no-retransmit channel: inputs, snapshots, pings. */
 const QS=new URLSearchParams(location.search);
-const NET_VER=33, ROOM_PREFIX='nailoong-badminton-v13-', CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const NET_VER=34, ROOM_PREFIX='nailoong-badminton-v13-', CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const NET={on:false,role:null,side:0,peer:null,conn:null,ch:null,code:'',closing:false,lost:false,
   rtt:0,rtts:[],off:0,offS:[],lastRecv:0,lastPing:0,epoch:0,
   lag:Math.max(0,+QS.get('netlag')||0), loss:clamp(+QS.get('netloss')||0,0,.9),
