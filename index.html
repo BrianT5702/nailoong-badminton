@@ -1188,7 +1188,7 @@ function serveClockTick(p,dt){ if(game.mode==='demo'||game.paused||game.replay||
   if(!game.delayW[p.side]){ game.delayW[p.side]=1; popup(p.x,p.y-170,'Serve clock! Warning \u2013 auto serve','#ff4d4d',22); p.req='drop'; doServe(p); }
   else pointTo(1-p.side,'Delay of play'); }
 function setupServe(side){ for(const q of players) q.atkN=0; game.rallySp=false; if(game.mode!=='demo'&&Math.random()<.35) crowdLightClap(5+Math.floor(Math.random()*6));
-  game.state='serve'; game.server=side; game.lastHitter=-1; game.rally=0; game.serveTimer=0; game.sClock=SERVE_CLOCK; if(typeof shuttle!=="undefined"&&shuttle) shuttle.special=null; if(typeof shuttle!=="undefined"&&shuttle) shuttle.spRet=null; for(const q of (typeof players!=='undefined'&&players)||[]){ q.rider=null; q.stunT=0; q.kbT=0; q.slowT=0; q.webT=0; if(q.cloneN>0||q.smokeN>0||q.armed||q.perfN>0){ q.meter=Math.max(q.meter||0,(q.armed&&game.state!=='win')?SP_REFUND:0); } q.cloneN=0; q.smokeN=0; q.armed=null; q.perfN=0; q.armT=0; q.boostT=0; q.boostK=1; q.rider=null; } /* v16.12: every special modifier ends with the rally */ if(typeof shuttle!=='undefined'&&shuttle){ shuttle.webDip=0; shuttle.webDip0=0; shuttle.tumbleT=0; shuttle.hideT=0; shuttle.spRet0=null; shuttle.gMul=1; shuttle.bK=BOOST_K; shuttle.special=null; }
+  game.state='serve'; game.server=side; game.lastHitter=-1; game.rally=0; game.serveTimer=0; game.sClock=SERVE_CLOCK; if(typeof shuttle!=="undefined"&&shuttle) shuttle.special=null; if(typeof shuttle!=="undefined"&&shuttle) shuttle.spRet=null; for(const q of (typeof players!=='undefined'&&players)||[]){ q.stunT=0; q.kbT=0; q.slowT=0; q.webT=0; q.smokeOn=0; q.spCarry=q.armed?1:0; q.armT=spPending(q)?SP_WIN:0; q.boostT=0; q.boostK=1; } /* v16.21: unused charges (perfect x3, smoke x3, clones x3, armed single shots, own riders) carry over to the next point with a fresh window; every lingering effect (stun, slow, web, freeze, boost, heavy shuttle, smoke on screen, decoys) still ends with the rally */ if(typeof game!=='undefined'){ game.decoy=null; game.cloneFx=null; game.decoyDelay=0; game.decoyFool=false; game.decoyOff=0; } if(typeof shuttle!=='undefined'&&shuttle){ shuttle.webDip=0; shuttle.webDip0=0; shuttle.tumbleT=0; shuttle.hideT=0; shuttle.spRet0=null; shuttle.gMul=1; shuttle.bK=BOOST_K; shuttle.special=null; }
   const P0=players[0],P1=players[1];
   P0.x = side===0?300:340; P1.x = side===1?980:940;
   for(const p of players){ p.y=GROUND; p.vx=p.vy=0; p.onGround=true; p.swingT=-1; p.lungeT=p.recT=0; }
@@ -1453,6 +1453,7 @@ function hitShuttle(p,d=0,reach=REACH){
   s.special=null; let spec=wallUsed?'wall':null;
   p.hitT=game.time; p.hitPt={x:s.x,y:s.y};
   let v=null, type=shotFor(p), big=false, fxTier=0;
+  if(p.spCarry&&(p.armed==='thunder'||p.armed==='bomb')&&type!=='smash'&&type!=='flat') type=canSmash(p,s)?'smash':'flat';   /* v16.21: a carried-over power special fires on the very next contact */
   if(type==='smash'){
     big=!p.onGround; if(big&&p.st<=0&&game.mode!=='demo'){ big=false; popup(p.x,p.y-160,'too tired to jump-smash','#d0456f',16); }
     if(p.armed==='thunder'||p.armed==='bomb'){ spec=p.armed; p.armed=null; q=Math.max(q,.9); }
@@ -1539,8 +1540,8 @@ function hitShuttle(p,d=0,reach=REACH){
       const e=Math.abs(sim.landX-tx); if(e<bestErr){ bestErr=e; v=c; } }
     if(!v) type='net';
   }
-  if(p.armed==='spin'&&(type==='net'||type==='drop'||type==='block'||p.ch.id==='spidey')){ spec='spin'; p.armed=null; q=1; if(Math.abs(s.x-NET_X)<150) type='net'; }
-  if(p.armed==='drive'&&(type==='clear'||type==='punch'||type==='lift')){ spec='drive'; p.armed=null; q=1; type='punch'; }
+  if(p.armed==='spin'&&(type==='net'||type==='drop'||type==='block'||p.ch.id==='spidey'||p.spCarry)){ spec='spin'; p.armed=null; q=1; if(Math.abs(s.x-NET_X)<150) type='net'; }
+  if(p.armed==='drive'&&(type==='clear'||type==='punch'||type==='lift'||p.spCarry)){ spec='drive'; p.armed=null; q=1; type='punch'; }
   let netV=null;   // v16.11 richer net play (drop key at the net): direction + contact height pick the shot
   if(type==='net'&&!spec){ const inp=p.input||{}, tow=p.side===0?inp.right:inp.left, awy=p.side===0?inp.left:inp.right;
     netV=awy?'lift':tow&&s.y<NET_TOP+10?'spin':'net'; if(p.ai) netV=Math.random()<.25&&s.y<NET_TOP+10?'spin':netV;
@@ -1637,7 +1638,7 @@ function hitShuttle(p,d=0,reach=REACH){
     if(dv){ game.decoyId=(game.decoyId||0)+1; game.decoy={id:game.decoyId,x:s.x,y:s.y,vx:dv.vx,vy:dv.vy,t:.5,side:p.side,tr:[],ctr:[],rot:Math.atan2(dv.vy,dv.vx),type,fx:s.fx,fxc:s.fxc}; game.cloneFx={side:p.side,t:.5,x:p.x-p.f*48};
       const o=players[1-p.side]; game.decoyDelay=0; if(o.ai){ const base={easy:.85,normal:.75,hard:.78}[o.ai.diff]??.78, fool=Math.random()<base*clamp(1-.07*chD(o,3),.6,1.4); game.decoyDelay=fool?.45:.15; game.decoyFool=fool; game.decoyOff=clamp(simulate(s.x,s.y,dv.vx,dv.vy,6).landX-real.landX,-260,260); }
       popup(p.x,p.y-175,'SHADOW CLONE!','#f28c28',22); } }
-  s.type=type; s.jp=type==='punch'&&p._jp?1:0; p._jp=false; s.bigSmash=big; s.q=q; s.special=spec; s.spRet=s.spRet0||null; s.spRet0=null; s.webDip=s.webDip0||0; s.webDip0=0; if(p.smokeN>0&&game.state==='rally'){ p.smokeN--; p.armT=p.smokeN>0?SP_WIN:0; s.hideT=.52; spRider(opp,'batman'); if(!p.ai) popup(p.x,p.y-190,'Smoke '+(p.smokeN?p.smokeN+' left':'last'),'#8a8aa8',18); }   /* v16.12: hidden ~0.5 s after each smoke-screen contact */ if(spec==='bomb'){ const r=Math.hypot(s.vx,s.vy), a=Math.atan2(s.vy,s.vx), d=Math.sign(s.vx)||1, a2=a+d*.07, nv={vx:Math.cos(a2)*r,vy:Math.sin(a2)*r}, sim=simulate(s.x,s.y,nv.vx,nv.vy,3); if(sim.crossY!==null&&sim.crossY<NET_TOP-4&&(sim.landX-NET_X)*d>1.5*PX_M){ s.vx=nv.vx; s.vy=nv.vy; } s.fx=2; game.shake=.45; hitFreeze(.1); sfx.boom&&sfx.boom(.6); game.camP=1; }   // steeper by ~4 deg when it still clears the tape
+  p.spCarry=0; s.type=type; s.jp=type==='punch'&&p._jp?1:0; p._jp=false; s.bigSmash=big; s.q=q; s.special=spec; s.spRet=s.spRet0||null; s.spRet0=null; s.webDip=s.webDip0||0; s.webDip0=0; if(p.smokeN>0&&game.state==='rally'){ p.smokeOn=1; p.smokeN--; p.armT=p.smokeN>0?SP_WIN:0; s.hideT=.52; spRider(opp,'batman'); if(!p.ai) popup(p.x,p.y-190,'Smoke '+(p.smokeN?p.smokeN+' left':'last'),'#8a8aa8',18); }   /* v16.12: hidden ~0.5 s after each smoke-screen contact */ if(spec==='bomb'){ const r=Math.hypot(s.vx,s.vy), a=Math.atan2(s.vy,s.vx), d=Math.sign(s.vx)||1, a2=a+d*.07, nv={vx:Math.cos(a2)*r,vy:Math.sin(a2)*r}, sim=simulate(s.x,s.y,nv.vx,nv.vy,3); if(sim.crossY!==null&&sim.crossY<NET_TOP-4&&(sim.landX-NET_X)*d>1.5*PX_M){ s.vx=nv.vx; s.vy=nv.vy; } s.fx=2; game.shake=.45; hitFreeze(.1); sfx.boom&&sfx.boom(.6); game.camP=1; }   // steeper by ~4 deg when it still clears the tape
   if(spec&&spec!=='thunder'&&spec!=='bomb'){ hitFreeze(.07); game.camP=Math.max(game.camP||0,.5); }
   if(spec){ const col=p.ch.col; popup(s.x,s.y-58,'\u2605 '+p.ch.spName,col,30); for(let i=0;i<14;i++) spark(s.x,s.y,col);
     if(spec==='thunder'){ s.fx=2; game.shake=.5; hitFreeze(.11); sfx.smashBig(1); fxBurst('burst',s.x,s.y,col,0,1.3); fxBurst('speed',s.x,s.y,col,Math.atan2(v.vy,v.vx)); game.camP=1; }
@@ -1942,8 +1943,8 @@ function step(dt){
       }
     }
     for(const p of players){
-      if(p.armed==='wall'&&(ATTACK_T.has(s.type)||Math.hypot(s.vx,s.vy)>22*PX_M||s.type==='drive'||s.type==='push'||s.type==='punch'||p.armT<2.5)&&game.lastHitter!==p.side&&!s.netHit&&(p.side===0?s.x<=NET_X+1:s.x>=NET_X-1)){   // v16.11: triggers on the next attack or fast shot (any shot in the last 2.5 s of the window)   // v15 shield: auto-perfect return
-        const hc=hitCenter(p); if(Math.hypot(s.x-hc.x,s.y-hc.y)<reachOf(p)*1.8){ p.armed=null; p.wallHit=true; if(p.ch.id==='cap') p.st=Math.min(stMax(p),p.st+5); p.swingT=SW_PEAK; p.hitDone=false; p.req=s.y<p.y-1.45*PX_M?'smash':'drop';   // v16.11 counter: overhead = a smash, low = a tight drop/net counter, onto a stunned opponent
+      if(p.armed==='wall'&&(p.spCarry||ATTACK_T.has(s.type)||Math.hypot(s.vx,s.vy)>22*PX_M||s.type==='drive'||s.type==='push'||s.type==='punch'||p.armT<2.5)&&game.lastHitter!==p.side&&!s.netHit&&(p.side===0?s.x<=NET_X+1:s.x>=NET_X-1)){   // v16.11: triggers on the next attack or fast shot (any shot in the last 2.5 s of the window)   // v15 shield: auto-perfect return
+        const hc=hitCenter(p); if(Math.hypot(s.x-hc.x,s.y-hc.y)<reachOf(p)*1.8){ p.armed=null; p.spCarry=0; p.wallHit=true; if(p.ch.id==='cap') p.st=Math.min(stMax(p),p.st+5); p.swingT=SW_PEAK; p.hitDone=false; p.req=s.y<p.y-1.45*PX_M?'smash':'drop';   // v16.11 counter: overhead = a smash, low = a tight drop/net counter, onto a stunned opponent
           popup(p.x,p.y-170,'\u2605 '+p.ch.spName+'!',p.ch.col,26); fxBurst('flash',s.x,s.y,p.ch.col,0,1.2); hitShuttle(p,0,reachOf(p)); break; } }
       if(p.swingT>=SW_START && p.swingT<SW_END && !p.hitDone && game.lastHitter!==p.side && !s.netHit){
         // online guest: judge the swing against where the shuttle was when they saw it (rewind ~half the ping)
@@ -2777,7 +2778,7 @@ function trySpecial(p){
   else if(t==='wind'){ p.st=stMax(p); p.boostT=3; p.boostK=1.2; }
   else if(t==='clone'){ p.cloneN=3; p.st=stMax(p); game.cloneFx={side:p.side,t:.6}; }   // v16.7 Naruto: the next shot comes with a decoy
   if(SPX[p.ch.id]){ if(SPX[p.ch.id].w==='act'){ spRider(players[1-p.side],p.ch.id); if(SPX[p.ch.id].chain) p.rider=p.ch.id+':chain'; } else if(t==='perfect'||t==='dash'||t==='wind') p.rider=p.ch.id; }   // v15.6: instant specials ride on your next shot
-  if(p.ch.id==='batman'){ p.smokeN=3; p.armed=null; } else if(t==='perfect'||t==='dash'||t==='wind'||t==='clone'); else p.armed=t;   /* v16.12 Batman smoke screen: his next 3 shots are hidden */
+  if(p.ch.id==='batman'){ p.smokeN=3; p.smokeOn=1; p.armed=null; } else if(t==='perfect'||t==='dash'||t==='wind'||t==='clone'); else p.armed=t;   /* v16.12 Batman smoke screen: his next 3 shots are hidden */
   p.armT=SP_WIN;   // v16.9 activation window   // thunder / spin / wall / drive wait for the right shot
   for(let i=0;i<10;i++) spark(p.x,p.y-90,p.ch.col);   // v15.1: the big name banner + aura come from the SPFX layer
   if(!NET.fxSkip){ tone(520,.18,'sawtooth',.08,1040); tone(780,.22,'triangle',.12,1560,.06); }
@@ -2800,8 +2801,8 @@ function drawPlayerBars(p){
   if(p.webT>0&&players[1-p.side].ch.id==='spidey'){ ctx.save(); const cx=p.x, cy=p.y-75, R0=78, a0=Math.min(1,p.webT*2); ctx.globalAlpha=.9*a0; ctx.strokeStyle='#ffffff'; ctx.lineWidth=2.2; ctx.shadowColor='#000'; ctx.shadowBlur=3; ctx.beginPath(); for(let i=0;i<10;i++){ const a=i*Math.PI/5+.2; ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*R0,cy+Math.sin(a)*R0*1.15); } for(let k=1;k<=4;k++){ const rr=R0*k/4; for(let i=0;i<=10;i++){ const a=i*Math.PI/5+.2, x=cx+Math.cos(a)*rr, y=cy+Math.sin(a)*rr*1.15; i?ctx.lineTo(x,y):ctx.moveTo(x,y); } } ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx-p.f*30,GROUND); ctx.moveTo(cx,cy); ctx.lineTo(cx+p.f*40,GROUND); ctx.stroke(); ctx.restore(); }   /* v16.12 web pin */
   if(p.ch.id==='wukong'&&p.boostT>0&&game.state==='rally'){ ctx.save(); const hc=hitCenter(p), L=reachOf(p)+20; ctx.lineCap='round'; ctx.strokeStyle='#7a1a10'; ctx.lineWidth=9; ctx.beginPath(); ctx.moveTo(hc.x-p.f*20,hc.y+20); ctx.lineTo(hc.x+p.f*L,hc.y-30); ctx.stroke(); ctx.strokeStyle='#ffc61a'; ctx.lineWidth=5; ctx.stroke(); for(const t of [0,1]){ ctx.fillStyle='#ffc61a'; ctx.beginPath(); ctx.arc(t?hc.x+p.f*L:hc.x-p.f*20,t?hc.y-30:hc.y+20,6,0,7); ctx.fill(); } ctx.globalAlpha=.7; ctx.fillStyle='#ffffff'; for(let i=0;i<5;i++){ ctx.beginPath(); ctx.arc(p.x-p.f*20+i*14*p.f,GROUND-8+Math.sin(game.time*8+i)*3,14,0,7); ctx.fill(); } ctx.restore(); }   /* v16.13 Ruyi staff + somersault cloud */
   if(p.slowT>0&&game.state==='rally'&&game.lastHitter!==p.side&&players[1-p.side].ch.id==='elsa'){ ctx.save(); ctx.globalAlpha=.45; ctx.fillStyle='#bfe9ff'; ctx.strokeStyle='#ffffff'; ctx.lineWidth=2; ctx.beginPath(); ctx.ellipse(p.x,p.y-70,46,82,0,0,7); ctx.fill(); ctx.stroke(); ctx.restore(); }   /* v16.13 frozen */
-  if(p.smokeN>0&&game.state==='rally'){ ctx.save(); const x0=p.side===0?COURT_L:NET_X, x1=p.side===0?NET_X:COURT_R, tt=performance.now()/900; for(let i=0;i<14;i++){ const x=x0+(x1-x0)*((i*.137+tt*.05)%1), y=GROUND-60-((i*53)%220), r=60+((i*37)%40); const g=ctx.createRadialGradient(x,y,4,x,y,r); g.addColorStop(0,'rgba(40,40,55,.42)'); g.addColorStop(1,'rgba(40,40,55,0)'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill(); } ctx.restore(); }
-  if((p.smokeN>0||p.cloneN>0)&&game.state==='rally'&&game.mode!=='demo'){ ctx.save(); ctx.font='bold 26px sans-serif'; ctx.textAlign='center'; ctx.lineWidth=4; ctx.strokeStyle='#000'; const t=(p.smokeN>0?'\u{1F4A8} ':'\u{1F465} ')+(p.smokeN||p.cloneN); ctx.strokeText(t,p.x,p.y-215); ctx.fillStyle='#fff'; ctx.fillText(t,p.x,p.y-215); ctx.restore(); }
+  if(p.smokeN>0&&p.smokeOn&&game.state==='rally'){ ctx.save(); const x0=p.side===0?COURT_L:NET_X, x1=p.side===0?NET_X:COURT_R, tt=performance.now()/900; for(let i=0;i<14;i++){ const x=x0+(x1-x0)*((i*.137+tt*.05)%1), y=GROUND-60-((i*53)%220), r=60+((i*37)%40); const g=ctx.createRadialGradient(x,y,4,x,y,r); g.addColorStop(0,'rgba(40,40,55,.42)'); g.addColorStop(1,'rgba(40,40,55,0)'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill(); } ctx.restore(); }
+  if((p.smokeN>0||p.cloneN>0)&&(game.state==='rally'||game.state==='serve'||game.state==='point')&&game.mode!=='demo'){ ctx.save(); ctx.font='bold 26px sans-serif'; ctx.textAlign='center'; ctx.lineWidth=4; ctx.strokeStyle='#000'; const t=(p.smokeN>0?'\u{1F4A8} ':'\u{1F465} ')+(p.smokeN||p.cloneN); ctx.strokeText(t,p.x,p.y-215); ctx.fillStyle='#fff'; ctx.fillText(t,p.x,p.y-215); ctx.restore(); }
   if(game.mode==='demo') return;
   if(spPending(p)&&p.armT>0){ const fr=clamp(p.armT/SP_WIN,0,1), fl=p.armT<2&&Math.sin(performance.now()/70)>0, col=fl?'#ff4d6d':(p.ch.col||'#ffd23a');   // v16.9 activation countdown: glow on the character + ring by the bars
     ctx.save(); const g=ctx.createRadialGradient(p.x,p.y-80,10,p.x,p.y-80,95); g.addColorStop(0,col+'55'); g.addColorStop(1,col+'00'); ctx.globalAlpha=fl?.9:.6; ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y-80,95,0,7); ctx.fill();
@@ -2823,7 +2824,7 @@ function drawPlayerBars(p){
   if(full&&!p.armed){ const own=!p.ai&&!(game.mode==='online'&&p.side!==NET.side); const k=own?(isTouch?'':kbFirst(game.mode==='2p'&&p.side===1?'p2':'p1','special')):'';
     const pu=1+.08*Math.sin(game.time*9); ctx.save(); ctx.translate(p.x,y+32); ctx.scale(pu,pu); ctx.shadowColor='#ff6fd5'; ctx.shadowBlur=12; ctx.fillStyle='#b23cff';
     ctx.fillText('\u2605 READY'+(k?` [${k}]`:''),0,0); ctx.restore(); }
-  else if(p.armed||p.perfN>0){ ctx.fillStyle='#b23cff'; ctx.fillText('\u2605 '+p.ch.spName+(p.perfN>0?` \u00d7${p.perfN}`:''),p.x,y+32); }
+  else if(spPending(p)){ const nn=p.perfN||p.smokeN||p.cloneN||0; ctx.fillStyle='#b23cff'; ctx.fillText('\u2605 '+p.ch.spName+(nn>0?` \u00d7${nn}`:''),p.x,y+32); }
   else if(low){ ctx.fillStyle='#e8553a'; ctx.fillText(p.st<=0?'exhausted!':'tired',p.x,y+32); }
   ctx.restore();
   // armed / boost aura
@@ -3494,7 +3495,7 @@ function chalRender(){ const S=PROG.stats, n=CHAL.filter(c=>PROG.chal[c.id]).len
     ['Longest rally',S.longestRally||0],['Net kills (total)',S.netKills||0],['Specials used',S.specials||0],['Wins per character',pc]].map(([a,b])=>`<tr><td>${a}</td><td><b>${kbEsc(String(b))}</b></td></tr>`).join(''); }
 /* ---- instant replay (offline): the last point, slow motion, skippable ---- */
 const REC_N=480;
-const RP_P=['x','y','vx','vy','onGround','swingT','f','run','squash','lungeT','recT','lungeDir','hitT','hitPt','req','mood','moodT','stunT','spFx','slowT','armed','armT','boostT','perfN','cloneN','kbT','meter','st','webT','smokeN'], RP_S=['x','y','vx','vy','rot','type','jp','fx','fxc','netHit','tumbleT','special','hideT','webDip','q','bigSmash'];
+const RP_P=['x','y','vx','vy','onGround','swingT','f','run','squash','lungeT','recT','lungeDir','hitT','hitPt','req','mood','moodT','stunT','spFx','slowT','armed','armT','boostT','perfN','cloneN','kbT','meter','st','webT','smokeN','smokeOn'], RP_S=['x','y','vx','vy','rot','type','jp','fx','fxc','netHit','tumbleT','special','hideT','webDip','q','bigSmash'];
 function recFrame(){ if(game.mode==='online'||game.mode==='demo') return; const r=game.rec||(game.rec=[]); const D=game.decoy, C=game.cloneFx;
   r.push({p:players.map(p=>RP_P.map(k=>p[k])),s:RP_S.map(k=>shuttle[k]),t:game.time,hid:game.hitId,lh:game.lastHitter,
     g:{sh:game.shake,dc:D?{id:D.id,x:D.x,y:D.y,vx:D.vx,vy:D.vy,t:D.t,side:D.side,type:D.type,fx:D.fx,fxc:D.fxc,rot:D.rot}:null,cf:C?{...C}:null}});   // v16.9 replays also carry special state
@@ -3733,7 +3734,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden && game.mo
    Host = Nailoong (authoritative simulation), guest = Berry (sends inputs, predicts itself, interpolates the host).
    Reliable PeerJS channel: lobby/start/fx/win events. Extra unordered, no-retransmit channel: inputs, snapshots, pings. */
 const QS=new URLSearchParams(location.search);
-const NET_VER=34, ROOM_PREFIX='nailoong-badminton-v13-', CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const NET_VER=35, ROOM_PREFIX='nailoong-badminton-v13-', CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const NET={on:false,role:null,side:0,peer:null,conn:null,ch:null,code:'',closing:false,lost:false,
   rtt:0,rtts:[],off:0,offS:[],lastRecv:0,lastPing:0,epoch:0,
   lag:Math.max(0,+QS.get('netlag')||0), loss:clamp(+QS.get('netloss')||0,0,.9),
@@ -3922,7 +3923,7 @@ function netHostAfter(dt){
   if(NET.fxq.length){ sendEv({t:'fx',e:NET.epoch,l:NET.fxq}); NET.fxq=[]; }
   const now=performance.now(); if(now-NET.lastSnapT<14) return; NET.lastSnapT=now;
   const s=shuttle, r=v=>Math.round(v*10)/10, f3=v=>Math.round((v||0)*1000)/1000;
-  const P=p=>[r(p.x),r(p.y),r(p.vx),r(p.vy),p.onGround?1:0,f3(p.swingT),f3(p.lungeT),f3(p.recT),p.lungeDir||0,f3(p.lungeCD),p.mood||0,f3(p.moodT),p.req||'clear',p.hitDone?1:0,f3(p.squash),p.f,Math.round(p.st*10)/10,Math.round(p.meter),p.armed||0,f3(p.boostT),p.perfN||0,p.spN||0,f3(p.stunT),f3(p.armT||0),p.cloneN||0,f3(p.webT||0),p.smokeN||0];
+  const P=p=>[r(p.x),r(p.y),r(p.vx),r(p.vy),p.onGround?1:0,f3(p.swingT),f3(p.lungeT),f3(p.recT),p.lungeDir||0,f3(p.lungeCD),p.mood||0,f3(p.moodT),p.req||'clear',p.hitDone?1:0,f3(p.squash),p.f,Math.round(p.st*10)/10,Math.round(p.meter),p.armed||0,f3(p.boostT),p.perfN||0,p.spN||0,f3(p.stunT),f3(p.armT||0),p.cloneN||0,f3(p.webT||0),p.smokeN||0,p.smokeOn||0];
   sendSt({t:'s',e:NET.epoch,ht:now,ack:NET.gSeq,st:game.state,sc:game.score,sv:game.server,sk:+(game.sClock||0).toFixed(2),lh:game.lastHitter,hid:game.hitId,ra:game.rally,
     p:[P(players[0]),P(players[1])],
     s:[r(s.x),r(s.y),r(s.vx),r(s.vy),f3(s.rot),f3(s.boostT),s.gMul||1,s.bK||BOOST_K,f3(s.tumbleT),s.netHit?1:0,s.type||0,s.landT?1:0,s.fx||0,s.fxc||0,s.special||0,s.webDip||0,f3(s.hideT)],hs:game.hitStop>0?1:0,
@@ -3934,7 +3935,7 @@ function netHostAfter(dt){
 function setPState(p,a){
   p.x=a[0]; p.y=a[1]; p.vx=a[2]; p.vy=a[3]; p.onGround=!!a[4]; p.swingT=a[5]; p.lungeT=a[6]; p.recT=a[7]; p.lungeDir=a[8]; p.lungeCD=a[9];
   p.mood=a[10]||null; p.moodT=a[11]; p.req=a[12]; p.hitDone=!!a[13]; p.squash=a[14];
-  if(a.length>16){ p.st=a[16]; p.meter=a[17]; p.armed=a[18]||null; p.boostT=a[19]; p.perfN=a[20]; if(a.length>21) p.spN=a[21]; if(a.length>22) p.stunT=a[22]; if(a.length>23){ p.armT=a[23]; p.cloneN=a[24]; } if(a.length>25) p.webT=a[25]; if(a.length>26) p.smokeN=a[26]; }
+  if(a.length>16){ p.st=a[16]; p.meter=a[17]; p.armed=a[18]||null; p.boostT=a[19]; p.perfN=a[20]; if(a.length>21) p.spN=a[21]; if(a.length>22) p.stunT=a[22]; if(a.length>23){ p.armT=a[23]; p.cloneN=a[24]; } if(a.length>25) p.webT=a[25]; if(a.length>26) p.smokeN=a[26]; if(a.length>27) p.smokeOn=a[27]; }
 }
 function simPlayer(p,dt){ const n=Math.max(1,Math.ceil(dt/(1/120)-1e-6)), h=dt/n; for(let k=0;k<n;k++) updatePlayer(p,h); }
 function guestSnap(m){
